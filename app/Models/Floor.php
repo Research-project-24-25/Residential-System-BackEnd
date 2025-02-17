@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Floor extends Model
 {
+    protected $guarded = [];
+
     public function building(): BelongsTo
     {
         return $this->belongsTo(Building::class);
