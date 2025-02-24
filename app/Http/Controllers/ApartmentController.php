@@ -10,10 +10,28 @@ class ApartmentController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Apartment::all();
+        $query = Apartment::query();
+
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('address', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('total_floors', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        $sort = $request->get('sort', 'created_at');
+        $direction = $request->get('direction', 'desc');
+
+        $results = $query->orderBy($sort, $direction)
+            ->paginate(10);
+
+        return response()->json($results);
     }
+
 
     /**
      * Store a newly created resource in storage.
