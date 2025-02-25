@@ -17,9 +17,8 @@ class ApartmentController extends Controller
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('address', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('total_floors', 'LIKE', "%{$searchTerm}%");
+                $q->where('floor_id', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('apartment_number', 'LIKE', "%{$searchTerm}%");
             });
         }
 

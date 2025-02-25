@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Apartment;
 use App\Models\Floor;
 use Illuminate\Http\Request;
 
@@ -13,14 +12,14 @@ class FloorController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Apartment::query();
+        $query = Floor::query();
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('address', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('total_floors', 'LIKE', "%{$searchTerm}%");
+                $q->where('building_id', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('total_apartments', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('floor_number', 'LIKE', "%{$searchTerm}%");
             });
         }
 
