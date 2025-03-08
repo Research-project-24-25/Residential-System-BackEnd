@@ -13,10 +13,15 @@ return new class extends Migration
     {
         Schema::create('houses', function (Blueprint $table) {
             $table->id();
+            $table->string('house_number');
+            $table->integer('number_of_residents');
+            $table->enum('house_type', ['villa', 'house']);
+            $table->boolean('is_occupied')->default(false);
             $table->timestamps();
         });
+ 
     }
-
+    
     /**
      * Reverse the migrations.
      */
