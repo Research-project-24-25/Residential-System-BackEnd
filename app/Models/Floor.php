@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Floor extends Model
 {
-    protected $guarded = [];
+    protected $guarded = ['id'];
 
     public function building(): BelongsTo
     {

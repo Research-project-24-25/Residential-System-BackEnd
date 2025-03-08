@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Apartment extends Model
 {
-    protected $guarded = [];
+    protected $guarded = ['id'];
 
-    public function building(): BelongsTo
+    public function floor(): BelongsTo
     {
         return $this->belongsTo(Floor::class);
     }

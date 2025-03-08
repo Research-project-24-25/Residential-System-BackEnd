@@ -7,12 +7,18 @@ use Illuminate\Http\Request;
 
 class BuildingController extends Controller
 {
+    public function __construct()
+    {
+        // Allow public access to index and show methods
+        $this->middleware('auth:sanctum')->except(['index', 'show']);
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $query = Building::query();
+        $query = Building::query()->with('floors');  // Eager load floors
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -31,7 +37,6 @@ class BuildingController extends Controller
 
         return response()->json($results);
     }
-
 
     /**
      * Store a newly created resource in storage.
@@ -52,9 +57,9 @@ class BuildingController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Building $building)
     {
-        //
+        return response()->json($building->load('floors.apartments'));
     }
 
     /**

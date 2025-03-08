@@ -7,23 +7,32 @@ use Illuminate\Http\Request;
 
 class ApartmentController extends Controller
 {
+    public function __construct()
+    {
+        // Allow public access to index and show methods
+        $this->middleware('auth:sanctum')->except(['index', 'show']);
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $query = Apartment::query();
+        $query = Apartment::query()->with(['floor.building']);
+
+        if ($request->filled('floor_id')) {
+            $query->where('floor_id', $request->floor_id);
+        }
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('floor_id', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('apartment_number', 'LIKE', "%{$searchTerm}%");
+                $q->where('apartment_number', 'LIKE', "%{$searchTerm}%");
             });
         }
 
-        $sort = $request->get('sort', 'created_at');
-        $direction = $request->get('direction', 'desc');
+        $sort = $request->get('sort', 'apartment_number');
+        $direction = $request->get('direction', 'asc');
 
         $results = $query->orderBy($sort, $direction)
             ->paginate(10);
@@ -31,15 +40,14 @@ class ApartmentController extends Controller
         return response()->json($results);
     }
 
-
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'floor_id' => ['required', 'integer'],
-            'apartment_number' => ['required'],
+            'floor_id' => ['required', 'exists:floors,id'],
+            'apartment_number' => ['required', 'string'],
         ]);
 
         Apartment::create($validated);
@@ -50,9 +58,9 @@ class ApartmentController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Apartment $apartment)
     {
-        //
+        return response()->json($apartment->load('floor.building'));
     }
 
     /**

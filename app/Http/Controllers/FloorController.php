@@ -7,24 +7,32 @@ use Illuminate\Http\Request;
 
 class FloorController extends Controller
 {
+    public function __construct()
+    {
+        // Allow public access to index and show methods
+        $this->middleware('auth:sanctum')->except(['index', 'show']);
+    }
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $query = Floor::query();
+        $query = Floor::query()->with(['building', 'apartments']);
+
+        if ($request->filled('building_id')) {
+            $query->where('building_id', $request->building_id);
+        }
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('building_id', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('total_apartments', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('floor_number', 'LIKE', "%{$searchTerm}%");
+                $q->where('floor_number', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('total_apartments', 'LIKE', "%{$searchTerm}%");
             });
         }
 
-        $sort = $request->get('sort', 'created_at');
-        $direction = $request->get('direction', 'desc');
+        $sort = $request->get('sort', 'floor_number');
+        $direction = $request->get('direction', 'asc');
 
         $results = $query->orderBy($sort, $direction)
             ->paginate(10);
@@ -51,9 +59,9 @@ class FloorController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Floor $floor)
     {
-        //
+        return response()->json($floor->load(['building', 'apartments']));
     }
 
     /**
