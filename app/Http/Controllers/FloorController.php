@@ -4,102 +4,103 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\FloorResource;
 use App\Models\Floor;
-use App\Traits\Filterable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class FloorController extends BaseController
 {
-    use Filterable;
-
     public function __construct()
     {
         // Allow public access to index and show methods
         $this->middleware('auth:sanctum')->except(['index', 'show']);
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request): ResourceCollection
+    public function index(Request $request): ResourceCollection|JsonResponse
     {
-        $query = Floor::query()->with(['building', 'apartments']);
+        try {
+            $query = Floor::query()->with(['building', 'apartments']);
 
-        if ($request->filled('building_id')) {
-            $query->where('building_id', $request->building_id);
+            if ($request->filled('building_id')) {
+                $query->where('building_id', $request->building_id);
+            }
+
+            // Apply search filtering
+            $this->applySearch($query, $request, [
+                'floor_number',
+                'total_apartments'
+            ]);
+
+            // Apply sorting
+            $this->applySorting($query, $request, 'floor_number', 'asc');
+
+            // Paginate and return resources
+            $floors = $this->applyPagination($query, $request);
+
+            return FloorResource::collection($floors);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
         }
-
-        // Apply search filtering
-        $this->applySearch($query, $request, [
-            'floor_number',
-            'total_apartments'
-        ]);
-
-        // Apply sorting
-        $this->applySorting($query, $request, 'floor_number', 'asc');
-
-        // Paginate and return resources
-        $floors = $this->applyPagination($query, $request);
-
-        return FloorResource::collection($floors);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'building_id' => ['required', 'exists:buildings,id'],
-            'floor_number' => ['required', 'integer'],
-            'total_apartments' => ['required', 'integer', 'min:1'],
-        ]);
+        try {
+            $validated = $request->validate([
+                'building_id' => ['required', 'exists:buildings,id'],
+                'floor_number' => ['required', 'integer'],
+                'total_apartments' => ['required', 'integer', 'min:1'],
+            ]);
+            $floor = Floor::create($validated);
 
-        $floor = Floor::create($validated);
-
-        return response()->json([
-            'message' => 'Floor created successfully.',
-            'data' => new FloorResource($floor)
-        ], 201);
+            return $this->createdResponse(
+                'Floor created successfully',
+                new FloorResource($floor)
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Floor $floor): FloorResource
+    public function show(Floor $floor): JsonResponse
     {
-        return new FloorResource($floor->load(['building', 'apartments']));
+        try {
+            return $this->successResponse(
+                'Floor retrieved successfully',
+                new FloorResource($floor->load(['building', 'apartments']))
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Floor $floor): JsonResponse
     {
-        $validated = $request->validate([
-            'building_id' => ['required', 'exists:buildings,id'],
-            'floor_number' => ['required', 'integer'],
-            'total_apartments' => ['required', 'integer', 'min:1'],
-        ]);
+        try {
+            $validated = $request->validate([
+                'building_id' => ['required', 'exists:buildings,id'],
+                'floor_number' => ['required', 'integer'],
+                'total_apartments' => ['required', 'integer', 'min:1'],
+            ]);
+            $floor->update($validated);
 
-        $floor->update($validated);
-
-        return response()->json([
-            'message' => 'Floor updated successfully.',
-            'data' => new FloorResource($floor)
-        ], 200);
+            return $this->successResponse(
+                'Floor updated successfully',
+                new FloorResource($floor)
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Floor $floor): JsonResponse
     {
-        $floor->delete();
-
-        return response()->json([
-            'message' => 'Floor deleted successfully.'
-        ], 200);
+        try {
+            $floor->delete();
+            return $this->successResponse('Floor deleted successfully');
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
     }
 }
