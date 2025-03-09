@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Resident;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class ResidentController extends Controller
 {
@@ -58,11 +59,17 @@ class ResidentController extends Controller
      */
     public function store(Request $request)
     {
+        // Check if user is admin
+        if (!$request->user() instanceof \App\Models\Admin) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $validated = $request->validate([
             'username' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:residents'],
+            'password' => ['required', 'string', 'min:8'],
             'phone_number' => ['required', 'string'],
             'age' => ['required', 'integer', 'min:0'],
             'gender' => ['required', 'in:male,female'],
@@ -78,10 +85,16 @@ class ResidentController extends Controller
             ], 422);
         }
 
+        // Hash the password
+        $validated['password'] = Hash::make($validated['password']);
+
         // Add the admin who created this resident
         $validated['created_by'] = $request->user()->id;
 
         $resident = Resident::create($validated);
+
+        // Hide password in response
+        $resident = $resident->makeHidden('password');
 
         return response()->json([
             'message' => 'Resident created successfully',
@@ -95,7 +108,7 @@ class ResidentController extends Controller
     public function show(Resident $resident)
     {
         return response()->json(
-            $resident->load(['house', 'apartment.floor.building', 'createdBy'])
+            $resident->makeHidden('password')->load(['house', 'apartment.floor.building', 'createdBy'])
         );
     }
 
@@ -104,11 +117,17 @@ class ResidentController extends Controller
      */
     public function update(Request $request, Resident $resident)
     {
+        // Check if user is admin
+        if (!$request->user() instanceof \App\Models\Admin) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $validated = $request->validate([
             'username' => ['sometimes', 'string', 'max:255'],
             'first_name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'unique:residents,email,' . $resident->id],
+            'password' => ['sometimes', 'string', 'min:8'],
             'phone_number' => ['sometimes', 'string'],
             'age' => ['sometimes', 'integer', 'min:0'],
             'gender' => ['sometimes', 'in:male,female'],
@@ -124,19 +143,29 @@ class ResidentController extends Controller
             ], 422);
         }
 
+        // Hash the password if it's provided
+        if (isset($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        }
+
         $resident->update($validated);
 
         return response()->json([
             'message' => 'Resident updated successfully',
-            'resident' => $resident->load(['house', 'apartment.floor.building', 'createdBy'])
+            'resident' => $resident->makeHidden('password')->load(['house', 'apartment.floor.building', 'createdBy'])
         ]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Resident $resident)
+    public function destroy(Request $request, Resident $resident)
     {
+        // Check if user is admin
+        if (!$request->user() instanceof \App\Models\Admin) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $resident->delete();
 
         return response()->json([
