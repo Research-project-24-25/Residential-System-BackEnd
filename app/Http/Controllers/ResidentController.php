@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 
-class ResidentController extends Controller
+class ResidentController extends BaseController
 {
     use Filterable;
 

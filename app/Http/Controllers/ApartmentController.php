@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\JsonResponse;
 
-class ApartmentController extends Controller
+class ApartmentController extends BaseController
 {
     use Filterable;
 
