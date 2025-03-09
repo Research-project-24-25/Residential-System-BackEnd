@@ -7,22 +7,11 @@ use App\Http\Controllers\FloorController;
 use App\Http\Controllers\HouseController;
 use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\ResidentAuthController;
+use App\Http\Controllers\PropertyController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes - accessible to anyone
-
-// Buildings, floors and apartments public access
-Route::get('buildings', [BuildingController::class, 'index'])->name('buildings.index');
-Route::get('buildings/{building}', [BuildingController::class, 'show'])->name('buildings.show');
-
-Route::get('floors', [FloorController::class, 'index'])->name('floors.index');
-Route::get('floors/{floor}', [FloorController::class, 'show'])->name('floors.show');
-
-Route::get('apartments', [ApartmentController::class, 'index'])->name('apartments.index');
-Route::get('apartments/{apartment}', [ApartmentController::class, 'show'])->name('apartments.show');
-
-Route::get('houses', [HouseController::class, 'index'])->name('houses.index');
-Route::get('houses/{house}', [HouseController::class, 'show'])->name('houses.show');
+Route::apiResource('properties', PropertyController::class)->only(['index', 'show']);
 
 // Admin authentication
 Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login');
@@ -36,10 +25,10 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
     // Protected resource routes
-    Route::apiResource('buildings', BuildingController::class)->except(['index', 'show']);
-    Route::apiResource('floors', FloorController::class)->except(['index', 'show']);
-    Route::apiResource('apartments', ApartmentController::class)->except(['index', 'show']);
-    Route::apiResource('houses', HouseController::class)->except(['index', 'show']);
+    Route::apiResource('buildings', BuildingController::class);
+    Route::apiResource('floors', FloorController::class);
+    Route::apiResource('apartments', ApartmentController::class);
+    Route::apiResource('houses', HouseController::class);
     Route::apiResource('residents', ResidentController::class);
 });
 
