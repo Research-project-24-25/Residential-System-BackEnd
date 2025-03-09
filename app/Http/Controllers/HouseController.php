@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\HouseResource;
 use App\Models\House;
+use App\Traits\Filterable;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Http\JsonResponse;
 
 class HouseController extends Controller
 {
+    use Filterable;
+
     public function __construct()
     {
         // Allow public access to index and show methods
@@ -16,17 +22,15 @@ class HouseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request): ResourceCollection
     {
-        $query = House::query();
+        $query = House::query()->with('residents');
 
-        if ($request->filled('search')) {
-            $searchTerm = $request->search;
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('house_number', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('house_type', 'LIKE', "%{$searchTerm}%");
-            });
-        }
+        // Apply search filtering
+        $this->applySearch($query, $request, [
+            'house_number',
+            'house_type'
+        ]);
 
         if ($request->filled('type')) {
             $query->where('house_type', $request->type);
@@ -36,19 +40,19 @@ class HouseController extends Controller
             $query->where('is_occupied', $request->boolean('is_occupied'));
         }
 
-        $sort = $request->get('sort', 'house_number');
-        $direction = $request->get('direction', 'asc');
+        // Apply sorting
+        $this->applySorting($query, $request, 'house_number', 'asc');
 
-        $results = $query->orderBy($sort, $direction)
-            ->paginate(10);
+        // Paginate and return resources
+        $houses = $this->applyPagination($query, $request);
 
-        return response()->json($results);
+        return HouseResource::collection($houses);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'house_number' => ['required', 'string'],
@@ -57,23 +61,26 @@ class HouseController extends Controller
             'is_occupied' => ['boolean'],
         ]);
 
-        House::create($validated);
+        $house = House::create($validated);
 
-        return response()->json(['message' => 'House created successfully.'], 201);
+        return response()->json([
+            'message' => 'House created successfully.',
+            'data' => new HouseResource($house)
+        ], 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(House $house)
+    public function show(House $house): HouseResource
     {
-        return response()->json($house);
+        return new HouseResource($house->load('residents'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, House $house)
+    public function update(Request $request, House $house): JsonResponse
     {
         $validated = $request->validate([
             'house_number' => ['required', 'string'],
@@ -84,16 +91,21 @@ class HouseController extends Controller
 
         $house->update($validated);
 
-        return response()->json(['message' => 'House updated successfully.']);
+        return response()->json([
+            'message' => 'House updated successfully.',
+            'data' => new HouseResource($house)
+        ]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(House $house)
+    public function destroy(House $house): JsonResponse
     {
         $house->delete();
 
-        return response()->json(['message' => 'House deleted successfully.']);
+        return response()->json([
+            'message' => 'House deleted successfully.'
+        ]);
     }
 }

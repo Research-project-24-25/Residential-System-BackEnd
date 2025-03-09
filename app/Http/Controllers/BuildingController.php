@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\BuildingResource;
 use App\Models\Building;
+use App\Traits\Filterable;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Http\JsonResponse;
 
 class BuildingController extends Controller
 {
+    use Filterable;
+
     public function __construct()
     {
         // Allow public access to index and show methods
@@ -16,32 +22,30 @@ class BuildingController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request): ResourceCollection
     {
         $query = Building::query()->with('floors');  // Eager load floors
 
-        if ($request->filled('search')) {
-            $searchTerm = $request->search;
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('address', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('total_floors', 'LIKE', "%{$searchTerm}%");
-            });
-        }
+        // Apply search filtering
+        $this->applySearch($query, $request, [
+            'name',
+            'address',
+            'total_floors'
+        ]);
 
-        $sort = $request->get('sort', 'created_at');
-        $direction = $request->get('direction', 'desc');
+        // Apply sorting
+        $this->applySorting($query, $request, 'created_at', 'desc');
 
-        $results = $query->orderBy($sort, $direction)
-            ->paginate(10);
+        // Paginate and return resources
+        $buildings = $this->applyPagination($query, $request);
 
-        return response()->json($results);
+        return BuildingResource::collection($buildings);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'name' => ['required'],
@@ -49,23 +53,26 @@ class BuildingController extends Controller
             'total_floors' => ['required', 'integer'],
         ]);
 
-        Building::create($validated);
+        $building = Building::create($validated);
 
-        return response()->json(['message' => 'Building created successfully.'], 201);
+        return response()->json([
+            'message' => 'Building created successfully.',
+            'data' => new BuildingResource($building)
+        ], 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Building $building)
+    public function show(Building $building): BuildingResource
     {
-        return response()->json($building->load('floors.apartments'));
+        return new BuildingResource($building->load('floors.apartments'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Building $building)
+    public function update(Request $request, Building $building): JsonResponse
     {
         $validated = $request->validate([
             'name' => ['required'],
@@ -75,16 +82,21 @@ class BuildingController extends Controller
 
         $building->update($validated);
 
-        return response()->json(['message' => 'Building updated successfully.']);
+        return response()->json([
+            'message' => 'Building updated successfully.',
+            'data' => new BuildingResource($building)
+        ]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Building $building)
+    public function destroy(Building $building): JsonResponse
     {
         $building->delete();
 
-        return response()->json(['message' => 'Building deleted successfully.'], 200);
+        return response()->json([
+            'message' => 'Building deleted successfully.'
+        ], 200);
     }
 }
