@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ResidentRequest;
 use App\Models\Resident;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,6 +12,7 @@ class ResidentController extends Controller
     public function __construct()
     {
         $this->middleware('auth:sanctum');
+        $this->middleware('admin')->except(['show']);
     }
 
     /**
@@ -57,34 +59,10 @@ class ResidentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(ResidentRequest $request)
     {
-        // Check if user is admin
-        if (!$request->user() instanceof \App\Models\Admin) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'username' => ['required', 'string', 'max:255'],
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:residents'],
-            'password' => ['required', 'string', 'min:8'],
-            'phone_number' => ['required', 'string'],
-            'age' => ['required', 'integer', 'min:0'],
-            'gender' => ['required', 'in:male,female'],
-            'status' => ['sometimes', 'in:active,inactive'],
-            'house_id' => ['nullable', 'exists:houses,id'],
-            'apartment_id' => ['nullable', 'exists:apartments,id'],
-        ]);
-
-        // Ensure resident is assigned to either a house or an apartment, not both
-        if (($validated['house_id'] ?? null) && ($validated['apartment_id'] ?? null)) {
-            return response()->json([
-                'message' => 'A resident cannot be assigned to both a house and an apartment'
-            ], 422);
-        }
-
+        $validated = $request->validated();
+        
         // Hash the password
         $validated['password'] = Hash::make($validated['password']);
 
@@ -105,8 +83,16 @@ class ResidentController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Resident $resident)
+    public function show(Request $request, Resident $resident)
     {
+        // Only allow admins or the resident themselves to view
+        if (
+            !($request->user() instanceof \App\Models\Admin) && 
+            !($request->user() instanceof \App\Models\Resident && $request->user()->id === $resident->id)
+        ) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         return response()->json(
             $resident->makeHidden('password')->load(['house', 'apartment.floor.building', 'createdBy'])
         );
@@ -115,34 +101,10 @@ class ResidentController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Resident $resident)
+    public function update(ResidentRequest $request, Resident $resident)
     {
-        // Check if user is admin
-        if (!$request->user() instanceof \App\Models\Admin) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'username' => ['sometimes', 'string', 'max:255'],
-            'first_name' => ['sometimes', 'string', 'max:255'],
-            'last_name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'unique:residents,email,' . $resident->id],
-            'password' => ['sometimes', 'string', 'min:8'],
-            'phone_number' => ['sometimes', 'string'],
-            'age' => ['sometimes', 'integer', 'min:0'],
-            'gender' => ['sometimes', 'in:male,female'],
-            'status' => ['sometimes', 'in:active,inactive'],
-            'house_id' => ['nullable', 'exists:houses,id'],
-            'apartment_id' => ['nullable', 'exists:apartments,id'],
-        ]);
-
-        // Ensure resident is assigned to either a house or an apartment, not both
-        if (($validated['house_id'] ?? null) && ($validated['apartment_id'] ?? null)) {
-            return response()->json([
-                'message' => 'A resident cannot be assigned to both a house and an apartment'
-            ], 422);
-        }
-
+        $validated = $request->validated();
+        
         // Hash the password if it's provided
         if (isset($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
@@ -159,13 +121,8 @@ class ResidentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request, Resident $resident)
+    public function destroy(Resident $resident)
     {
-        // Check if user is admin
-        if (!$request->user() instanceof \App\Models\Admin) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $resident->delete();
 
         return response()->json([
