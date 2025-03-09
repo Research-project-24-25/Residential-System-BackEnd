@@ -20,4 +20,14 @@ class Admin extends Authenticatable
         'age' => 'integer',
         'password' => 'hashed',
     ];
+
+    public function isSuperAdmin()
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
 }
