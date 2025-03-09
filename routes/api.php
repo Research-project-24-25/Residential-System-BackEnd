@@ -30,12 +30,10 @@ Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.l
 // Resident authentication
 Route::post('resident/login', [ResidentAuthController::class, 'login'])->name('resident.login');
 
-
 // Admin authenticated routes
-Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
-    Route::post('register', [AdminAuthController::class, 'register'])->name('admin.register');
-    Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('profile', [AdminAuthController::class, 'profile'])->name('admin.profile');
+    Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
     // Protected resource routes
     Route::apiResource('buildings', BuildingController::class)->except(['index', 'show']);
@@ -43,6 +41,11 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('apartments', ApartmentController::class)->except(['index', 'show']);
     Route::apiResource('houses', HouseController::class)->except(['index', 'show']);
     Route::apiResource('residents', ResidentController::class);
+});
+
+// Super admin only routes
+Route::prefix('admin')->middleware(['auth:sanctum', 'admin:super_admin'])->group(function () {
+    Route::post('register', [AdminAuthController::class, 'register'])->name('admin.register');
 });
 
 // Resident authenticated routes
