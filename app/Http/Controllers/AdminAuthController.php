@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\AdminResource;
 use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Http\JsonResponse;
 
 class AdminAuthController extends Controller
 {
-    public function register(Request $request)
+    public function register(Request $request): JsonResponse
     {
         if (!$request->user()->isSuperAdmin()) {
             return response()->json(['message' => 'Unauthorized. Only super admins can create admin accounts.'], 403);
@@ -28,7 +29,6 @@ class AdminAuthController extends Controller
             'gender' => ['required', 'in:male,female'],
         ]);
 
-
         $validated['password'] = Hash::make($validated['password']);
 
         $admin = Admin::create($validated);
@@ -37,12 +37,12 @@ class AdminAuthController extends Controller
 
         return response()->json([
             'message' => 'Admin registered successfully',
-            'admin' => $admin,
+            'admin' => new AdminResource($admin),
             'token' => $token
         ], 201);
     }
 
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'email' => ['required', 'email'],
@@ -61,12 +61,12 @@ class AdminAuthController extends Controller
 
         return response()->json([
             'message' => 'Logged in successfully',
-            'admin' => $admin,
+            'admin' => new AdminResource($admin),
             'token' => $token
         ]);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
 
@@ -75,8 +75,8 @@ class AdminAuthController extends Controller
         ]);
     }
 
-    public function profile(Request $request)
+    public function profile(Request $request): JsonResponse
     {
-        return response()->json($request->user());
+        return response()->json(new AdminResource($request->user()));
     }
 }

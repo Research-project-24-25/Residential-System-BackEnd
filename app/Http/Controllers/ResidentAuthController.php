@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ResidentResource;
 use App\Models\Resident;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\JsonResponse;
 
 class ResidentAuthController extends Controller
 {
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'email' => ['required', 'email'],
@@ -27,12 +29,12 @@ class ResidentAuthController extends Controller
 
         return response()->json([
             'message' => 'Logged in successfully',
-            'resident' => $resident->load(['house', 'apartment.floor.building']),
+            'resident' => new ResidentResource($resident->load(['house', 'apartment.floor.building'])),
             'token' => $token
         ]);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
 
@@ -41,8 +43,10 @@ class ResidentAuthController extends Controller
         ]);
     }
 
-    public function profile(Request $request)
+    public function profile(Request $request): JsonResponse
     {
-        return response()->json($request->user()->load(['house', 'apartment.floor.building']));
+        return response()->json(
+            new ResidentResource($request->user()->load(['house', 'apartment.floor.building']))
+        );
     }
 }
