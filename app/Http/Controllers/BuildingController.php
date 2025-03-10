@@ -11,22 +11,14 @@ use Throwable;
 
 class BuildingController extends BaseController
 {
-    public function __construct()
-    {
-        // Allow public access to index and show methods
-        $this->middleware('auth:sanctum')->except(['index', 'show']);
-    }
-
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
-            $query = Building::query()->with('floors');  // Eager load floors
-
+            $query = Building::query()->withCount('floors');
             // Apply search filtering
             $this->applySearch($query, $request, [
                 'name',
                 'address',
-                'total_floors'
             ]);
 
             // Apply sorting
@@ -47,7 +39,6 @@ class BuildingController extends BaseController
             $validated = $request->validate([
                 'name' => ['required'],
                 'address' => ['required'],
-                'total_floors' => ['required', 'integer', 'min:1'],
             ]);
             $building = Building::create($validated);
 
@@ -65,7 +56,10 @@ class BuildingController extends BaseController
         try {
             return $this->successResponse(
                 'Building retrieved successfully',
-                new BuildingResource($building->load('floors.apartments'))
+                new BuildingResource(
+                    $building->loadCount('floors')
+                        ->load('floors.apartments')
+                )
             );
         } catch (Throwable $e) {
             return $this->handleException($e);
@@ -78,7 +72,6 @@ class BuildingController extends BaseController
             $validated = $request->validate([
                 'name' => ['required'],
                 'address' => ['required'],
-                'total_floors' => ['required', 'integer', 'min:1'],
             ]);
             $building->update($validated);
 

@@ -18,7 +18,7 @@ class BuildingResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'address' => $this->address,
-            'total_floors' => $this->total_floors,
+            'total_floors' => $this->floors_count,
             'floors' => FloorResource::collection($this->whenLoaded('floors')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

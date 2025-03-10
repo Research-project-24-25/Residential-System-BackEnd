@@ -11,7 +11,6 @@ class BuildingFactory extends Factory
         return [
             'name' => 'Building ' . fake()->unique()->buildingNumber(),
             'address' => fake()->streetAddress(),
-            'total_floors' => fake()->numberBetween(3, 20),
         ];
     }
 } 
