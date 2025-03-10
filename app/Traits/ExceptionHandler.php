@@ -23,20 +23,13 @@ trait ExceptionHandler
     }
 
     if ($exception instanceof ModelNotFoundException || $exception instanceof NotFoundHttpException) {
-      return $this->notFoundResponse();
+      return $this->notFoundResponse($exception->getMessage());
     }
 
     if ($exception instanceof AuthorizationException) {
       return $this->forbiddenResponse($exception->getMessage());
     }
 
-    // Log unexpected exceptions
-    if (app()->environment('production')) {
-      logger()->error($exception);
-      return $this->errorResponse('An unexpected error occurred', 500);
-    }
-
-    // In non-production environments, return the exception details
     return $this->errorResponse($exception->getMessage(), 500);
   }
 }

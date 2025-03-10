@@ -51,24 +51,24 @@ class BuildingController extends BaseController
         }
     }
 
-    public function show(Building $building): JsonResponse
+    public function show($building): JsonResponse
     {
         try {
+            $building = Building::withCount('floors')->with('floors.apartments')->findOrFail($building);
+
             return $this->successResponse(
                 'Building retrieved successfully',
-                new BuildingResource(
-                    $building->loadCount('floors')
-                        ->load('floors.apartments')
-                )
+                new BuildingResource($building)
             );
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
     }
 
-    public function update(Request $request, Building $building): JsonResponse
+    public function update($building, Request $request): JsonResponse
     {
         try {
+            $building = Building::findOrFail($building);
             $validated = $request->validate([
                 'name' => ['required'],
                 'address' => ['required'],
@@ -84,9 +84,10 @@ class BuildingController extends BaseController
         }
     }
 
-    public function destroy(Building $building): JsonResponse
+    public function destroy($building): JsonResponse
     {
         try {
+            $building = Building::findOrFail($building);
             $building->delete();
             return $this->successResponse('Building deleted successfully');
         } catch (Throwable $e) {
