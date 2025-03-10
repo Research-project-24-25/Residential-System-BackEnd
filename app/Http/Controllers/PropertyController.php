@@ -31,6 +31,7 @@ class PropertyController extends BaseController
   {
     $query = House::query()->with('residents');
     $this->applySearch($query, $request, ['house_number']);
+    $this->applySorting($query, $request, 'house_number');
     return PropertyResource::collection($this->applyPagination($query, $request));
   }
 
@@ -41,6 +42,7 @@ class PropertyController extends BaseController
     $query->orWhereHas('floor.building', function ($query) use ($request) {
       $query->where('name', 'LIKE', "%{$request->search}%");
     });
+    $this->applySorting($query, $request, 'apartment_number');
     return PropertyResource::collection($this->applyPagination($query, $request));
   }
 
@@ -71,6 +73,7 @@ class PropertyController extends BaseController
     $query->orWhereHas('floor.building', function ($query) use ($request) {
       $query->where('name', 'LIKE', "%{$request->search}%");
     });
+    $this->applySorting($query, $request, 'apartment_number');
     return $query;
   }
 
@@ -78,6 +81,7 @@ class PropertyController extends BaseController
   {
     $query = House::query()->with('residents');
     $this->applySearch($query, $request, ['house_number']);
+    $this->applySorting($query, $request, 'house_number');
     return $query;
   }
 
