@@ -11,16 +11,10 @@ use Throwable;
 
 class FloorController extends BaseController
 {
-    public function __construct()
-    {
-        // Allow public access to index and show methods
-        $this->middleware('auth:sanctum')->except(['index', 'show']);
-    }
-
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
-            $query = Floor::query()->with(['building', 'apartments']);
+            $query = Floor::query()->withCount('apartments');
 
             if ($request->filled('building_id')) {
                 $query->where('building_id', $request->building_id);
@@ -49,13 +43,29 @@ class FloorController extends BaseController
         try {
             $validated = $request->validate([
                 'building_id' => ['required', 'exists:buildings,id'],
-                'floor_number' => ['required', 'integer'],
-                'total_apartments' => ['required', 'integer', 'min:1'],
+                'floor_number' => ['required', 'integer', 'unique:floors,floor_number,NULL,id,building_id,' . $request->building_id],
             ]);
             $floor = Floor::create($validated);
 
             return $this->createdResponse(
                 'Floor created successfully',
+                new FloorResource($floor->loadCount('apartments'))
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function show($id): JsonResponse
+    {
+        try {
+            $floor = Floor::query()
+                ->withCount('apartments')
+                ->with(['building', 'apartments'])
+                ->findOrFail($id);
+
+            return $this->successResponse(
+                'Floor retrieved successfully',
                 new FloorResource($floor)
             );
         } catch (Throwable $e) {
@@ -63,26 +73,16 @@ class FloorController extends BaseController
         }
     }
 
-    public function show(Floor $floor): JsonResponse
+    public function update($id, Request $request): JsonResponse
     {
         try {
-            return $this->successResponse(
-                'Floor retrieved successfully',
-                new FloorResource($floor->load(['building', 'apartments']))
-            );
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
+            $floor = Floor::withCount('apartments')->findOrFail($id);
 
-    public function update(Request $request, Floor $floor): JsonResponse
-    {
-        try {
             $validated = $request->validate([
                 'building_id' => ['required', 'exists:buildings,id'],
-                'floor_number' => ['required', 'integer'],
-                'total_apartments' => ['required', 'integer', 'min:1'],
+                'floor_number' => ['required', 'integer', 'unique:floors,floor_number,' . $id . ',id,building_id,' . $request->building_id],
             ]);
+
             $floor->update($validated);
 
             return $this->successResponse(
@@ -94,9 +94,10 @@ class FloorController extends BaseController
         }
     }
 
-    public function destroy(Floor $floor): JsonResponse
+    public function destroy($id): JsonResponse
     {
         try {
+            $floor = Floor::findOrFail($id);
             $floor->delete();
             return $this->successResponse('Floor deleted successfully');
         } catch (Throwable $e) {

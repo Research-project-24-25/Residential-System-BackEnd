@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('building_id')->constrained('buildings')->cascadeOnDelete();
             $table->integer('floor_number');
-            $table->integer('total_apartments');
             $table->timestamps();
         });
     }

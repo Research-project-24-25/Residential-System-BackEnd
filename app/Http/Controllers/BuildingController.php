@@ -44,17 +44,19 @@ class BuildingController extends BaseController
 
             return $this->createdResponse(
                 'Building created successfully',
-                new BuildingResource($building)
+                new BuildingResource($building->loadCount('floors'))
             );
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
     }
 
-    public function show($building): JsonResponse
+    public function show($id): JsonResponse
     {
         try {
-            $building = Building::withCount('floors')->with('floors.apartments')->findOrFail($building);
+            $building = Building::query()
+                ->withCount('floors')
+                ->findOrFail($id);
 
             return $this->successResponse(
                 'Building retrieved successfully',
@@ -65,14 +67,18 @@ class BuildingController extends BaseController
         }
     }
 
-    public function update($building, Request $request): JsonResponse
+    public function update($id, Request $request): JsonResponse
     {
         try {
-            $building = Building::findOrFail($building);
+            $building = Building::query()
+                ->withCount('floors')
+                ->findOrFail($id);
+
             $validated = $request->validate([
                 'name' => ['required'],
                 'address' => ['required'],
             ]);
+
             $building->update($validated);
 
             return $this->successResponse(
@@ -84,10 +90,10 @@ class BuildingController extends BaseController
         }
     }
 
-    public function destroy($building): JsonResponse
+    public function destroy($id): JsonResponse
     {
         try {
-            $building = Building::findOrFail($building);
+            $building = Building::findOrFail($id);
             $building->delete();
             return $this->successResponse('Building deleted successfully');
         } catch (Throwable $e) {

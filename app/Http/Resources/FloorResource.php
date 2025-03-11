@@ -18,7 +18,7 @@ class FloorResource extends JsonResource
             'id' => $this->id,
             'building_id' => $this->building_id,
             'floor_number' => $this->floor_number,
-            'total_apartments' => $this->total_apartments,
+            'total_apartments' => $this->apartments_count,
             'building' => new BuildingResource($this->whenLoaded('building')),
             'apartments' => ApartmentResource::collection($this->whenLoaded('apartments')),
             'created_at' => $this->created_at,
