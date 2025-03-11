@@ -75,8 +75,8 @@ class BuildingController extends BaseController
                 ->findOrFail($id);
 
             $validated = $request->validate([
-                'name' => ['required'],
-                'address' => ['required'],
+                'name' => ['sometimes'],
+                'address' => ['sometimes'],
             ]);
 
             $building->update($validated);

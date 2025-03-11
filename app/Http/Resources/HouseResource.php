@@ -17,7 +17,7 @@ class HouseResource extends JsonResource
         return [
             'id' => $this->id,
             'house_number' => $this->house_number,
-            'number_of_residents' => $this->number_of_residents,
+            'number_of_residents' => $this->residents_count,
             'house_type' => $this->house_type,
             'is_occupied' => (bool) $this->is_occupied,
             'residents' => ResidentResource::collection($this->whenLoaded('residents')),

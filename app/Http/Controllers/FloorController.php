@@ -79,8 +79,8 @@ class FloorController extends BaseController
             $floor = Floor::withCount('apartments')->findOrFail($id);
 
             $validated = $request->validate([
-                'building_id' => ['required', 'exists:buildings,id'],
-                'floor_number' => ['required', 'integer', 'unique:floors,floor_number,' . $id . ',id,building_id,' . $request->building_id],
+                'building_id' => ['sometimes', 'exists:buildings,id'],
+                'floor_number' => ['sometimes', 'integer', 'unique:floors,floor_number,' . $id . ',id,building_id,' . $request->building_id],
             ]);
 
             $floor->update($validated);

@@ -11,16 +11,10 @@ use Throwable;
 
 class HouseController extends BaseController
 {
-    public function __construct()
-    {
-        // Allow public access to index and show methods
-        $this->middleware('auth:sanctum')->except(['index', 'show']);
-    }
-
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
-            $query = House::query()->with('residents');
+            $query = House::query()->withCount('residents');
 
             // Apply search filtering
             $this->applySearch($query, $request, [
@@ -52,8 +46,7 @@ class HouseController extends BaseController
     {
         try {
             $validated = $request->validate([
-                'house_number' => ['required', 'string'],
-                'number_of_residents' => ['required', 'integer', 'min:0'],
+                'house_number' => ['required', 'string', 'unique:houses,house_number'],
                 'house_type' => ['required', 'in:villa,house'],
                 'is_occupied' => ['boolean'],
             ]);
@@ -61,6 +54,21 @@ class HouseController extends BaseController
 
             return $this->createdResponse(
                 'House created successfully',
+                new HouseResource($house->loadCount('residents'))
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function show($id): JsonResponse
+    {
+        try {
+            $house = House::with('residents')
+                ->withCount('residents')
+                ->findOrFail($id);
+            return $this->successResponse(
+                'House retrieved successfully',
                 new HouseResource($house)
             );
         } catch (Throwable $e) {
@@ -68,27 +76,16 @@ class HouseController extends BaseController
         }
     }
 
-    public function show(House $house): JsonResponse
-    {
-        try {
-            return $this->successResponse(
-                'House retrieved successfully',
-                new HouseResource($house->load('residents'))
-            );
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
-    public function update(Request $request, House $house): JsonResponse
+    public function update($id, Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'house_number' => ['required', 'string'],
-                'number_of_residents' => ['required', 'integer', 'min:0'],
-                'house_type' => ['required', 'in:villa,house'],
-                'is_occupied' => ['boolean'],
+                'house_number' => ['sometimes', 'string', 'unique:houses,house_number,' . $id],
+                'house_type' => ['sometimes', 'in:villa,house'],
+                'is_occupied' => ['sometimes', 'boolean'],
             ]);
+            $house = House::withCount('residents')
+                ->findOrFail($id);
             $house->update($validated);
 
             return $this->successResponse(
@@ -100,9 +97,10 @@ class HouseController extends BaseController
         }
     }
 
-    public function destroy(House $house): JsonResponse
+    public function destroy($id): JsonResponse
     {
         try {
+            $house = House::findOrFail($id);
             $house->delete();
             return $this->successResponse('House deleted successfully');
         } catch (Throwable $e) {
