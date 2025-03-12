@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ResidentResource extends JsonResource
 {
     /**
+     * 
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
@@ -24,9 +25,14 @@ class ResidentResource extends JsonResource
             'age' => $this->age,
             'gender' => $this->gender,
             'status' => $this->status,
-            'house' => $this->when($this->house_id, new HouseResource($this->whenLoaded('house'))),
+            'property_type' => $this->house_id ? 'house' : ($this->apartment_id ? 'apartment' : null),
+            'house' => $this->when($this->house_id, function() {
+                return new HouseResource($this->whenLoaded('house', function() {
+                    return $this->house->loadCount('residents');
+                }));
+            }),
             'apartment' => $this->when($this->apartment_id, new ApartmentResource($this->whenLoaded('apartment'))),
-            'created_by' => new AdminResource($this->whenLoaded('createdBy')),
+            'created_by' => $this->whenLoaded('createdBy', fn() => $this->createdBy->email),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

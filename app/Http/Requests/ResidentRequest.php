@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ResidentRequest extends FormRequest
@@ -11,7 +12,7 @@ class ResidentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user() instanceof \App\Models\Admin;
+        return $this->user() instanceof Admin;
     }
 
     /**
@@ -34,7 +35,7 @@ class ResidentRequest extends FormRequest
             'house_id' => ['nullable', 'exists:houses,id'],
             'apartment_id' => ['nullable', 'exists:apartments,id'],
         ];
-
+        
         if ($this->isMethod('POST')) {
             // Add required validation for store
             $rules['username'][] = 'required';
@@ -46,13 +47,13 @@ class ResidentRequest extends FormRequest
             $rules['phone_number'][] = 'required';
             $rules['age'][] = 'required';
             $rules['gender'][] = 'required';
-        } else {
+        } else if ($this->isMethod('PUT')) {
             // Add sometimes validation for update
             $rules['username'][] = 'sometimes';
             $rules['first_name'][] = 'sometimes';
             $rules['last_name'][] = 'sometimes';
             $rules['email'][] = 'sometimes';
-            $rules['email'][] = 'unique:residents,email,' . $this->resident?->id;
+            $rules['email'][] = 'unique:residents,email,' . $this->route('resident');
             $rules['password'][] = 'sometimes';
             $rules['phone_number'][] = 'sometimes';
             $rules['age'][] = 'sometimes';

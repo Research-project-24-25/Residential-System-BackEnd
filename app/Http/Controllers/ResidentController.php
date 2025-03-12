@@ -5,26 +5,21 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ResidentRequest;
 use App\Http\Resources\ResidentResource;
 use App\Models\Resident;
+use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ResidentController extends BaseController
 {
-
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum');
-        $this->middleware('admin')->except(['show']);
-    }
-
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
             $query = Resident::query()
-                ->with(['house', 'apartment.floor.building', 'createdBy']);
+                ->with(['createdBy']);
 
             // Apply search filtering
             $this->applySearch($query, $request, [
@@ -82,13 +77,14 @@ class ResidentController extends BaseController
         }
     }
 
-    public function show(Request $request, Resident $resident): JsonResponse
+    public function show($id, Request $request): JsonResponse
     {
         try {
+            $resident = Resident::with(['house', 'apartment.floor.building', 'createdBy'])->findOrFail($id);
             // Only allow admins or the resident themselves to view
             if (
-                !($request->user() instanceof \App\Models\Admin) &&
-                !($request->user() instanceof \App\Models\Resident && $request->user()->id === $resident->id)
+                !($request->user() instanceof Admin) &&
+                !($request->user() instanceof Resident && $request->user()->id === $resident->id)
             ) {
                 return $this->forbiddenResponse();
             }
@@ -102,9 +98,10 @@ class ResidentController extends BaseController
         }
     }
 
-    public function update(ResidentRequest $request, Resident $resident): JsonResponse
+    public function update($id, ResidentRequest $request): JsonResponse
     {
         try {
+            $resident = Resident::with(['house', 'apartment.floor.building', 'createdBy'])->findOrFail($id);
             $validated = $request->validated();
 
             // Hash the password if it's provided
@@ -123,9 +120,10 @@ class ResidentController extends BaseController
         }
     }
 
-    public function destroy(Resident $resident): JsonResponse
+    public function destroy($id): JsonResponse
     {
         try {
+            $resident = Resident::with(['house', 'apartment.floor.building', 'createdBy'])->findOrFail($id);
             $resident->delete();
             return $this->successResponse('Resident deleted successfully');
         } catch (Throwable $e) {
