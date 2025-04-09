@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('floors', function (Blueprint $table) {
             $table->id();
             $table->foreignId('building_id')->constrained('buildings')->cascadeOnDelete();
-            $table->integer('floor_number');
+            $table->string('number'); // Floor identifier (e.g., "G", "1", "15")
             $table->timestamps();
+
+            $table->unique(['building_id', 'number']); // Ensure floor number is unique within the building
         });
     }
 
