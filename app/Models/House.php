@@ -9,11 +9,35 @@ class House extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'identifier',
+        'price',
+        'currency',
+        'price_type',
+        'status',
+        'description',
+        'bedrooms',
+        'bathrooms',
+        'area',
+        'lot_size',
+        'property_style',
+        'images',
+        'features',
+    ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
-        'is_occupied' => 'boolean',
-        'number_of_residents' => 'integer',
+        'price' => 'decimal:2',
+        'bedrooms' => 'integer',
+        'bathrooms' => 'integer',
+        'area' => 'integer',
+        'lot_size' => 'integer',
+        'images' => 'array', // Cast JSON column to array
+        'features' => 'array', // Cast JSON column to array
     ];
 
     /**
@@ -22,5 +46,16 @@ class House extends Model
     public function residents(): HasMany
     {
         return $this->hasMany(Resident::class);
+    }
+
+    /**
+     * Get the full compound address for the house.
+     * Example: "Villa 27"
+     *
+     * @return string
+     */
+    public function getCompoundAddressAttribute(): string
+    {
+        return $this->identifier ?? '';
     }
 }
