@@ -10,7 +10,7 @@ class Floor extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
+    protected $fillable = ['building_id', 'number'];
 
     public function building(): BelongsTo
     {
