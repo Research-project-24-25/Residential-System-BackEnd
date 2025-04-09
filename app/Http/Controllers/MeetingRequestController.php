@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Mail; // Placeholder for Mail facade
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Throwable;
-// Assuming BaseController provides response methods like successResponse, errorResponse, etc.
 class MeetingRequestController extends BaseController
 {
     /**
@@ -37,7 +36,7 @@ class MeetingRequestController extends BaseController
             };
 
             if (!$property) {
-                return $this->errorResponse('The selected property does not exist.', 404);
+                return $this->notFoundResponse('The selected property does not exist.');
             }
 
             // Generate unique token
@@ -60,11 +59,7 @@ class MeetingRequestController extends BaseController
             // Example: Mail::to($validated['user_email'])->send(new VerifyMeetingRequestMail($meetingRequest, $token));
             // Log::info("Verification email needs to be sent for token: {$token}"); // Temporary log
 
-            return $this->successResponse(
-                'Meeting request received. Please check your email to verify your request.',
-                null, // No data needed in success response for this step
-                201 // HTTP status code for Created
-            );
+            return $this->createdResponse('Meeting request received. Please check your email to verify your request.');
 
         } catch (Throwable $e) {
             // Assuming handleException exists in BaseController
@@ -75,13 +70,13 @@ class MeetingRequestController extends BaseController
     /**
      * Verify the meeting request using the provided token.
      */
-    public function verify(string $token): JsonResponse // Or potentially redirect response
+    public function verify(string $token): JsonResponse
     {
         try {
             $meetingRequest = MeetingRequest::where('verification_token', $token)->first();
 
             if (!$meetingRequest) {
-                return $this->errorResponse('Invalid or expired verification link.', 404);
+                return $this->notFoundResponse('Invalid or expired verification link.');
             }
 
             if ($meetingRequest->status !== 'pending_verification') {
@@ -100,7 +95,6 @@ class MeetingRequestController extends BaseController
             // Example: Mail::to($meetingRequest->user_email)->send(new MeetingRequestVerifiedMail($meetingRequest));
             // Example: Notification::route('mail', 'admin@example.com')->notify(new NewMeetingRequestNotification($meetingRequest));
 
-            // For an API, return success. If it were web, redirect to a success page.
             return $this->successResponse('Your meeting request has been successfully verified.');
 
         } catch (Throwable $e) {
