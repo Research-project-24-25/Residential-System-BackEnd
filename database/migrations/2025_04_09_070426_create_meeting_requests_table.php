@@ -1,0 +1,40 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('meeting_requests', function (Blueprint $table) {
+            $table->id();
+            $table->string('property_type'); // 'apartment' or 'house'
+            $table->unsignedBigInteger('property_id'); // ID of the apartment or house
+            $table->string('user_name');
+            $table->string('user_email');
+            $table->string('user_phone')->nullable();
+            $table->dateTime('preferred_time')->nullable();
+            $table->text('message')->nullable();
+            $table->enum('status', ['pending_verification', 'verified', 'scheduled', 'cancelled', 'completed'])->default('pending_verification');
+            $table->string('verification_token')->unique()->nullable();
+            $table->timestamp('verified_at')->nullable();
+            $table->timestamps();
+
+            // Optional: Add index for faster lookup by property
+            // $table->index(['property_type', 'property_id']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('meeting_requests');
+    }
+};
