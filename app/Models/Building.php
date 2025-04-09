@@ -9,7 +9,7 @@ class Building extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = ['identifier'];
 
     public function floors(): HasMany
     {
