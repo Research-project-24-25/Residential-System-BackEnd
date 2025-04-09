@@ -8,10 +8,17 @@ use App\Http\Controllers\HouseController;
 use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\ResidentAuthController;
 use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\MeetingRequestController; // Added
 use Illuminate\Support\Facades\Route;
 
 // Public routes - accessible to anyone
-Route::apiResource('properties', PropertyController::class)->only(['index', 'show']);
+// Public Property Routes
+Route::get('properties', [PropertyController::class, 'index'])->name('properties.index');
+Route::get('properties/{type}/{id}', [PropertyController::class, 'show'])->whereIn('type', ['apartment', 'house'])->name('properties.show');
+
+// Public Meeting Request Routes
+Route::post('meeting-requests', [MeetingRequestController::class, 'store'])->name('meeting-requests.store');
+Route::get('verify-meeting/{token}', [MeetingRequestController::class, 'verify'])->name('meeting-requests.verify');
 
 // Admin authentication
 Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login');
