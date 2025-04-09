@@ -85,11 +85,12 @@ class PropertyController extends BaseController
     return $query;
   }
 
-  public function show(Request $request, $id): JsonResponse
+  // Updated signature to accept type and id from route parameters
+  public function show(string $type, $id): JsonResponse
   {
     try {
-      $propertyType = $request->input('type');
-      $property = $this->findProperty($propertyType, $id);
+      // $propertyType is now directly available as $type
+      $property = $this->findProperty($type, $id);
 
       if (!$property) {
         return $this->notFoundResponse('Property not found');
@@ -104,13 +105,14 @@ class PropertyController extends BaseController
     }
   }
 
-  private function findProperty(?string $propertyType, $id)
+  // Updated helper to use the type parameter reliably
+  private function findProperty(string $propertyType, $id)
   {
+    // Eager load relationships needed for display
     return match ($propertyType) {
-      'apartment' => Apartment::with(['floor.building', 'residents'])->find($id),
-      'house' => House::with('residents')->find($id),
-      default => Apartment::with(['floor.building', 'residents'])->find($id)
-        ?? House::with('residents')->find($id)
+        'apartment' => Apartment::with(['floor.building', 'residents'])->find($id),
+        'house' => House::with('residents')->find($id),
+        // No default case needed as the route enforces 'apartment' or 'house'
     };
   }
 }
