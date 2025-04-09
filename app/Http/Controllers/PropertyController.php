@@ -12,16 +12,14 @@ use Throwable;
 
 class PropertyController extends BaseController
 {
+  // Updated index method to handle filtering and searching across all properties
   public function index(Request $request): ResourceCollection|JsonResponse
   {
-    try {
-      $propertyType = $request->input('type', 'all');
-
-      return match ($propertyType) {
-        'house' => $this->getHouseProperties($request),
-        'apartment' => $this->getApartmentProperties($request),
-        default => $this->getAllProperties($request)
-      };
+      try {
+          // We will primarily use getAllProperties which handles filtering internally
+          // The 'type' filter can be handled within the query builders if needed,
+          // but the main endpoint usually shows a mix unless explicitly filtered.
+          return $this->getAllProperties($request);
     } catch (Throwable $e) {
       return $this->handleException($e);
     }
@@ -29,6 +27,9 @@ class PropertyController extends BaseController
 
   private function getHouseProperties(Request $request): ResourceCollection
   {
+    // This method seems redundant if getAllProperties handles combined logic.
+    // We will remove it later if getAllProperties is sufficient.
+    // For now, just update field names for consistency if called directly.
     $query = House::query()->with('residents');
     $this->applySearch($query, $request, ['identifier']);
     $this->applySorting($query, $request, 'identifier');
@@ -37,6 +38,9 @@ class PropertyController extends BaseController
 
   private function getApartmentProperties(Request $request): ResourceCollection
   {
+    // This method seems redundant if getAllProperties handles combined logic.
+    // We will remove it later if getAllProperties is sufficient.
+    // For now, just update field names for consistency if called directly.
     $query = Apartment::query()->with(['floor.building', 'residents']);
     $this->applySearch($query, $request, ['number']);
     $query->orWhereHas('floor.building', function ($query) use ($request) {
@@ -46,26 +50,47 @@ class PropertyController extends BaseController
     return PropertyResource::collection($this->applyPagination($query, $request));
   }
 
+  // Updated method to combine filtered/searched Apartments and Houses
   private function getAllProperties(Request $request): ResourceCollection
   {
-    $apartments = $this->getApartmentQuery($request)->get();
-    $houses = $this->getHouseQuery($request)->get();
-    $allProperties = $apartments->concat($houses);
+      // Get the filtered/searched query builders
+      $apartmentQuery = $this->getApartmentQuery($request);
+      $houseQuery = $this->getHouseQuery($request);
 
-    $page = $request->input('page', 1);
-    $perPage = (int)$request->input('per_page', 15);
-    $items = $allProperties->forPage($page, $perPage);
+      // --- Combining Results ---
+      // Fetch results separately
+      $apartments = $apartmentQuery->get();
+      $houses = $houseQuery->get();
 
-    return PropertyResource::collection($items)->additional([
-      'meta' => [
-        'total' => $allProperties->count(),
-        'per_page' => $perPage,
-        'current_page' => $page,
-        'last_page' => ceil($allProperties->count() / $perPage)
-      ]
-    ]);
+      // Add a 'property_type' attribute to distinguish them easily in the resource/frontend
+      $apartments->each(fn($apt) => $apt->property_type = 'apartment');
+      $houses->each(fn($house) => $house->property_type = 'house');
+
+      // Combine the collections
+      $allProperties = $apartments->concat($houses);
+
+      // --- Manual Pagination ---
+      // Note: For very large datasets, consider a more optimized approach
+      // like a UNION query or separate paginated results if performance becomes an issue.
+      $page = $request->input('page', 1);
+      $perPage = (int)$request->input('per_page', 15);
+      $total = $allProperties->count();
+      $items = $allProperties->forPage($page, $perPage)->values(); // Use values() to reset keys
+
+      // Manually create a LengthAwarePaginator instance
+      $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+          $items,
+          $total,
+          $perPage,
+          $page,
+          ['path' => $request->url(), 'query' => $request->query()]
+      );
+
+      // Return the collection using the paginator
+      return PropertyResource::collection($paginator);
   }
 
+  // Updated query builder for Apartments with filtering
   private function getApartmentQuery(Request $request)
   {
     $query = Apartment::query()->with(['floor.building', 'residents']);
@@ -77,6 +102,7 @@ class PropertyController extends BaseController
     return $query;
   }
 
+  // Updated query builder for Houses with filtering
   private function getHouseQuery(Request $request)
   {
     $query = House::query()->with('residents');
