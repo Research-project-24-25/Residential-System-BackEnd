@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('buildings', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('address');
+            $table->string('identifier')->unique(); // Unique identifier for the building within the compound
             $table->timestamps();
         });
     }
