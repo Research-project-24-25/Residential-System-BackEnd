@@ -30,19 +30,19 @@ class PropertyController extends BaseController
   private function getHouseProperties(Request $request): ResourceCollection
   {
     $query = House::query()->with('residents');
-    $this->applySearch($query, $request, ['house_number']);
-    $this->applySorting($query, $request, 'house_number');
+    $this->applySearch($query, $request, ['identifier']);
+    $this->applySorting($query, $request, 'identifier');
     return PropertyResource::collection($this->applyPagination($query, $request));
   }
 
   private function getApartmentProperties(Request $request): ResourceCollection
   {
     $query = Apartment::query()->with(['floor.building', 'residents']);
-    $this->applySearch($query, $request, ['apartment_number']);
+    $this->applySearch($query, $request, ['number']);
     $query->orWhereHas('floor.building', function ($query) use ($request) {
-      $query->where('name', 'LIKE', "%{$request->search}%");
+      $query->where('identifier', 'LIKE', "%{$request->search}%");
     });
-    $this->applySorting($query, $request, 'apartment_number');
+    $this->applySorting($query, $request, 'number');
     return PropertyResource::collection($this->applyPagination($query, $request));
   }
 
@@ -69,19 +69,19 @@ class PropertyController extends BaseController
   private function getApartmentQuery(Request $request)
   {
     $query = Apartment::query()->with(['floor.building', 'residents']);
-    $this->applySearch($query, $request, ['apartment_number']);
+    $this->applySearch($query, $request, ['number']);
     $query->orWhereHas('floor.building', function ($query) use ($request) {
-      $query->where('name', 'LIKE', "%{$request->search}%");
+      $query->where('identifier', 'LIKE', "%{$request->search}%");
     });
-    $this->applySorting($query, $request, 'apartment_number');
+    $this->applySorting($query, $request, 'number');
     return $query;
   }
 
   private function getHouseQuery(Request $request)
   {
     $query = House::query()->with('residents');
-    $this->applySearch($query, $request, ['house_number']);
-    $this->applySorting($query, $request, 'house_number');
+    $this->applySearch($query, $request, ['identifier']);
+    $this->applySorting($query, $request, 'identifier');
     return $query;
   }
 

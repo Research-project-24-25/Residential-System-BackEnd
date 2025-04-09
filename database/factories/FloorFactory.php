@@ -10,7 +10,7 @@ class FloorFactory extends Factory
     {
         return [
             'building_id' => \App\Models\Building::factory(),
-            'floor_number' => fake()->numberBetween(1, 20),
+            'number' => fake()->unique()->numberBetween(1, 1000),
         ];
     }
 } 
