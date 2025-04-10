@@ -16,9 +16,24 @@ use Illuminate\Support\Facades\Route;
 Route::get('properties', [PropertyController::class, 'index'])->name('properties.index');
 Route::get('properties/{type}/{id}', [PropertyController::class, 'show'])->whereIn('type', ['apartment', 'house'])->name('properties.show');
 
-// Public Meeting Request Routes
-Route::post('meeting-requests', [MeetingRequestController::class, 'store'])->name('meeting-requests.store');
-Route::get('verify-meeting/{token}', [MeetingRequestController::class, 'verify'])->name('meeting-requests.verify');
+// Meeting Request Routes
+// Route for authenticated users to create and manage their meeting requests
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+    // Get all meeting requests for the authenticated user
+    Route::get('meeting-requests', [MeetingRequestController::class, 'index'])->name('meeting-requests.index');
+    
+    // Create a new meeting request
+    Route::post('meeting-requests', [MeetingRequestController::class, 'store'])->name('meeting-requests.store');
+    
+    // Get a specific meeting request
+    Route::get('meeting-requests/{id}', [MeetingRequestController::class, 'show'])->name('meeting-requests.show');
+    
+    // Cancel a meeting request (user can cancel their own requests)
+    Route::patch('meeting-requests/{id}/cancel', [MeetingRequestController::class, 'cancel'])->name('meeting-requests.cancel');
+    
+    // Get upcoming meetings for the authenticated user
+    Route::get('meeting-requests/upcoming', [MeetingRequestController::class, 'upcoming'])->name('meeting-requests.upcoming');
+});
 
 // Admin authentication
 Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login');
@@ -37,6 +52,14 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::apiResource('apartments', ApartmentController::class);
     Route::apiResource('houses', HouseController::class);
     Route::apiResource('residents', ResidentController::class);
+
+    Route::patch('meeting-requests/{id}', [MeetingRequestController::class, 'update'])->name('admin.meeting-requests.update');
+    
+    Route::delete('meeting-requests/{id}', [MeetingRequestController::class, 'destroy'])->name('admin.meeting-requests.destroy');
+
+    Route::get('meeting-requests', [MeetingRequestController::class, 'index'])->name('admin.meeting-requests.index');
+
+    Route::get('meeting-requests/{id}', [MeetingRequestController::class, 'show'])->name('admin.meeting-requests.show');
 });
 
 // Super admin only routes
@@ -49,5 +72,4 @@ Route::prefix('resident')->middleware('auth:sanctum')->group(function () {
     Route::post('logout', [ResidentAuthController::class, 'logout'])->name('resident.logout');
     Route::get('profile', [ResidentAuthController::class, 'profile'])->name('resident.profile');
 
-    // Additional resident-specific routes will go here
 });
