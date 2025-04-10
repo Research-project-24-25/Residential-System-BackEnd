@@ -8,7 +8,8 @@ use App\Http\Controllers\HouseController;
 use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\ResidentAuthController;
 use App\Http\Controllers\PropertyController;
-use App\Http\Controllers\MeetingRequestController; // Added
+use App\Http\Controllers\MeetingRequestController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes - accessible to anyone
@@ -21,18 +22,27 @@ Route::get('properties/{type}/{id}', [PropertyController::class, 'show'])->where
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Get all meeting requests for the authenticated user
     Route::get('meeting-requests', [MeetingRequestController::class, 'index'])->name('meeting-requests.index');
-    
+
     // Create a new meeting request
     Route::post('meeting-requests', [MeetingRequestController::class, 'store'])->name('meeting-requests.store');
-    
+
     // Get a specific meeting request
     Route::get('meeting-requests/{id}', [MeetingRequestController::class, 'show'])->name('meeting-requests.show');
-    
+
     // Cancel a meeting request (user can cancel their own requests)
     Route::patch('meeting-requests/{id}/cancel', [MeetingRequestController::class, 'cancel'])->name('meeting-requests.cancel');
-    
+
     // Get upcoming meetings for the authenticated user
     Route::get('meeting-requests/upcoming', [MeetingRequestController::class, 'upcoming'])->name('meeting-requests.upcoming');
+
+    // Notification Routes
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+        Route::get('/{id}', [NotificationController::class, 'show'])->name('notifications.show');
+        Route::patch('/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
+        Route::patch('/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
+    });
 });
 
 // Admin authentication
@@ -54,7 +64,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::apiResource('residents', ResidentController::class);
 
     Route::patch('meeting-requests/{id}', [MeetingRequestController::class, 'update'])->name('admin.meeting-requests.update');
-    
+
     Route::delete('meeting-requests/{id}', [MeetingRequestController::class, 'destroy'])->name('admin.meeting-requests.destroy');
 
     Route::get('meeting-requests', [MeetingRequestController::class, 'index'])->name('admin.meeting-requests.index');
@@ -71,5 +81,4 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin:super_admin'])->group
 Route::prefix('resident')->middleware('auth:sanctum')->group(function () {
     Route::post('logout', [ResidentAuthController::class, 'logout'])->name('resident.logout');
     Route::get('profile', [ResidentAuthController::class, 'profile'])->name('resident.profile');
-
 });
