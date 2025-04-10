@@ -15,35 +15,10 @@ class PropertyController extends BaseController
   public function index(Request $request): ResourceCollection|JsonResponse
   {
     try {
-      $propertyType = $request->input('type', 'all');
-
-      return match ($propertyType) {
-        'house' => $this->getHouseProperties($request),
-        'apartment' => $this->getApartmentProperties($request),
-        default => $this->getAllProperties($request)
-      };
+      return $this->getAllProperties($request);
     } catch (Throwable $e) {
       return $this->handleException($e);
     }
-  }
-
-  private function getHouseProperties(Request $request): ResourceCollection
-  {
-    $query = House::query()->with('residents');
-    $this->applySearch($query, $request, ['identifier']);
-    $this->applySorting($query, $request, 'identifier');
-    return PropertyResource::collection($this->applyPagination($query, $request));
-  }
-
-  private function getApartmentProperties(Request $request): ResourceCollection
-  {
-    $query = Apartment::query()->with(['floor.building', 'residents']);
-    $this->applySearch($query, $request, ['number']);
-    $query->orWhereHas('floor.building', function ($query) use ($request) {
-      $query->where('identifier', 'LIKE', "%{$request->search}%");
-    });
-    $this->applySorting($query, $request, 'number');
-    return PropertyResource::collection($this->applyPagination($query, $request));
   }
 
   private function getAllProperties(Request $request): ResourceCollection
@@ -110,9 +85,9 @@ class PropertyController extends BaseController
   {
     // Eager load relationships needed for display
     return match ($propertyType) {
-        'apartment' => Apartment::with(['floor.building', 'residents'])->find($id),
-        'house' => House::with('residents')->find($id),
-        // No default case needed as the route enforces 'apartment' or 'house'
+      'apartment' => Apartment::with(['floor.building', 'residents'])->find($id),
+      'house' => House::with('residents')->find($id),
+      // No default case needed as the route enforces 'apartment' or 'house'
     };
   }
 }

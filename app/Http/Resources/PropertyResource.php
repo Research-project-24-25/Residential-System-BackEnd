@@ -15,7 +15,17 @@ class PropertyResource extends JsonResource
     $data = [
       'id' => $this->id,
       'type' => $this->resource instanceof Apartment ? 'apartment' : 'house',
-      'property_number' => $this->resource instanceof Apartment ? $this->apartment_number : $this->house_number,
+      'property_number' => $this->resource instanceof Apartment ? $this->number : $this->identifier,
+      'price' => $this->price,
+      'currency' => $this->currency,
+      'price_type' => $this->price_type,
+      'status' => $this->status,
+      'description' => $this->description,
+      'bedrooms' => $this->bedrooms,
+      'bathrooms' => $this->bathrooms,
+      'area' => $this->area,
+      'images' => $this->images,
+      'features' => $this->features,
       'created_at' => $this->created_at,
       'updated_at' => $this->updated_at,
     ];
@@ -24,12 +34,16 @@ class PropertyResource extends JsonResource
     if ($this->resource instanceof Apartment) {
       $data['building'] = [
         'id' => $this->floor->building->id,
-        'name' => $this->floor->building->name,
+        'name' => $this->floor->building->identifier,
       ];
       $data['floor'] = [
         'id' => $this->floor->id,
-        'number' => $this->floor->floor_number,
+        'number' => $this->floor->number,
       ];
+    } else {
+      // Add house-specific data
+      $data['lot_size'] = $this->lot_size;
+      $data['property_style'] = $this->property_style;
     }
 
     // Add resident count for both types
