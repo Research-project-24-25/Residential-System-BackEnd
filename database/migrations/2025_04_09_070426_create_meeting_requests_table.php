@@ -20,13 +20,8 @@ return new class extends Migration
             $table->string('user_phone')->nullable();
             $table->dateTime('preferred_time')->nullable();
             $table->text('message')->nullable();
-            $table->enum('status', ['pending_verification', 'verified', 'scheduled', 'cancelled', 'completed'])->default('pending_verification');
-            $table->string('verification_token')->unique()->nullable();
-            $table->timestamp('verified_at')->nullable();
+            $table->enum('status', ['pending', 'scheduled', 'cancelled', 'completed'])->default('pending');
             $table->timestamps();
-
-            // Optional: Add index for faster lookup by property
-            // $table->index(['property_type', 'property_id']);
         });
     }
 
