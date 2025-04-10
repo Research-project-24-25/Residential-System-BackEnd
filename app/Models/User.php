@@ -21,6 +21,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -52,5 +53,21 @@ class User extends Authenticatable implements MustVerifyEmail
     public function meetingRequests()
     {
         return $this->hasMany(MeetingRequest::class, 'user_email', 'email');
+    }
+
+    /**
+     * Get in-app notifications for this user.
+     */
+    public function inAppNotifications()
+    {
+        return $this->hasMany(Notification::class, 'user_email', 'email');
+    }
+
+    /**
+     * Route notifications for the mail channel.
+     */
+    public function routeNotificationForMail()
+    {
+        return $this->email;
     }
 }
