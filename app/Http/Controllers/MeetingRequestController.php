@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\MeetingRequest;
+use App\Models\User;
+use App\Notifications\MeetingRequestCreated;
+use App\Notifications\MeetingRequestUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -73,6 +76,9 @@ class MeetingRequestController extends BaseController
                 'status' => 'pending',
             ]);
 
+            // Send notification to user
+            $user->notify(new MeetingRequestCreated($meetingRequest));
+
             return $this->createdResponse('Meeting request created successfully', $meetingRequest);
         } catch (\Throwable $e) {
             return $this->handleException($e);
@@ -111,6 +117,7 @@ class MeetingRequestController extends BaseController
             ]);
 
             $meetingRequest = MeetingRequest::findOrFail($id);
+            $previousStatus = $meetingRequest->status;
 
             // Only admins can update meeting requests
             if (!$request->user()->hasRole('admin')) {
@@ -124,6 +131,14 @@ class MeetingRequestController extends BaseController
             }
 
             $meetingRequest->save();
+
+            // Send notification to user about the status update
+            if ($previousStatus !== $meetingRequest->status) {
+                $user = User::where('email', $meetingRequest->user_email)->first();
+                if ($user) {
+                    $user->notify(new MeetingRequestUpdated($meetingRequest, $previousStatus));
+                }
+            }
 
             return $this->successResponse('Meeting request updated successfully', $meetingRequest);
         } catch (\Throwable $e) {
@@ -150,8 +165,12 @@ class MeetingRequestController extends BaseController
                 return $this->errorResponse('Cannot cancel a completed meeting request');
             }
 
+            $previousStatus = $meetingRequest->status;
             $meetingRequest->status = 'cancelled';
             $meetingRequest->save();
+
+            // Send notification to user about cancellation
+            $user->notify(new MeetingRequestUpdated($meetingRequest, $previousStatus));
 
             return $this->successResponse('Meeting request cancelled successfully', $meetingRequest);
         } catch (\Throwable $e) {
