@@ -9,8 +9,6 @@ class ResidentFactory extends Factory
 {
   public function definition(): array
   {
-    $hasHouse = fake()->boolean();
-
     return [
       'username' => fake()->unique()->userName(),
       'first_name' => fake()->firstName(),
@@ -20,9 +18,6 @@ class ResidentFactory extends Factory
       'phone_number' => fake()->phoneNumber(),
       'age' => fake()->numberBetween(18, 80),
       'gender' => fake()->randomElement(['male', 'female']),
-      'status' => fake()->randomElement(['active', 'inactive']),
-      'house_id' => $hasHouse ? \App\Models\House::factory() : null,
-      'apartment_id' => !$hasHouse ? \App\Models\Apartment::factory() : null,
       'created_by' => \App\Models\Admin::factory(),
     ];
   }

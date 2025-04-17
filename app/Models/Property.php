@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Traits\Filterable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Property extends Model
 {
-    use Filterable;
+    use Filterable, HasFactory;
 
     /**
      * The attributes that are mass assignable.
