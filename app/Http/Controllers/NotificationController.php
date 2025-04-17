@@ -6,7 +6,7 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class NotificationController extends BaseController
+class NotificationController extends Controller
 {
     /**
      * Display a listing of the user's notifications.
