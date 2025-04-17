@@ -22,11 +22,6 @@ return new class extends Migration
             $table->integer('age');
             $table->enum('gender', ['male', 'female']);
             $table->enum('role', ['owner', 'rent'])->default('rent');
-            // Property association - either house or apartment
-            $table->unsignedBigInteger('house_id')->nullable();
-            $table->unsignedBigInteger('apartment_id')->nullable();
-            $table->foreign('house_id')->references('id')->on('houses')->onDelete('set null');
-            $table->foreign('apartment_id')->references('id')->on('apartments')->onDelete('set null');
             // Track which admin created this resident
             $table->unsignedBigInteger('created_by');
             $table->foreign('created_by')->references('id')->on('admins')->onDelete('cascade');
