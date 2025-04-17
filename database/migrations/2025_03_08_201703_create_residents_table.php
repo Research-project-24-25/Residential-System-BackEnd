@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('phone_number');
             $table->integer('age');
             $table->enum('gender', ['male', 'female']);
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->enum('role', ['owner', 'rent'])->default('rent');
             // Property association - either house or apartment
             $table->unsignedBigInteger('house_id')->nullable();
             $table->unsignedBigInteger('apartment_id')->nullable();
