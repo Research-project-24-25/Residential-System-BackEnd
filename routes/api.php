@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes - accessible to anyone
 // Public Property Routes
-Route::get('properties', [PropertyController::class, 'index'])->name('properties.index');
-Route::get('properties/{type}/{id}', [PropertyController::class, 'show'])->whereIn('type', ['apartment', 'house'])->name('properties.show');
+Route::post('properties', [PropertyController::class, 'index'])->name('properties.index');
+Route::post('properties/{type}/{id}', [PropertyController::class, 'show'])->whereIn('type', ['apartment', 'house'])->name('properties.show');
 
 // Meeting Request Routes
 // Route for authenticated users to create and manage their meeting requests

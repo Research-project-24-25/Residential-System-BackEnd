@@ -34,8 +34,8 @@ class PropertyController extends BaseController
   public function index(PropertyRequest $request): ResourceCollection|JsonResponse
   {
     try {
-      $perPage = (int) $request->input('per_page', 15);
-      $page = (int) $request->input('page', 1);
+      $perPage = (int) ($request->input('per_page') ?? 15);
+      $page = (int) ($request->input('page') ?? 1);
       $propertyType = $request->input('property_type');
 
       // Get property collections based on type filter
