@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PropertyRequest extends FormRequest
 {
@@ -21,16 +22,38 @@ class PropertyRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'page' => 'sometimes|integer|min:1',
-            'per_page' => 'sometimes|integer|min:1|max:100',
-            'property_type' => 'sometimes|string|in:apartment,house',
-            'filters' => 'sometimes|array',
+        // Get the current route name or action to determine the context
+        $action = $this->route() ? $this->route()->getActionMethod() : null;
 
-            // Common filters
+        // Rules for filtering properties
+        if ($action === 'index' || $this->has('filters')) {
+            return $this->getFilterRules();
+        }
+
+        // Rules for storing or updating properties
+        return $this->getPropertyRules();
+    }
+
+    /**
+     * Get rules for filtering properties
+     */
+    private function getFilterRules(): array
+    {
+        return [
+            'filters' => 'sometimes|array',
+            'filters.type' => 'sometimes|string|in:apartment,house,villa',
+            'filters.status' => 'sometimes|string|in:available,sold,rented,pending',
+            'filters.price_type' => 'sometimes|string|in:sale,rent',
+            'filters.currency' => 'sometimes|string',
+
+            // Range filters
             'filters.price' => 'sometimes|array',
             'filters.price.min' => 'sometimes|numeric|min:0',
             'filters.price.max' => 'sometimes|numeric|gt:filters.price.min',
+
+            'filters.occupancy_limit' => 'sometimes|array',
+            'filters.occupancy_limit.min' => 'sometimes|integer|min:0',
+            'filters.occupancy_limit.max' => 'sometimes|integer|gte:filters.occupancy_limit.min',
 
             'filters.bedrooms' => 'sometimes|array',
             'filters.bedrooms.min' => 'sometimes|integer|min:0',
@@ -44,9 +67,6 @@ class PropertyRequest extends FormRequest
             'filters.area.min' => 'sometimes|integer|min:0',
             'filters.area.max' => 'sometimes|integer|gte:filters.area.min',
 
-            'filters.status' => 'sometimes|array',
-            'filters.price_type' => 'sometimes|string',
-            'filters.currency' => 'sometimes|string',
             'filters.features' => 'sometimes|array',
 
             // Date filters
@@ -58,18 +78,6 @@ class PropertyRequest extends FormRequest
             'filters.updated_at.from' => 'sometimes|date',
             'filters.updated_at.to' => 'sometimes|date|after_or_equal:filters.updated_at.from',
 
-            // Apartment-specific filters
-            'filters.building_id' => 'sometimes|integer|exists:buildings,id',
-            'filters.floor_id' => 'sometimes|integer|exists:floors,id',
-            'filters.floor_number' => 'sometimes|string',
-
-            // House-specific filters
-            'filters.lot_size' => 'sometimes|array',
-            'filters.lot_size.min' => 'sometimes|integer|min:0',
-            'filters.lot_size.max' => 'sometimes|integer|gte:filters.lot_size.min',
-
-            'filters.property_style' => 'sometimes|array',
-
             // Search
             'filters.search' => 'sometimes|string|max:255',
 
@@ -78,5 +86,41 @@ class PropertyRequest extends FormRequest
             'sort.field' => 'sometimes|string',
             'sort.direction' => 'sometimes|string|in:asc,desc',
         ];
+    }
+
+    /**
+     * Get rules for creating and updating properties
+     */
+    private function getPropertyRules(): array
+    {
+        $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH');
+        $required = $isUpdate ? 'sometimes' : 'required';
+
+        $rules = [
+            'identifier' => [$required, 'string', 'max:255'],
+            'type' => [$required, 'string', 'in:apartment,house,villa'],
+            'price' => [$required, 'numeric', 'min:0'],
+            'currency' => 'sometimes|string|max:3',
+            'price_type' => 'sometimes|string|in:sale,rent',
+            'status' => 'sometimes|string|in:available,sold,rented,pending',
+            'description' => 'sometimes|nullable|string',
+            'occupancy_limit' => 'sometimes|integer|min:0',
+            'bedrooms' => 'sometimes|integer|min:0',
+            'bathrooms' => 'sometimes|integer|min:0',
+            'area' => 'sometimes|integer|min:0',
+            'images' => 'sometimes|nullable|array',
+            'images.*' => 'sometimes|string|url',
+            'features' => 'sometimes|nullable|array',
+            'features.*' => 'sometimes|string',
+        ];
+
+        // Add unique rule for identifier on create or when changing identifier on update
+        if (!$isUpdate) {
+            $rules['identifier'][] = 'unique:properties,identifier';
+        } else {
+            $rules['identifier'][] = Rule::unique('properties', 'identifier')->ignore($this->route('property'));
+        }
+
+        return $rules;
     }
 }
