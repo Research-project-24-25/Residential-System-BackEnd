@@ -10,7 +10,7 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Http\JsonResponse;
 use Throwable;
 
-class AdminAuthController extends BaseController
+class AdminAuthController extends Controller
 {
     public function register(Request $request): JsonResponse
     {

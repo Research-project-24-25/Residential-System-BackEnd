@@ -8,14 +8,15 @@ use App\Http\Controllers\MeetingRequestController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
-// Public routes - accessible to anyone
-// Public Property Routes
+// Public Routes
 Route::post('properties', [PropertyController::class, 'index'])->name('properties.index');
-Route::post('properties/{type}/{id}', [PropertyController::class, 'show'])->whereIn('type', ['apartment', 'house'])->name('properties.show');
+Route::get('properties/{id}', [PropertyController::class, 'show'])->name('properties.show');
 
 // Meeting Request Routes
 // Route for authenticated users to create and manage their meeting requests
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+    Route::apiResource('properties', PropertyController::class)->except(['index', 'show']);
+
     // Get all meeting requests for the authenticated user
     Route::get('meeting-requests', [MeetingRequestController::class, 'index'])->name('meeting-requests.index');
 

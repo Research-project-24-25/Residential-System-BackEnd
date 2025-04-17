@@ -9,7 +9,7 @@ use App\Notifications\MeetingRequestUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class MeetingRequestController extends BaseController
+class MeetingRequestController extends Controller
 {
     /**
      * Display a listing of meeting requests for the authenticated user.

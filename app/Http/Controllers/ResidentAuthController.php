@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\JsonResponse;
 use Throwable;
 
-class ResidentAuthController extends BaseController
+class ResidentAuthController extends Controller
 {
     public function login(Request $request): JsonResponse
     {

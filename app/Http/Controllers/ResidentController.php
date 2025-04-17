@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class ResidentController extends BaseController
+class ResidentController extends Controller
 {
     public function index(Request $request): ResourceCollection|JsonResponse
     {
