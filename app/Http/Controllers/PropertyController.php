@@ -2,60 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Filters\PropertyFilter;
 use App\Http\Requests\PropertyRequest;
 use App\Http\Resources\PropertyResource;
-use App\Models\Apartment;
-use App\Models\House;
+use App\Models\Property;
+use App\Traits\ApiResponse;
+use App\Traits\ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\ResourceCollection;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 use Throwable;
 
-class PropertyController extends BaseController
+class PropertyController extends Controller
 {
-  /**
-   * The property filter instance
-   */
-  protected PropertyFilter $propertyFilter;
-
-  /**
-   * Create a new controller instance
-   */
-  public function __construct(PropertyFilter $propertyFilter)
-  {
-    $this->propertyFilter = $propertyFilter;
-  }
+  use ApiResponse, ExceptionHandler;
 
   /**
    * List all properties with filtering, searching and sorting
+   *
+   * @param PropertyRequest $request
+   * @return ResourceCollection|JsonResponse
    */
   public function index(PropertyRequest $request): ResourceCollection|JsonResponse
   {
     try {
-      $perPage = (int) ($request->input('per_page') ?? 15);
-      $page = (int) ($request->input('page') ?? 1);
-      $propertyType = $request->input('property_type');
+      $query = Property::with('residents');
 
-      // Get property collections based on type filter
-      if ($propertyType === 'apartment') {
-        $properties = $this->propertyFilter->filterApartments($request);
-        $paginatedProperties = $this->paginateCollection($properties, $perPage, $page);
-      } elseif ($propertyType === 'house') {
-        $properties = $this->propertyFilter->filterHouses($request);
-        $paginatedProperties = $this->paginateCollection($properties, $perPage, $page);
-      } else {
-        // Get both property types and combine them
-        $apartments = $this->propertyFilter->filterApartments($request);
-        $houses = $this->propertyFilter->filterHouses($request);
-
-        // Combine and sort the collections
-        $allProperties = $this->propertyFilter->combineAndSort($apartments, $houses, $request);
-        $paginatedProperties = $this->paginateCollection($allProperties, $perPage, $page);
+      // Apply type filter if specified
+      if ($request->filled('property_type')) {
+        $query->where('type', $request->input('property_type'));
       }
 
-      return PropertyResource::collection($paginatedProperties);
+      // Apply all filters, sorting and pagination
+      $properties = $query->filter($request)
+        ->sort($request)
+        ->paginate($request->input('per_page', 15));
+
+      return PropertyResource::collection($properties);
     } catch (Throwable $e) {
       return $this->handleException($e);
     }
@@ -63,11 +44,14 @@ class PropertyController extends BaseController
 
   /**
    * Show a specific property
+   *
+   * @param string $id Property ID
+   * @return JsonResponse
    */
-  public function show(string $type, $id): JsonResponse
+  public function show($id): JsonResponse
   {
     try {
-      $property = $this->findProperty($type, $id);
+      $property = Property::with('residents')->find($id);
 
       if (!$property) {
         return $this->notFoundResponse('Property not found');
@@ -83,28 +67,72 @@ class PropertyController extends BaseController
   }
 
   /**
-   * Find a property by type and ID
+   * Store a newly created property
+   *
+   * @param PropertyRequest $request
+   * @return JsonResponse
    */
-  private function findProperty(string $propertyType, $id)
+  public function store(PropertyRequest $request): JsonResponse
   {
-    return match ($propertyType) {
-      'apartment' => Apartment::with(['floor.building', 'residents'])->find($id),
-      'house' => House::with('residents')->find($id),
-      default => null,
-    };
+    try {
+      $property = Property::create($request->validated());
+
+      return $this->createdResponse(
+        'Property created successfully',
+        new PropertyResource($property)
+      );
+    } catch (Throwable $e) {
+      return $this->handleException($e);
+    }
   }
 
   /**
-   * Paginate a collection
+   * Update the specified property
+   *
+   * @param PropertyRequest $request
+   * @param string $id Property ID
+   * @return JsonResponse
    */
-  private function paginateCollection(Collection $collection, int $perPage, int $page): LengthAwarePaginator
+  public function update(PropertyRequest $request, $id): JsonResponse
   {
-    return new LengthAwarePaginator(
-      $collection->forPage($page, $perPage),
-      $collection->count(),
-      $perPage,
-      $page,
-      ['path' => request()->url()]
-    );
+    try {
+      $property = Property::find($id);
+
+      if (!$property) {
+        return $this->notFoundResponse('Property not found');
+      }
+
+      $property->update($request->validated());
+
+      return $this->successResponse(
+        'Property updated successfully',
+        new PropertyResource($property)
+      );
+    } catch (Throwable $e) {
+      return $this->handleException($e);
+    }
+  }
+
+  /**
+   * Remove the specified property
+   *
+   * @param string $id Property ID
+   * @return JsonResponse
+   */
+  public function destroy($id): JsonResponse
+  {
+    try {
+      $property = Property::find($id);
+
+      if (!$property) {
+        return $this->notFoundResponse('Property not found');
+      }
+
+      $property->delete();
+
+      return $this->successResponse('Property deleted successfully');
+    } catch (Throwable $e) {
+      return $this->handleException($e);
+    }
   }
 }
