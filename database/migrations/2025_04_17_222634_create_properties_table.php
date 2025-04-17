@@ -13,7 +13,7 @@ class CreatePropertiesTable extends Migration
     {
         Schema::create('properties', function (Blueprint $table) {
             $table->id();
-            $table->string('identifier')->unique(); // B1F2A5, H21, V12, etc.
+            $table->string('label')->unique(); // B1F2A5, H21, V12, etc.
             $table->string('type'); // apartment, house, villa, etc.
             $table->decimal('price', 15, 2);
             $table->string('currency')->default('USD');

@@ -16,7 +16,7 @@ class Property extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'identifier',
+        'label',
         'type',
         'price',
         'currency',
@@ -71,7 +71,7 @@ class Property extends Model
      * @var array<int, string>
      */
     protected array $searchableFields = [
-        'identifier',
+        'label',
         'description',
     ];
 
@@ -120,6 +120,6 @@ class Property extends Model
      */
     public function getPropertyNumberAttribute(): string
     {
-        return $this->identifier;
+        return $this->label;
     }
 }
