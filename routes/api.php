@@ -1,10 +1,6 @@
 <?php
 
 use App\Http\Controllers\AdminAuthController;
-use App\Http\Controllers\ApartmentController;
-use App\Http\Controllers\BuildingController;
-use App\Http\Controllers\FloorController;
-use App\Http\Controllers\HouseController;
 use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\ResidentAuthController;
 use App\Http\Controllers\PropertyController;
@@ -56,11 +52,6 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('profile', [AdminAuthController::class, 'profile'])->name('admin.profile');
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
-    // Protected resource routes
-    Route::apiResource('buildings', BuildingController::class);
-    Route::apiResource('floors', FloorController::class);
-    Route::apiResource('apartments', ApartmentController::class);
-    Route::apiResource('houses', HouseController::class);
     Route::apiResource('residents', ResidentController::class);
 
     Route::patch('meeting-requests/{id}', [MeetingRequestController::class, 'update'])->name('admin.meeting-requests.update');
