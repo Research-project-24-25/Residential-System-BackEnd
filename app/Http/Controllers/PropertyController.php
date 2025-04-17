@@ -2,69 +2,71 @@
 
 namespace App\Http\Controllers;
 
+use App\Filters\PropertyFilter;
+use App\Http\Requests\PropertyRequest;
 use App\Http\Resources\PropertyResource;
 use App\Models\Apartment;
 use App\Models\House;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Throwable;
 
 class PropertyController extends BaseController
 {
-  public function index(Request $request): ResourceCollection|JsonResponse
+  /**
+   * The property filter instance
+   */
+  protected PropertyFilter $propertyFilter;
+
+  /**
+   * Create a new controller instance
+   */
+  public function __construct(PropertyFilter $propertyFilter)
+  {
+    $this->propertyFilter = $propertyFilter;
+  }
+
+  /**
+   * List all properties with filtering, searching and sorting
+   */
+  public function index(PropertyRequest $request): ResourceCollection|JsonResponse
   {
     try {
-      return $this->getAllProperties($request);
+      $perPage = (int) $request->input('per_page', 15);
+      $page = (int) $request->input('page', 1);
+      $propertyType = $request->input('property_type');
+
+      // Get property collections based on type filter
+      if ($propertyType === 'apartment') {
+        $properties = $this->propertyFilter->filterApartments($request);
+        $paginatedProperties = $this->paginateCollection($properties, $perPage, $page);
+      } elseif ($propertyType === 'house') {
+        $properties = $this->propertyFilter->filterHouses($request);
+        $paginatedProperties = $this->paginateCollection($properties, $perPage, $page);
+      } else {
+        // Get both property types and combine them
+        $apartments = $this->propertyFilter->filterApartments($request);
+        $houses = $this->propertyFilter->filterHouses($request);
+
+        // Combine and sort the collections
+        $allProperties = $this->propertyFilter->combineAndSort($apartments, $houses, $request);
+        $paginatedProperties = $this->paginateCollection($allProperties, $perPage, $page);
+      }
+
+      return PropertyResource::collection($paginatedProperties);
     } catch (Throwable $e) {
       return $this->handleException($e);
     }
   }
 
-  private function getAllProperties(Request $request): ResourceCollection
-  {
-    $apartments = $this->getApartmentQuery($request)->get();
-    $houses = $this->getHouseQuery($request)->get();
-    $allProperties = $apartments->concat($houses);
-
-    $page = $request->input('page', 1);
-    $perPage = (int)$request->input('per_page', 15);
-    $items = $allProperties->forPage($page, $perPage);
-
-    return PropertyResource::collection($items)->additional([
-      'meta' => [
-        'total' => $allProperties->count(),
-        'per_page' => $perPage,
-        'current_page' => $page,
-        'last_page' => ceil($allProperties->count() / $perPage)
-      ]
-    ]);
-  }
-
-  private function getApartmentQuery(Request $request)
-  {
-    $query = Apartment::query()->with(['floor.building', 'residents']);
-    $this->applySearch($query, $request, ['number']);
-    $query->orWhereHas('floor.building', function ($query) use ($request) {
-      $query->where('identifier', 'LIKE', "%{$request->search}%");
-    });
-    $this->applySorting($query, $request, 'number');
-    return $query;
-  }
-
-  private function getHouseQuery(Request $request)
-  {
-    $query = House::query()->with('residents');
-    $this->applySearch($query, $request, ['identifier']);
-    $this->applySorting($query, $request, 'identifier');
-    return $query;
-  }
-
-  // Updated signature to accept type and id from route parameters
+  /**
+   * Show a specific property
+   */
   public function show(string $type, $id): JsonResponse
   {
     try {
-      // $propertyType is now directly available as $type
       $property = $this->findProperty($type, $id);
 
       if (!$property) {
@@ -80,14 +82,29 @@ class PropertyController extends BaseController
     }
   }
 
-  // Updated helper to use the type parameter reliably
+  /**
+   * Find a property by type and ID
+   */
   private function findProperty(string $propertyType, $id)
   {
-    // Eager load relationships needed for display
     return match ($propertyType) {
       'apartment' => Apartment::with(['floor.building', 'residents'])->find($id),
       'house' => House::with('residents')->find($id),
-      // No default case needed as the route enforces 'apartment' or 'house'
+      default => null,
     };
+  }
+
+  /**
+   * Paginate a collection
+   */
+  private function paginateCollection(Collection $collection, int $perPage, int $page): LengthAwarePaginator
+  {
+    return new LengthAwarePaginator(
+      $collection->forPage($page, $perPage),
+      $collection->count(),
+      $perPage,
+      $page,
+      ['path' => request()->url()]
+    );
   }
 }

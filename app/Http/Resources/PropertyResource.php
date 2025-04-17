@@ -9,6 +9,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class PropertyResource extends JsonResource
 {
+  /**
+   * Transform the resource into an array.
+   *
+   * @return array<string, mixed>
+   */
   public function toArray(Request $request): array
   {
     // Common properties for both types
@@ -24,6 +29,7 @@ class PropertyResource extends JsonResource
       'bedrooms' => $this->bedrooms,
       'bathrooms' => $this->bathrooms,
       'area' => $this->area,
+      'compound_address' => $this->compound_address,
       'images' => $this->images,
       'features' => $this->features,
       'created_at' => $this->created_at,
@@ -31,23 +37,28 @@ class PropertyResource extends JsonResource
     ];
 
     // Add apartment-specific data
-    if ($this->resource instanceof Apartment) {
-      $data['building'] = [
-        'id' => $this->floor->building->id,
-        'name' => $this->floor->building->identifier,
-      ];
+    if ($this->resource instanceof Apartment && $this->relationLoaded('floor')) {
+      if ($this->floor && $this->floor->relationLoaded('building')) {
+        $data['building'] = [
+          'id' => $this->floor->building->id,
+          'name' => $this->floor->building->identifier,
+        ];
+      }
+
       $data['floor'] = [
         'id' => $this->floor->id,
         'number' => $this->floor->number,
       ];
-    } else {
+    } else if ($this->resource instanceof House) {
       // Add house-specific data
       $data['lot_size'] = $this->lot_size;
       $data['property_style'] = $this->property_style;
     }
 
     // Add resident count for both types
-    $data['resident_count'] = $this->residents->count();
+    if ($this->relationLoaded('residents')) {
+      $data['resident_count'] = $this->residents->count();
+    }
 
     return $data;
   }
