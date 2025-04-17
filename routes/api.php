@@ -12,11 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('properties', [PropertyController::class, 'index'])->name('properties.index');
 Route::get('properties/{id}', [PropertyController::class, 'show'])->name('properties.show');
 
-// Meeting Request Routes
-// Route for authenticated users to create and manage their meeting requests
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-    Route::apiResource('properties', PropertyController::class)->except(['index', 'show']);
-
     // Get all meeting requests for the authenticated user
     Route::get('meeting-requests', [MeetingRequestController::class, 'index'])->name('meeting-requests.index');
 
@@ -50,6 +46,8 @@ Route::post('resident/login', [ResidentAuthController::class, 'login'])->name('r
 
 // Admin authenticated routes
 Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::apiResource('properties', PropertyController::class)->except(['index', 'show']);
+
     Route::get('profile', [AdminAuthController::class, 'profile'])->name('admin.profile');
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
