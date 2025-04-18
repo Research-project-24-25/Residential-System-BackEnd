@@ -26,16 +26,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::patch('meeting-requests/{id}/cancel', [MeetingRequestController::class, 'cancel'])->name('meeting-requests.cancel');
 
     // Get upcoming meetings for the authenticated user
-    Route::get('meeting-requests/upcoming', [MeetingRequestController::class, 'upcoming'])->name('meeting-requests.upcoming');
-
-    // Notification Routes
-    Route::prefix('notifications')->group(function () {
-        Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
-        Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
-        Route::get('/{id}', [NotificationController::class, 'show'])->name('notifications.show');
-        Route::patch('/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
-        Route::patch('/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
-    });
+    Route::get('upcoming-meetings', [MeetingRequestController::class, 'upcoming'])->name('meeting-requests.upcoming');
 });
 
 // Admin authentication
@@ -53,13 +44,11 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
 
     Route::apiResource('residents', ResidentController::class);
 
-    Route::patch('meeting-requests/{id}', [MeetingRequestController::class, 'update'])->name('admin.meeting-requests.update');
-
-    Route::delete('meeting-requests/{id}', [MeetingRequestController::class, 'destroy'])->name('admin.meeting-requests.destroy');
-
+    // Admin meeting request management endpoints
     Route::get('meeting-requests', [MeetingRequestController::class, 'index'])->name('admin.meeting-requests.index');
-
     Route::get('meeting-requests/{id}', [MeetingRequestController::class, 'show'])->name('admin.meeting-requests.show');
+    Route::patch('meeting-requests/{id}', [MeetingRequestController::class, 'update'])->name('admin.meeting-requests.update');
+    Route::delete('meeting-requests/{id}', [MeetingRequestController::class, 'destroy'])->name('admin.meeting-requests.destroy');
 });
 
 // Super admin only routes
