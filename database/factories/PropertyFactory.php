@@ -18,11 +18,10 @@ class PropertyFactory extends Factory
     {
         return [
             'label' => $this->faker->unique()->regexify('[A-Z]{1}[0-9]{1}[A-Z]{1}[0-9]{1}[A-Z]{1}'), // e.g., B1F2A5
-            'type' => $this->faker->randomElement(['apartment', 'house', 'land']),
+            'type' => $this->faker->randomElement(['apartment', 'house', 'villa']),
             'price' => $this->faker->numberBetween(100000, 1000000),
             'currency' => $this->faker->randomElement(['USD', 'EUR', 'GBP']),
-            'price_type' => $this->faker->randomElement(['sale', 'rent']),
-            'status' => $this->faker->randomElement(['available', 'sold', 'rented']),
+            'status' => $this->faker->randomElement(['available now', 'under construction', 'sold', 'rented']),
             'description' => $this->faker->sentence(),
             'occupancy_limit' => $this->faker->numberBetween(1, 10),
             'bedrooms' => $this->faker->numberBetween(1, 5),

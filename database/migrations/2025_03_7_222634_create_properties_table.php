@@ -14,11 +14,10 @@ class CreatePropertiesTable extends Migration
         Schema::create('properties', function (Blueprint $table) {
             $table->id();
             $table->string('label')->unique(); // B1F2A5, H21, V12, etc.
-            $table->string('type'); // apartment, house, villa, etc.
+            $table->enum('type', ['apartment', 'villa', 'house', 'studio']);
             $table->decimal('price', 15, 2);
             $table->string('currency')->default('USD');
-            $table->string('price_type')->default('sale'); // sale, rent, etc.
-            $table->string('status')->default('available'); // available, sold, rented, etc.
+            $table->enum('status', ['available now', 'under construction', 'sold', 'rented']);
             $table->text('description')->nullable();
             $table->integer('occupancy_limit')->default(0); // this unit can accommodate how many residents
             $table->integer('bedrooms')->default(0);
