@@ -47,7 +47,7 @@ class PropertyRequest extends FormRequest
             'filters.type.*' => 'string|in:apartment,house,villa',
 
             'filters.status' => 'sometimes',
-            'filters.status.*' => 'string|in:available now, under construction, sold, rented',
+            'filters.status.*' => 'string|in:available_now,under_construction,sold,rented',
 
             'filters.currency' => 'sometimes',
             'filters.currency.*' => 'string',
@@ -108,7 +108,7 @@ class PropertyRequest extends FormRequest
             'type' => [$required, 'string', 'in:apartment,house,villa'],
             'price' => [$required, 'numeric', 'min:0'],
             'currency' => 'sometimes|string|max:3',
-            'status' => 'sometimes|string|in:available now, under construction, sold, rented',
+            'status' => 'sometimes|string|in:available_now,under_construction,sold,rented',
             'description' => 'sometimes|nullable|string',
             'occupancy_limit' => 'sometimes|integer|min:0',
             'bedrooms' => 'sometimes|integer|min:0',

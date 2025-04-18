@@ -21,7 +21,7 @@ class PropertyFactory extends Factory
             'type' => $this->faker->randomElement(['apartment', 'house', 'villa']),
             'price' => $this->faker->numberBetween(100000, 1000000),
             'currency' => $this->faker->randomElement(['USD', 'EUR', 'GBP']),
-            'status' => $this->faker->randomElement(['available now', 'under construction', 'sold', 'rented']),
+            'status' => $this->faker->randomElement(['available_now', 'under_construction', 'sold', 'rented']),
             'description' => $this->faker->sentence(),
             'occupancy_limit' => $this->faker->numberBetween(1, 10),
             'bedrooms' => $this->faker->numberBetween(1, 5),
