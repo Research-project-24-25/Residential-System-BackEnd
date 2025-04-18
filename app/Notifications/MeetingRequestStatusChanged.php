@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\MeetingRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -15,7 +16,7 @@ class MeetingRequestStatusChanged extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      */
-    public function __construct(public MeetingRequest $meetingRequest)
+    public function __construct(public Collection $meetingRequest)
     {
         //
     }
