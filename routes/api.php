@@ -5,11 +5,17 @@ use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\ResidentAuthController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\MeetingRequestController;
+use App\Http\Controllers\User\AuthController;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::post('properties', [PropertyController::class, 'index'])->name('properties.index');
 Route::get('properties/{id}', [PropertyController::class, 'show'])->name('properties.show');
+
+// User authentication
+Route::post('register', [AuthController::class, 'register'])->name('user.register');
+Route::post('login', [AuthController::class, 'login'])->name('user.login');
+Route::delete('logout', [AuthController::class, 'logout'])->name('user.logout');
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Get all meeting requests for the authenticated user
