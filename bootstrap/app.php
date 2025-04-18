@@ -26,9 +26,4 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->withCommands(
-        //
-    )->withSchedule(function (Schedule $schedule) {
-        $schedule->command('meetings:send-reminders')->dailyAt('10:00');
-    })
-    ->create();
+    })->create();
