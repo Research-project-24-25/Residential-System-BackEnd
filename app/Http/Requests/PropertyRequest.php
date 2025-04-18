@@ -41,10 +41,19 @@ class PropertyRequest extends FormRequest
     {
         return [
             'filters' => 'sometimes|array',
-            'filters.type' => 'sometimes|string|in:apartment,house,villa',
-            'filters.status' => 'sometimes|string|in:available,sold,rented,pending',
-            'filters.price_type' => 'sometimes|string|in:sale,rent',
-            'filters.currency' => 'sometimes|string',
+
+            // Support for single value or array of values
+            'filters.type' => 'sometimes',
+            'filters.type.*' => 'string|in:apartment,house,villa',
+
+            'filters.status' => 'sometimes',
+            'filters.status.*' => 'string|in:available,sold,rented,pending',
+
+            'filters.price_type' => 'sometimes',
+            'filters.price_type.*' => 'string|in:sale,rent',
+
+            'filters.currency' => 'sometimes',
+            'filters.currency.*' => 'string',
 
             // Range filters
             'filters.price' => 'sometimes|array',
@@ -68,6 +77,7 @@ class PropertyRequest extends FormRequest
             'filters.area.max' => 'sometimes|integer|gte:filters.area.min',
 
             'filters.features' => 'sometimes|array',
+            'filters.features.*' => 'sometimes|string',
 
             // Date filters
             'filters.created_at' => 'sometimes|array',
@@ -97,7 +107,7 @@ class PropertyRequest extends FormRequest
         $required = $isUpdate ? 'sometimes' : 'required';
 
         $rules = [
-            'identifier' => [$required, 'string', 'max:255'],
+            'label' => [$required, 'string', 'max:255'],
             'type' => [$required, 'string', 'in:apartment,house,villa'],
             'price' => [$required, 'numeric', 'min:0'],
             'currency' => 'sometimes|string|max:3',
@@ -114,11 +124,11 @@ class PropertyRequest extends FormRequest
             'features.*' => 'sometimes|string',
         ];
 
-        // Add unique rule for identifier on create or when changing identifier on update
+        // Add unique rule for label on create or when changing label on update
         if (!$isUpdate) {
-            $rules['identifier'][] = 'unique:properties,identifier';
+            $rules['label'][] = 'unique:properties,label';
         } else {
-            $rules['identifier'][] = Rule::unique('properties', 'identifier')->ignore($this->route('property'));
+            $rules['label'][] = Rule::unique('properties', 'label')->ignore($this->route('property'));
         }
 
         return $rules;

@@ -7,13 +7,6 @@ use Illuminate\Http\Request;
 
 trait Filterable
 {
-    /**
-     * Apply all filters to the query builder.
-     *
-     * @param Builder $query
-     * @param Request $request
-     * @return Builder
-     */
     public function scopeFilter(Builder $query, Request $request): Builder
     {
         $filters = $request->input('filters', []);
@@ -29,13 +22,6 @@ trait Filterable
         return $query;
     }
 
-    /**
-     * Dynamically apply filters to the query.
-     *
-     * @param Builder $query
-     * @param array $filters
-     * @return void
-     */
     protected function applyFilters(Builder $query, array $filters): void
     {
         $allowedFields = $this->filterableFields ?? [];
@@ -46,17 +32,23 @@ trait Filterable
             }
 
             if (is_array($value)) {
-                if (isset($value['min'])) {
-                    $query->where($field, '>=', $value['min']);
-                }
-                if (isset($value['max'])) {
-                    $query->where($field, '<=', $value['max']);
-                }
-                if (isset($value['from'])) {
-                    $query->whereDate($field, '>=', $value['from']);
-                }
-                if (isset($value['to'])) {
-                    $query->whereDate($field, '<=', $value['to']);
+                // Check if this is a range filter with min/max or from/to
+                if (isset($value['min']) || isset($value['max']) || isset($value['from']) || isset($value['to'])) {
+                    if (isset($value['min'])) {
+                        $query->where($field, '>=', $value['min']);
+                    }
+                    if (isset($value['max'])) {
+                        $query->where($field, '<=', $value['max']);
+                    }
+                    if (isset($value['from'])) {
+                        $query->whereDate($field, '>=', $value['from']);
+                    }
+                    if (isset($value['to'])) {
+                        $query->whereDate($field, '<=', $value['to']);
+                    }
+                } else {
+                    // Handle multi-value filtering (WHERE IN)
+                    $query->whereIn($field, $value);
                 }
             } else {
                 $query->where($field, $value);
@@ -64,13 +56,6 @@ trait Filterable
         }
     }
 
-    /**
-     * Apply search to the query based on searchable fields.
-     *
-     * @param Builder $query
-     * @param string $searchTerm
-     * @return Builder
-     */
     protected function applySearch(Builder $query, string $searchTerm): Builder
     {
         $searchableFields = $this->searchableFields ?? [];
@@ -86,15 +71,7 @@ trait Filterable
         return $query;
     }
 
-    /**
-     * Apply sorting to the query.
-     *
-     * @param Builder $query
-     * @param Request $request
-     * @param string $defaultSort
-     * @param string $defaultDirection
-     * @return Builder
-     */
+
     public function scopeSort(Builder $query, Request $request, string $defaultSort = 'created_at', string $defaultDirection = 'desc'): Builder
     {
         $sort = $request->input('sort', ['field' => $defaultSort, 'direction' => $defaultDirection]);
