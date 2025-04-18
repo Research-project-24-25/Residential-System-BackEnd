@@ -7,6 +7,39 @@ use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\MeetingRequestController;
 use App\Http\Controllers\User\AuthController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
+use App\Models\User;
+
+Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+    $user = User::findOrFail($id);
+
+    // Check that the hash matches the user's email hash
+    if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        return response()->json(['message' => 'Invalid verification link.'], 403);
+    }
+
+    if ($user->hasVerifiedEmail()) {
+        return response()->json(['message' => 'Email already verified.']);
+    }
+
+    $user->markEmailAsVerified();
+
+    return response()->json(['message' => 'Email verified successfully.']);
+})->middleware('signed')->name('verification.verify');
+
+
+// Resend verification email
+Route::post('/email/resend', function (Request $request) {
+    if ($request->user()->hasVerifiedEmail()) {
+        return response()->json(['message' => 'Email already verified.']);
+    }
+
+    $request->user()->sendEmailVerificationNotification();
+
+    return response()->json(['message' => 'Verification link sent.']);
+})->middleware(['auth:sanctum'])->name('verification.send');
+
 
 // Public Routes
 Route::post('properties', [PropertyController::class, 'index'])->name('properties.index');

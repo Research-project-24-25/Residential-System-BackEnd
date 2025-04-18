@@ -8,16 +8,15 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\Events\Registered;
 use Throwable;
-use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
     use ApiResponse;
 
     /**
-     * Register a new user and return token.
+     * Register a new user and send verification email.
      */
     public function register(Request $request)
     {
@@ -34,23 +33,19 @@ class AuthController extends Controller
                 'password' => Hash::make($validated['password']),
             ]);
 
-            Auth::login($user);
+            // Dispatch verification email
+            event(new Registered($user));
 
-            $token = $user->createToken($user->email)->plainTextToken;
-
-            return $this->createdResponse('User registered successfully', [
+            return $this->createdResponse('User registered successfully. Please verify your email address.', [
                 'user' => $user,
-                'token' => $token,
             ]);
-        } catch (ValidationException $e) {
-            return $this->errorResponse('Validation failed: ' . $e->errors(), 422);
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
     }
 
     /**
-     * Log in the user and return token.
+     * Log in the user only if email is verified.
      */
     public function login(Request $request)
     {
@@ -65,14 +60,17 @@ class AuthController extends Controller
             }
 
             $user = User::where('email', $credentials['email'])->firstOrFail();
+
+            if (! $user->hasVerifiedEmail()) {
+                return $this->errorResponse('Please verify your email address first.', 403);
+            }
+
             $token = $user->createToken($user->email)->plainTextToken;
 
             return $this->successResponse('User logged in successfully', [
                 'user' => $user,
                 'token' => $token,
             ]);
-        } catch (ValidationException $e) {
-            return $this->errorResponse('Validation failed: ' . $e->errors(), 422);
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
@@ -98,7 +96,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Optional: Get the currently authenticated user.
+     * Get the currently authenticated user.
      */
     public function me(Request $request)
     {
