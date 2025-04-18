@@ -15,7 +15,7 @@ Route::get('properties/{id}', [PropertyController::class, 'show'])->name('proper
 // User authentication
 Route::post('register', [AuthController::class, 'register'])->name('user.register');
 Route::post('login', [AuthController::class, 'login'])->name('user.login');
-Route::delete('logout', [AuthController::class, 'logout'])->name('user.logout');
+Route::delete('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Get all meeting requests for the authenticated user
