@@ -5,7 +5,6 @@ use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\ResidentAuthController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\MeetingRequestController;
-use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
