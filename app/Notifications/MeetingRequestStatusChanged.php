@@ -16,7 +16,7 @@ class MeetingRequestStatusChanged extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      */
-    public function __construct(public Collection $meetingRequest)
+    public function __construct(public MeetingRequest $meetingRequest)
     {
         //
     }

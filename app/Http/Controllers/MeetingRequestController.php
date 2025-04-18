@@ -53,7 +53,7 @@ class MeetingRequestController extends Controller
     {
         try {
             $user = $request->user();
-            $property = Property::find($request->property_id);
+            $property = Property::findorFail($request->property_id);
 
             if (!$property) {
                 return $this->notFoundResponse('Property not found');
@@ -92,7 +92,7 @@ class MeetingRequestController extends Controller
     {
         try {
             $user = $request->user();
-            $meetingRequest = MeetingRequest::find($id);
+            $meetingRequest = MeetingRequest::findorFail($id);
 
             if (!$meetingRequest) {
                 return $this->notFoundResponse('Meeting request not found');
@@ -126,7 +126,7 @@ class MeetingRequestController extends Controller
     {
         try {
             $admin = $request->user();
-            $meetingRequest = MeetingRequest::find($id);
+            $meetingRequest = MeetingRequest::findorFail($id);
 
             if (!$meetingRequest) {
                 return $this->notFoundResponse('Meeting request not found');
@@ -139,6 +139,10 @@ class MeetingRequestController extends Controller
 
             // Previous status to check if status has changed
             $previousStatus = $meetingRequest->status;
+
+            if ($data['status'] === 'approved') {
+                $data['approved_date'] = now();
+            }
 
             $meetingRequest->update($data);
             $meetingRequest->load(['property', 'user', 'admin']);
@@ -164,7 +168,7 @@ class MeetingRequestController extends Controller
     {
         try {
             $user = $request->user();
-            $meetingRequest = MeetingRequest::find($id);
+            $meetingRequest = MeetingRequest::findorFail($id);
 
             if (!$meetingRequest) {
                 return $this->notFoundResponse('Meeting request not found');
@@ -190,6 +194,23 @@ class MeetingRequestController extends Controller
                 'Meeting request cancelled successfully',
                 new MeetingRequestResource($meetingRequest)
             );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        try {
+            $meetingRequest = MeetingRequest::findOrFail($id);
+
+            if (!$meetingRequest) {
+                return $this->notFoundResponse('Meeting request not found');
+            }
+
+            $meetingRequest->delete();
+
+            return $this->successResponse('Meeting request deleted successfully');
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
