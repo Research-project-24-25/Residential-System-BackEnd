@@ -74,12 +74,20 @@ class Property extends Model
         'description',
     ];
 
-    /**
-     * Get the residents for the property.
-     */
-    public function residents(): HasMany
+    // Relationships
+    public function residents()
     {
-        return $this->hasMany(Resident::class);
+        return $this->belongsToMany(Resident::class)
+            ->using(PropertyResident::class)
+            ->withPivot([
+                'relationship_type',
+                'sale_price',
+                'ownership_share',
+                'monthly_rent',
+                'start_date',
+                'end_date',
+            ])
+            ->withTimestamps();
     }
 
     /**

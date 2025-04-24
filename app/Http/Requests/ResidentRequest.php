@@ -22,60 +22,23 @@ class ResidentRequest extends FormRequest
      */
     public function rules(): array
     {
-        $rules = [
-            'username' => ['string', 'max:255'],
-            'first_name' => ['string', 'max:255'],
-            'last_name' => ['string', 'max:255'],
-            'email' => ['email'],
-            'password' => ['string', 'min:8'],
-            'phone_number' => ['string'],
-            'age' => ['integer', 'min:0'],
-            'gender' => ['in:male,female'],
-            'status' => ['sometimes', 'in:active,inactive'],
-            'house_id' => ['nullable', 'exists:houses,id'],
-            'apartment_id' => ['nullable', 'exists:apartments,id'],
+        return [
+            'username' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'unique:residents'],
+            'password' => ['required', 'string', 'min:8'],
+            'phone_number' => ['required', 'string'],
+            'age' => ['required', 'integer', 'min:0'],
+            'gender' => ['required', 'in:male,female'],
+            
+            'property_id'          => ['required', 'integer', 'exists:properties,id'],
+            'relationship_type'    => ['required', 'in:buyer,co_buyer,renter'],
+            'sale_price'           => ['nullable', 'numeric', 'min:0'],
+            'ownership_share'      => ['nullable', 'numeric', 'between:0,100'],
+            'monthly_rent'         => ['nullable', 'numeric', 'min:0'],
+            'start_date'           => ['nullable', 'date'],
+            'end_date'             => ['nullable', 'date', 'after_or_equal:start_date'],
         ];
-        
-        if ($this->isMethod('POST')) {
-            // Add required validation for store
-            $rules['username'][] = 'required';
-            $rules['first_name'][] = 'required';
-            $rules['last_name'][] = 'required';
-            $rules['email'][] = 'required';
-            $rules['email'][] = 'unique:residents';
-            $rules['password'][] = 'required';
-            $rules['phone_number'][] = 'required';
-            $rules['age'][] = 'required';
-            $rules['gender'][] = 'required';
-        } else if ($this->isMethod('PUT')) {
-            // Add sometimes validation for update
-            $rules['username'][] = 'sometimes';
-            $rules['first_name'][] = 'sometimes';
-            $rules['last_name'][] = 'sometimes';
-            $rules['email'][] = 'sometimes';
-            $rules['email'][] = 'unique:residents,email,' . $this->route('resident');
-            $rules['password'][] = 'sometimes';
-            $rules['phone_number'][] = 'sometimes';
-            $rules['age'][] = 'sometimes';
-            $rules['gender'][] = 'sometimes';
-        }
-
-        return $rules;
-    }
-
-    /**
-     * Handle a passed validation attempt.
-     */
-    protected function passedValidation(): void
-    {
-        // Ensure resident is assigned to either a house or an apartment, not both
-        if (($this->house_id ?? null) && ($this->apartment_id ?? null)) {
-            $validator = $this->getValidatorInstance();
-            $validator->errors()->add(
-                'property_assignment',
-                'A resident cannot be assigned to both a house and an apartment'
-            );
-            $this->failedValidation($validator);
-        }
     }
 }

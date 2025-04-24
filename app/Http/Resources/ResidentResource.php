@@ -8,7 +8,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ResidentResource extends JsonResource
 {
     /**
-     * 
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
@@ -24,14 +23,26 @@ class ResidentResource extends JsonResource
             'phone_number' => $this->phone_number,
             'age' => $this->age,
             'gender' => $this->gender,
-            'status' => $this->status,
-            'property_type' => $this->house_id ? 'house' : ($this->apartment_id ? 'apartment' : null),
-            'house' => $this->when($this->house_id, function() {
-                return new HouseResource($this->whenLoaded('house', function() {
-                    return $this->house->loadCount('residents');
-                }));
+            'properties' => $this->whenLoaded('properties', function () {
+                return $this->properties->map(function ($property) {
+                    $pivotData = $property->pivot;
+
+                    return [
+                        'id' => $property->id,
+                        'label' => $property->label,
+                        'type' => $property->type,
+                        'status' => $property->status,
+                        'relationship' => [
+                            'type' => $pivotData->relationship_type,
+                            'sale_price' => $pivotData->sale_price,
+                            'ownership_share' => $pivotData->ownership_share,
+                            'monthly_rent' => $pivotData->monthly_rent,
+                            'start_date' => $pivotData->start_date,
+                            'end_date' => $pivotData->end_date,
+                        ]
+                    ];
+                });
             }),
-            'apartment' => $this->when($this->apartment_id, new ApartmentResource($this->whenLoaded('apartment'))),
             'created_by' => $this->whenLoaded('createdBy', fn() => $this->createdBy->email),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

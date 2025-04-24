@@ -7,9 +7,19 @@ use Illuminate\Http\Request;
 
 trait Filterable
 {
-    public function scopeFilter(Builder $query, Request $request): Builder
+    /**
+     * Apply dynamic filters to the query
+     *
+     * @param Builder $query
+     * @param Request $request
+     * @return Builder
+     */
+    public function scopeFilter(Builder $query, $request): Builder
     {
-        $filters = $request->input('filters', []);
+        // Support both direct Request object and already parsed array of filters
+        $filters = $request instanceof Request
+            ? $request->input('filters', [])
+            : (is_array($request) ? $request : []);
 
         // Apply filters dynamically
         $this->applyFilters($query, $filters);
@@ -22,12 +32,48 @@ trait Filterable
         return $query;
     }
 
+    /**
+     * Apply sort to the query
+     *
+     * @param Builder $query
+     * @param Request|array $request
+     * @param string $defaultSort
+     * @param string $defaultDirection
+     * @return Builder
+     */
+    public function scopeSort(Builder $query, $request, string $defaultSort = 'created_at', string $defaultDirection = 'desc'): Builder
+    {
+        // Handle both Request object and already parsed array
+        if ($request instanceof Request) {
+            $sort = $request->input('sort', ['field' => $defaultSort, 'direction' => $defaultDirection]);
+        } else {
+            $sort = is_array($request) ? $request : ['field' => $defaultSort, 'direction' => $defaultDirection];
+        }
+
+        $sortField = $sort['field'] ?? $defaultSort;
+        $direction = $sort['direction'] ?? $defaultDirection;
+
+        // Sanitize direction
+        if (!in_array(strtolower($direction), ['asc', 'desc'])) {
+            $direction = $defaultDirection;
+        }
+
+        return $query->orderBy($sortField, $direction);
+    }
+
+    /**
+     * Apply filters to the query
+     *
+     * @param Builder $query
+     * @param array $filters
+     * @return void
+     */
     protected function applyFilters(Builder $query, array $filters): void
     {
         $allowedFields = $this->filterableFields ?? [];
 
         foreach ($filters as $field => $value) {
-            if (!in_array($field, $allowedFields)) {
+            if ($field === 'search' || !in_array($field, $allowedFields)) {
                 continue;
             }
 
@@ -56,6 +102,13 @@ trait Filterable
         }
     }
 
+    /**
+     * Apply search to the query
+     *
+     * @param Builder $query
+     * @param string $searchTerm
+     * @return Builder
+     */
     protected function applySearch(Builder $query, string $searchTerm): Builder
     {
         $searchableFields = $this->searchableFields ?? [];
@@ -69,21 +122,5 @@ trait Filterable
         }
 
         return $query;
-    }
-
-
-    public function scopeSort(Builder $query, Request $request, string $defaultSort = 'created_at', string $defaultDirection = 'desc'): Builder
-    {
-        $sort = $request->input('sort', ['field' => $defaultSort, 'direction' => $defaultDirection]);
-
-        $sortField = $sort['field'] ?? $defaultSort;
-        $direction = $sort['direction'] ?? $defaultDirection;
-
-        // Sanitize direction
-        if (!in_array(strtolower($direction), ['asc', 'desc'])) {
-            $direction = $defaultDirection;
-        }
-
-        return $query->orderBy($sortField, $direction);
     }
 }
