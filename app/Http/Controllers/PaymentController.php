@@ -68,15 +68,15 @@ class PaymentController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             // Verify the bill exists
             $bill = Bill::findOrFail($validated['bill_id']);
-            
+
             // If this is an admin processing a payment
             if ($request->user()->getTable() === 'admins') {
                 $validated['processed_by'] = $request->user()->id;
             }
-            
+
             // Process the payment
             $payment = $this->paymentService->processPayment($validated);
 
@@ -101,16 +101,16 @@ class PaymentController extends Controller
         try {
             $payment = Payment::findOrFail($id);
             $validated = $request->validated();
-            
+
             // Only admins can update payments
             if ($request->user()->getTable() !== 'admins') {
                 return $this->errorResponse('Unauthorized to update payments', 403);
             }
-            
+
             // Update payment status
             $payment = $this->paymentService->updatePaymentStatus(
-                $payment, 
-                $validated['status'], 
+                $payment,
+                $validated['status'],
                 $request->user()->id
             );
 
@@ -134,7 +134,7 @@ class PaymentController extends Controller
     {
         try {
             $bill = Bill::findOrFail($billId);
-            
+
             $payments = $bill->payments()
                 ->with(['resident', 'paymentMethod'])
                 ->filter($request)
@@ -156,3 +156,18 @@ class PaymentController extends Controller
      */
     public function residentPayments($residentId, Request $request): ResourceCollection|JsonResponse
     {
+        try {
+            $resident = Resident::findOrFail($residentId);
+
+            $payments = $resident->payments()
+                ->with(['bill', 'paymentMethod'])
+                ->filter($request)
+                ->sort($request)
+                ->paginate($request->get('per_page', 10));
+
+            return PaymentResource::collection($payments);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+}
