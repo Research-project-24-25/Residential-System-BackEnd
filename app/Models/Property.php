@@ -91,6 +91,38 @@ class Property extends Model
     }
 
     /**
+     * Get all bills for this property.
+     */
+    public function bills(): HasMany
+    {
+        return $this->hasMany(Bill::class);
+    }
+
+    /**
+     * Get all recurring bills for this property.
+     */
+    public function recurringBills()
+    {
+        return $this->bills()->whereNotNull('recurrence')->whereNotNull('next_billing_date');
+    }
+
+    /**
+     * Get buyers of this property.
+     */
+    public function buyers()
+    {
+        return $this->residents()->wherePivotIn('relationship_type', ['buyer', 'co_buyer']);
+    }
+
+    /**
+     * Get renters of this property.
+     */
+    public function renters()
+    {
+        return $this->residents()->where('relationship_type', 'renter');
+    }
+
+    /**
      * Determine if the property is an apartment.
      *
      * @return bool
@@ -128,5 +160,21 @@ class Property extends Model
     public function getPropertyNumberAttribute(): string
     {
         return $this->label;
+    }
+
+    /**
+     * Get overdue bills for this property.
+     */
+    public function getOverdueBillsAttribute()
+    {
+        return $this->bills()->overdue()->get();
+    }
+
+    /**
+     * Get total unpaid bills amount for this property.
+     */
+    public function getUnpaidBillsTotalAttribute(): float
+    {
+        return $this->bills()->unpaid()->sum('amount');
     }
 }
