@@ -1,0 +1,158 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\PaymentRequest;
+use App\Http\Resources\PaymentResource;
+use App\Models\Bill;
+use App\Models\Payment;
+use App\Models\Resident;
+use App\Services\PaymentService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
+use Throwable;
+
+class PaymentController extends Controller
+{
+    public function __construct(private PaymentService $paymentService) {}
+
+    /**
+     * List all payments with filtering and pagination
+     *
+     * @param Request $request
+     * @return ResourceCollection|JsonResponse
+     */
+    public function index(Request $request): ResourceCollection|JsonResponse
+    {
+        try {
+            $payments = Payment::query()
+                ->with(['bill', 'resident', 'paymentMethod'])
+                ->filter($request)
+                ->sort($request)
+                ->paginate($request->get('per_page', 10));
+
+            return PaymentResource::collection($payments);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Get a single payment
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function show($id): JsonResponse
+    {
+        try {
+            $payment = Payment::with(['bill', 'resident', 'paymentMethod'])->findOrFail($id);
+
+            return $this->successResponse(
+                'Payment retrieved successfully',
+                new PaymentResource($payment)
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Process a new payment
+     *
+     * @param PaymentRequest $request
+     * @return JsonResponse
+     */
+    public function store(PaymentRequest $request): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+            
+            // Verify the bill exists
+            $bill = Bill::findOrFail($validated['bill_id']);
+            
+            // If this is an admin processing a payment
+            if ($request->user()->getTable() === 'admins') {
+                $validated['processed_by'] = $request->user()->id;
+            }
+            
+            // Process the payment
+            $payment = $this->paymentService->processPayment($validated);
+
+            return $this->createdResponse(
+                'Payment processed successfully',
+                new PaymentResource($payment)
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Update a payment (only status updates are allowed)
+     *
+     * @param int $id
+     * @param PaymentRequest $request
+     * @return JsonResponse
+     */
+    public function update($id, PaymentRequest $request): JsonResponse
+    {
+        try {
+            $payment = Payment::findOrFail($id);
+            $validated = $request->validated();
+            
+            // Only admins can update payments
+            if ($request->user()->getTable() !== 'admins') {
+                return $this->errorResponse('Unauthorized to update payments', 403);
+            }
+            
+            // Update payment status
+            $payment = $this->paymentService->updatePaymentStatus(
+                $payment, 
+                $validated['status'], 
+                $request->user()->id
+            );
+
+            return $this->successResponse(
+                'Payment updated successfully',
+                new PaymentResource($payment)
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Get payments for a specific bill
+     *
+     * @param int $billId
+     * @param Request $request
+     * @return ResourceCollection|JsonResponse
+     */
+    public function billPayments($billId, Request $request): ResourceCollection|JsonResponse
+    {
+        try {
+            $bill = Bill::findOrFail($billId);
+            
+            $payments = $bill->payments()
+                ->with(['resident', 'paymentMethod'])
+                ->filter($request)
+                ->sort($request)
+                ->paginate($request->get('per_page', 10));
+
+            return PaymentResource::collection($payments);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Get payments for a specific resident
+     *
+     * @param int $residentId
+     * @param Request $request
+     * @return ResourceCollection|JsonResponse
+     */
+    public function residentPayments($residentId, Request $request): ResourceCollection|JsonResponse
+    {
