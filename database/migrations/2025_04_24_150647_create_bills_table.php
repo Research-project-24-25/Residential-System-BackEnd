@@ -13,7 +13,25 @@ return new class extends Migration
     {
         Schema::create('bills', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('property_id')->constrained()->onDelete('cascade');
+            $table->foreignId('resident_id')->constrained()->onDelete('cascade');
+            $table->string('bill_type'); // maintenance, water, electricity, gas, etc.
+            $table->decimal('amount', 10, 2);
+            $table->string('currency', 3)->default('USD');
+            $table->date('due_date');
+            $table->text('description')->nullable();
+            $table->enum('status', ['pending', 'partial', 'paid', 'overdue', 'cancelled'])->default('pending');
+            $table->string('recurrence')->nullable(); // monthly, quarterly, yearly, one-time, etc.
+            $table->date('next_billing_date')->nullable(); // For recurring bills
+            $table->json('metadata')->nullable();
+            $table->foreignId('created_by')->constrained('admins')->onDelete('restrict');
             $table->timestamps();
+
+            // Index for performance
+            $table->index(['property_id', 'resident_id']);
+            $table->index('due_date');
+            $table->index('status');
+            $table->index('bill_type');
         });
     }
 
