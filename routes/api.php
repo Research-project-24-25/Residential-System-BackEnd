@@ -1,101 +1,231 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Models\User;
+
+// Controllers
+use App\Http\Controllers\User\AuthController as UserAuthController;
 use App\Http\Controllers\AdminAuthController;
-use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\ResidentAuthController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\MeetingRequestController;
-use App\Http\Controllers\User\AuthController;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Http\Request;
-use App\Models\User;
+use App\Http\Controllers\ResidentController;
+use App\Http\Controllers\BillController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentMethodController;
 
-Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
-    $user = User::findOrFail($id);
+/*
+|--------------------------------------------------------------------------
+| Email verification
+|--------------------------------------------------------------------------
+*/
 
-    // Check that the hash matches the user's email hash
-    if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-        return response()->json(['message' => 'Invalid verification link.'], 403);
-    }
+Route::prefix('email')->name('verification.')->group(function () {
+    // Verify e-mail
+    Route::get('/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+        $user = User::findOrFail($id);
 
-    if ($user->hasVerifiedEmail()) {
-        return response()->json(['message' => 'Email already verified.']);
-    }
+        abort_unless(
+            hash_equals((string) $hash, sha1($user->getEmailForVerification())),
+            403,
+            'Invalid verification link.'
+        );
 
-    $user->markEmailAsVerified();
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified.']);
+        }
 
-    return response()->json(['message' => 'Email verified successfully.']);
-})->middleware('signed')->name('verification.verify');
+        $user->markEmailAsVerified();
+        return response()->json(['message' => 'Email verified successfully.']);
+    })->middleware('signed')->name('verify');
 
+    // Resend link
+    Route::middleware('auth:sanctum')->post('/resend', function (Request $request) {
+        if ($request->user()->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified.']);
+        }
 
-// Resend verification email
-Route::post('/email/resend', function (Request $request) {
-    if ($request->user()->hasVerifiedEmail()) {
-        return response()->json(['message' => 'Email already verified.']);
-    }
-
-    $request->user()->sendEmailVerificationNotification();
-
-    return response()->json(['message' => 'Verification link sent.']);
-})->middleware(['auth:sanctum'])->name('verification.send');
-
-
-// Public Routes
-Route::post('properties', [PropertyController::class, 'index'])->name('properties.index');
-Route::get('properties/{id}', [PropertyController::class, 'show'])->name('properties.show');
-
-// User authentication
-Route::post('register', [AuthController::class, 'register'])->name('user.register');
-Route::post('login', [AuthController::class, 'login'])->name('user.login');
-Route::delete('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-
-Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-    // Get all meeting requests for the authenticated user
-    Route::get('meeting-requests', [MeetingRequestController::class, 'index'])->name('meeting-requests.index');
-
-    // Create a new meeting request
-    Route::post('meeting-requests', [MeetingRequestController::class, 'store'])->name('meeting-requests.store');
-
-    // Get a specific meeting request
-    Route::get('meeting-requests/{id}', [MeetingRequestController::class, 'show'])->name('meeting-requests.show');
-
-    // Cancel a meeting request (user can cancel their own requests)
-    Route::patch('meeting-requests/{id}/cancel', [MeetingRequestController::class, 'cancel'])->name('meeting-requests.cancel');
-
-    // Get upcoming meetings for the authenticated user
-    Route::get('upcoming-meetings', [MeetingRequestController::class, 'upcoming'])->name('meeting-requests.upcoming');
+        $request->user()->sendEmailVerificationNotification();
+        return response()->json(['message' => 'Verification link sent.']);
+    })->name('send');
 });
 
-// Admin authentication
-Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login');
+/*
+|--------------------------------------------------------------------------
+| Public resources & user auth
+|--------------------------------------------------------------------------
+*/
+Route::controller(PropertyController::class)
+    ->prefix('properties')
+    ->name('properties.')
+    ->group(function () {
+        Route::post('/', 'index')->name('index'); // listing with filters
+        Route::get('/{id}', 'show')->name('show');
+    });
 
-// Resident authentication
+Route::controller(UserAuthController::class)->group(function () {
+    Route::post('register', 'register')->name('user.register');
+    Route::post('login',    'login')->name('user.login');
+    Route::middleware('auth:sanctum')->delete('logout', 'logout')->name('user.logout');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated user routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+    Route::controller(MeetingRequestController::class)
+        ->prefix('meeting-requests')
+        ->name('meeting-requests.')
+        ->group(function () {
+            Route::get('/',           'index')->name('index');
+            Route::post('/',          'store')->name('store');
+            Route::get('/upcoming',   'upcoming')->name('upcoming');
+            Route::get('/{id}',       'show')->name('show');
+            Route::patch('/{id}/cancel', 'cancel')->name('cancel');
+        });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Authentication shortcuts
+|--------------------------------------------------------------------------
+*/
+Route::post('admin/login',    [AdminAuthController::class,    'login'])->name('admin.login');
 Route::post('resident/login', [ResidentAuthController::class, 'login'])->name('resident.login');
 
-// Admin authenticated routes
-Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
-    Route::apiResource('properties', PropertyController::class)->except(['index', 'show']);
+/*
+|--------------------------------------------------------------------------
+| Admin routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'admin'])
+    ->group(function () {
 
-    Route::get('profile', [AdminAuthController::class, 'profile'])->name('admin.profile');
-    Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+        // Profile / auth
+        Route::controller(AdminAuthController::class)->group(function () {
+            Route::get('profile', 'profile')->name('admin.profile');
+            Route::post('logout',  'logout')->name('admin.logout');
+        });
 
-    Route::apiResource('residents', ResidentController::class);
+        // Properties (CRUD except list/show)
+        Route::apiResource('properties', PropertyController::class)
+            ->except(['index', 'show']);
 
-    // Admin meeting request management endpoints
-    Route::get('meeting-requests', [MeetingRequestController::class, 'index'])->name('admin.meeting-requests.index');
-    Route::get('meeting-requests/{id}', [MeetingRequestController::class, 'show'])->name('admin.meeting-requests.show');
-    Route::patch('meeting-requests/{id}', [MeetingRequestController::class, 'update'])->name('admin.meeting-requests.update');
-    Route::delete('meeting-requests/{id}', [MeetingRequestController::class, 'destroy'])->name('admin.meeting-requests.destroy');
-});
+        // Residents
+        Route::apiResource('residents', ResidentController::class);
 
-// Super admin only routes
-Route::prefix('admin')->middleware(['auth:sanctum', 'admin:super_admin'])->group(function () {
-    Route::post('register', [AdminAuthController::class, 'register'])->name('admin.register');
-});
+        // Meeting requests
+        Route::controller(MeetingRequestController::class)
+            ->prefix('meeting-requests')
+            ->name('admin.meeting-requests.')
+            ->group(function () {
+                Route::get('/',       'index')->name('index');
+                Route::get('/{id}',   'show')->name('show');
+                Route::patch('/{id}', 'update')->name('update');
+                Route::delete('/{id}', 'destroy')->name('destroy');
+            });
 
-// Resident authenticated routes
-Route::prefix('resident')->middleware('auth:sanctum')->group(function () {
-    Route::post('logout', [ResidentAuthController::class, 'logout'])->name('resident.logout');
-    Route::get('profile', [ResidentAuthController::class, 'profile'])->name('resident.profile');
-});
+        /*
+    |------------------------------------------------------------------
+    | Billing
+    |------------------------------------------------------------------
+    */
+        // Bills
+        Route::controller(BillController::class)->group(function () {
+            Route::get('bills',                    'index')->name('admin.bills.index');
+            Route::post('bills',                   'store')->name('admin.bills.store');
+            Route::get('bills/{id}',               'show')->name('admin.bills.show');
+            Route::match(['put', 'patch'], 'bills/{id}', 'update')->name('admin.bills.update');
+            Route::delete('bills/{id}',            'destroy')->name('admin.bills.destroy');
+            Route::post('generate-recurring-bills', 'generateRecurringBills')->name('admin.bills.generate-recurring');
+
+            // Property / resident scopes
+            Route::get('properties/{propertyId}/bills', 'propertyBills')->name('admin.properties.bills');
+            Route::get('residents/{residentId}/bills',  'residentBills')->name('admin.residents.bills');
+        });
+
+        // Payments
+        Route::controller(PaymentController::class)->group(function () {
+            Route::get('payments',                 'index')->name('admin.payments.index');
+            Route::post('payments',                'store')->name('admin.payments.store');
+            Route::get('payments/{id}',            'show')->name('admin.payments.show');
+            Route::match(['put', 'patch'], 'payments/{id}', 'update')->name('admin.payments.update');
+
+            Route::get('bills/{billId}/payments',      'billPayments')->name('admin.bills.payments');
+            Route::get('residents/{residentId}/payments', 'residentPayments')->name('admin.residents.payments');
+        });
+
+        // Payment methods
+        Route::controller(PaymentMethodController::class)->group(function () {
+            Route::get('payment-methods',               'index')->name('admin.payment-methods.index');
+            Route::post('payment-methods',              'store')->name('admin.payment-methods.store');
+            Route::get('payment-methods/{id}',          'show')->name('admin.payment-methods.show');
+            Route::match(['put', 'patch'], 'payment-methods/{id}', 'update')
+                ->name('admin.payment-methods.update');
+            Route::delete('payment-methods/{id}',       'destroy')->name('admin.payment-methods.destroy');
+
+            Route::get('residents/{residentId}/payment-methods', 'residentPaymentMethods')
+                ->name('admin.residents.payment-methods');
+            Route::post('payment-methods/{id}/set-default', 'setDefault')
+                ->name('admin.payment-methods.set-default');
+        });
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Super-admin only
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'admin:super_admin'])
+    ->post('register', [AdminAuthController::class, 'register'])
+    ->name('admin.register');
+
+/*
+|--------------------------------------------------------------------------
+| Resident routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('resident')
+    ->middleware('auth:sanctum')
+    ->group(function () {
+
+        // Profile / auth
+        Route::controller(ResidentAuthController::class)->group(function () {
+            Route::post('logout', 'logout')->name('resident.logout');
+            Route::get('profile', 'profile')->name('resident.profile');
+        });
+
+        // Bills
+        Route::controller(BillController::class)->group(function () {
+            Route::get('bills',      'index')->name('resident.bills.index');
+            Route::get('bills/{id}', 'show')->name('resident.bills.show');
+        });
+
+        // Payments
+        Route::controller(PaymentController::class)->group(function () {
+            Route::post('payments',  'store')->name('resident.payments.store');
+            Route::get('payments',   'index')->name('resident.payments.index');
+            Route::get('payments/{id}', 'show')->name('resident.payments.show');
+        });
+
+        // Payment methods
+        Route::controller(PaymentMethodController::class)->group(function () {
+            Route::get('payment-methods',               'residentPaymentMethods')
+                ->middleware('substitute_auth_id')
+                ->name('resident.payment-methods.index');
+
+            Route::post('payment-methods',              'store')->name('resident.payment-methods.store');
+            Route::get('payment-methods/{id}',          'show')->name('resident.payment-methods.show');
+            Route::match(['put', 'patch'], 'payment-methods/{id}', 'update')
+                ->name('resident.payment-methods.update');
+            Route::delete('payment-methods/{id}',       'destroy')->name('resident.payment-methods.delete');
+            Route::post('payment-methods/{id}/set-default', 'setDefault')
+                ->name('resident.payment-methods.set-default');
+        });
+    });
