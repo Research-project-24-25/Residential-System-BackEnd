@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
         // Create properties 
         Property::factory(100)->create();
 
-        // Create residents (some in houses, some in apartments)
+        // Create residents
         Resident::factory(20)->create();
     }
 }
