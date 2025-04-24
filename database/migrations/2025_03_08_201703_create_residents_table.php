@@ -21,7 +21,6 @@ return new class extends Migration
             $table->string('phone_number');
             $table->integer('age');
             $table->enum('gender', ['male', 'female']);
-            $table->enum('role', ['owner', 'rent'])->default('rent');
             // Track which admin created this resident
             $table->unsignedBigInteger('created_by');
             $table->foreign('created_by')->references('id')->on('admins')->onDelete('cascade');
