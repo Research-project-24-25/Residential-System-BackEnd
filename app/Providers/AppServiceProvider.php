@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Admin;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\File;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,5 +31,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin', function (Admin $admin) {
             return $admin->isAdmin() || $admin->isSuperAdmin();
         });
+
+        // Create property images directory if it doesn't exist
+        $propertyImagesPath = public_path('property-images');
+        if (!File::exists($propertyImagesPath)) {
+            File::makeDirectory($propertyImagesPath, 0755, true);
+        }
     }
 }

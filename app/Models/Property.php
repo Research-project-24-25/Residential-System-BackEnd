@@ -74,6 +74,40 @@ class Property extends Model
         'description',
     ];
 
+    /**
+     * Get full image URLs
+     *
+     * @param mixed $images
+     * @return array
+     */
+    public function getImagesAttribute($images)
+    {
+        if (empty($images)) {
+            return [];
+        }
+
+        $imagesArray = is_string($images) ? json_decode($images, true) : $images;
+
+        if (empty($imagesArray)) {
+            return [];
+        }
+
+        return array_map(function ($image) {
+            return url($image);
+        }, $imagesArray);
+    }
+
+    /**
+     * Set images as JSON
+     *
+     * @param array $images
+     * @return void
+     */
+    public function setImagesAttribute($images)
+    {
+        $this->attributes['images'] = is_array($images) ? json_encode($images) : $images;
+    }
+
     // Relationships
     public function residents()
     {
