@@ -102,8 +102,9 @@ Route::post('resident/login', [ResidentAuthController::class, 'login'])->name('r
 | Admin routes
 |--------------------------------------------------------------------------
 */
+
 Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'admin'])
+    ->middleware(['auth:sanctum', 'admin:admin'])
     ->group(function () {
 
         // Profile / auth
@@ -112,9 +113,8 @@ Route::prefix('admin')
             Route::post('logout',  'logout')->name('admin.logout');
         });
 
-        // Properties (CRUD except list/show)
         Route::apiResource('properties', PropertyController::class)
-            ->except(['index', 'show']);
+            ->except(['show']);
 
         // Residents
         Route::apiResource('residents', ResidentController::class);
