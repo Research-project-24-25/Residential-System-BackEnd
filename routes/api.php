@@ -181,9 +181,8 @@ Route::prefix('admin')
 | Super-admin only
 |--------------------------------------------------------------------------
 */
-Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'admin:super_admin'])
-    ->post('register', [AdminAuthController::class, 'register'])
+Route::middleware(['auth:sanctum', 'admin:super_admin'])
+    ->post('admin/register', [AdminAuthController::class, 'register'])
     ->name('admin.register');
 
 /*

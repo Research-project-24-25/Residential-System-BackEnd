@@ -30,7 +30,7 @@ class PaymentMethodRequest extends FormRequest
             'type' => ['required', 'string', Rule::in(['credit_card', 'debit_card', 'bank_transfer', 'cash', 'check', 'wallet', 'other'])],
             'provider' => ['nullable', 'string', 'max:100'],
             'account_number' => ['nullable', 'string', 'max:255'],
-            'last_four' => ['nullable', 'string', 'size:4', 'numeric'],
+            'last_four' => ['nullable', 'string', 'digits:4'],
             'expiry_date' => ['nullable', 'date', 'after:today'],
             'cardholder_name' => ['nullable', 'string', 'max:255'],
             'is_default' => ['nullable', 'boolean'],
@@ -52,7 +52,7 @@ class PaymentMethodRequest extends FormRequest
         // Extra validations for specific payment types
         if ($this->input('type') === 'credit_card' || $this->input('type') === 'debit_card') {
             $rules['provider'] = ['required', 'string', 'max:100'];
-            $rules['last_four'] = ['required', 'string', 'size:4', 'numeric'];
+            $rules['last_four'] = ['required', 'string', 'digits:4'];
 
             if ($this->isMethod('POST')) { // Only require on creation
                 $rules['account_number'] = ['required', 'string', 'max:255'];
