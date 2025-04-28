@@ -43,58 +43,6 @@ class AuthController extends Controller
             return $this->handleException($e);
         }
     }
-
-    /**
-     * Log in the user only if email is verified.
-     */
-    public function login(Request $request)
-    {
-        try {
-            $credentials = $request->validate([
-                'email' => 'required|email',
-                'password' => 'required|string',
-            ]);
-
-            if (!Auth::attempt($credentials)) {
-                return $this->errorResponse('Invalid login credentials', 401);
-            }
-
-            $user = User::where('email', $credentials['email'])->firstOrFail();
-
-            if (! $user->hasVerifiedEmail()) {
-                return $this->errorResponse('Please verify your email address first.', 403);
-            }
-
-            $token = $user->createToken($user->email)->plainTextToken;
-
-            return $this->successResponse('User logged in successfully', [
-                'user' => $user,
-                'token' => $token,
-            ]);
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
-    /**
-     * Log out the current user.
-     */
-    public function logout(Request $request)
-    {
-        try {
-            $token = $request->user()->currentAccessToken();
-
-            if ($token) {
-                $token->delete();
-                return $this->successResponse('Logged out successfully');
-            }
-
-            return $this->errorResponse('No active token found', 400);
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
     /**
      * Get the currently authenticated user.
      */

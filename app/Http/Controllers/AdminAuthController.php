@@ -47,44 +47,6 @@ class AdminAuthController extends Controller
         }
     }
 
-    public function login(Request $request): JsonResponse
-    {
-        try {
-            $validated = $request->validate([
-                'email' => ['required', 'string', 'email'],
-                'password' => ['required', 'string'],
-            ]);
-
-            $admin = Admin::where('email', $validated['email'])->first();
-
-            if (!$admin || !Hash::check($validated['password'], $admin->password)) {
-                return $this->unauthorizedResponse('Invalid credentials');
-            }
-
-            $token = $admin->createToken('admin-token')->plainTextToken;
-
-            return $this->successResponse(
-                'Logged in successfully',
-                [
-                    'admin' => new AdminResource($admin),
-                    'token' => $token
-                ]
-            );
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
-    public function logout(Request $request): JsonResponse
-    {
-        try {
-            $request->user()->currentAccessToken()->delete();
-            return $this->successResponse('Logged out successfully');
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
     public function profile(Request $request): JsonResponse
     {
         try {

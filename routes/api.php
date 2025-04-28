@@ -15,6 +15,18 @@ use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentMethodController;
+use App\Http\Controllers\AuthController;
+
+/*
+|--------------------------------------------------------------------------
+| Unified Authentication
+|--------------------------------------------------------------------------
+*/
+
+Route::controller(AuthController::class)->group(function () {
+    Route::post('auth/login', 'login')->name('auth.login');
+    Route::middleware('auth:sanctum')->post('auth/logout', 'logout')->name('auth.logout');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -65,11 +77,8 @@ Route::controller(PropertyController::class)
         Route::get('/{id}', 'show')->name('show');
     });
 
-Route::controller(UserAuthController::class)->group(function () {
-    Route::post('register', 'register')->name('user.register');
-    Route::post('login',    'login')->name('user.login');
-    Route::middleware('auth:sanctum')->delete('logout', 'logout')->name('user.logout');
-});
+Route::post('auth/register', [UserAuthController::class, 'register'])
+    ->name('auth.register');
 
 /*
 |--------------------------------------------------------------------------
@@ -91,14 +100,6 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Authentication shortcuts
-|--------------------------------------------------------------------------
-*/
-Route::post('admin/login',    [AdminAuthController::class,    'login'])->name('admin.login');
-Route::post('resident/login', [ResidentAuthController::class, 'login'])->name('resident.login');
-
-/*
-|--------------------------------------------------------------------------
 | Admin routes
 |--------------------------------------------------------------------------
 */
@@ -107,11 +108,9 @@ Route::prefix('admin')
     ->middleware(['auth:sanctum', 'admin:admin'])
     ->group(function () {
 
-        // Profile / auth
-        Route::controller(AdminAuthController::class)->group(function () {
-            Route::get('profile', 'profile')->name('admin.profile');
-            Route::post('logout',  'logout')->name('admin.logout');
-        });
+        // Profile
+        Route::get('profile', [AdminAuthController::class, 'profile'])
+            ->name('admin.profile');
 
         Route::apiResource('properties', PropertyController::class)
             ->except(['show']);
@@ -194,11 +193,9 @@ Route::prefix('resident')
     ->middleware('auth:sanctum')
     ->group(function () {
 
-        // Profile / auth
-        Route::controller(ResidentAuthController::class)->group(function () {
-            Route::post('logout', 'logout')->name('resident.logout');
-            Route::get('profile', 'profile')->name('resident.profile');
-        });
+        // Profile
+        Route::get('profile', [ResidentAuthController::class, 'profile'])
+            ->name('resident.profile');
 
         // Bills
         Route::controller(BillController::class)->group(function () {
