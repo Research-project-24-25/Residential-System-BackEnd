@@ -25,6 +25,51 @@ class Resident extends Authenticatable
         'password' => 'hashed',
     ];
 
+    /**
+     * Define the filterable fields for this model.
+     */
+    protected array $filterableFields = [
+        'username',
+        'first_name',
+        'last_name',
+        'email',
+        'gender',
+        'age',
+        'created_at',
+        'updated_at'
+    ];
+
+    /**
+     * Define the searchable fields for this model.
+     */
+    protected array $searchableFields = [
+        'username',
+        'first_name',
+        'last_name',
+        'email',
+        'phone_number'
+    ];
+
+    /**
+     * Get the full name attribute
+     */
+    public function getNameAttribute(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+    /**
+     * Get profile image URL
+     */
+    public function getProfileImageAttribute($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        return url($value);
+    }
+
     /* Relationships */
     public function properties()
     {

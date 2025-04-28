@@ -32,10 +32,17 @@ class AppServiceProvider extends ServiceProvider
             return $admin->isAdmin() || $admin->isSuperAdmin();
         });
 
-        // Create property images directory if it doesn't exist
-        $propertyImagesPath = public_path('property-images');
-        if (!File::exists($propertyImagesPath)) {
-            File::makeDirectory($propertyImagesPath, 0755, true);
+        // Create required directories if they don't exist
+        $directories = [
+            'property-images',
+            'resident-images'
+        ];
+
+        foreach ($directories as $directory) {
+            $path = public_path($directory);
+            if (!File::exists($path)) {
+                File::makeDirectory($path, 0755, true);
+            }
         }
     }
 }

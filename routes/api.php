@@ -126,7 +126,17 @@ Route::prefix('admin')
             });
 
         // Residents
-        Route::apiResource('residents', ResidentController::class);
+        Route::controller(ResidentController::class)
+            ->prefix('residents')
+            ->name('admin.residents.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{id}', 'show')->name('show');
+                Route::match(['put', 'patch'], '/{id}', 'update')->name('update');
+                Route::delete('/{id}', 'destroy')->name('destroy');
+            });
 
         // Meeting requests
         Route::controller(MeetingRequestController::class)

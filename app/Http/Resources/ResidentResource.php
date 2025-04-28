@@ -19,10 +19,12 @@ class ResidentResource extends JsonResource
             'username' => $this->username,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
+            'name' => $this->name, // Uses the accessor
             'email' => $this->email,
             'phone_number' => $this->phone_number,
             'age' => $this->age,
             'gender' => $this->gender,
+            'profile_image' => $this->profile_image,
             'properties' => $this->whenLoaded('properties', function () {
                 return $this->properties->map(function ($property) {
                     $pivotData = $property->pivot;

@@ -10,13 +10,45 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use App\Services\ResidentPropertyService;
+use Illuminate\Http\UploadedFile;
 use Throwable;
 
 class ResidentController extends Controller
 {
     public function __construct(private ResidentPropertyService $service) {}
 
+    /**
+     * Get all residents with optional pagination
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function index(Request $request): JsonResponse
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+
+            $residents = Resident::query()
+                ->with(['properties'])
+                ->sort($request)
+                ->paginate($perPage);
+
+            return $this->successResponse(
+                'Residents retrieved successfully',
+                ResidentResource::collection($residents)
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Get filtered residents
+     * 
+     * @param ResidentRequest $request
+     * @return JsonResponse
+     */
+    public function filter(ResidentRequest $request): JsonResponse
     {
         try {
             $residents = Resident::query()
@@ -81,6 +113,11 @@ class ResidentController extends Controller
                 'created_by' => $request->user()->id, // Get the authenticated admin's ID
             ];
 
+            // Handle profile image if provided
+            if ($request->hasFile('profile_image')) {
+                $residentData['profile_image'] = $this->handleProfileImage($request->file('profile_image'));
+            }
+
             // Prepare pivot data
             $pivotData = [
                 'relationship_type' => $validated['relationship_type'],
@@ -131,6 +168,16 @@ class ResidentController extends Controller
                 $updateData['password'] = Hash::make($updateData['password']);
             }
 
+            // Handle profile image if provided
+            if ($request->hasFile('profile_image')) {
+                // Remove old profile image if exists
+                if (!empty($resident->profile_image)) {
+                    $this->removeOldProfileImage($resident->profile_image);
+                }
+
+                $updateData['profile_image'] = $this->handleProfileImage($request->file('profile_image'));
+            }
+
             $resident->update($updateData);
 
             // Update property relationship if property_id is provided
@@ -168,11 +215,44 @@ class ResidentController extends Controller
     {
         try {
             $resident = Resident::findOrFail($id);
+
+            // Remove profile image if exists
+            if (!empty($resident->profile_image)) {
+                $this->removeOldProfileImage($resident->profile_image);
+            }
+
             $resident->delete();
 
             return $this->successResponse('Resident deleted successfully');
         } catch (Throwable $e) {
             return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Handle uploading resident profile image
+     * 
+     * @param UploadedFile $image
+     * @return string
+     */
+    private function handleProfileImage($image): string
+    {
+        $filename = time() . '_' . $image->getClientOriginalName();
+        $image->move(public_path('resident-images'), $filename);
+        return 'resident-images/' . $filename;
+    }
+
+    /**
+     * Remove old profile image
+     * 
+     * @param string $imagePath
+     * @return void
+     */
+    private function removeOldProfileImage($imagePath): void
+    {
+        $path = public_path($imagePath);
+        if (file_exists($path)) {
+            unlink($path);
         }
     }
 }
