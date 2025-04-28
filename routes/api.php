@@ -73,7 +73,8 @@ Route::controller(PropertyController::class)
     ->prefix('properties')
     ->name('properties.')
     ->group(function () {
-        Route::post('/', 'index')->name('index'); // listing with filters
+        Route::get('/', 'index')->name('index'); // Simple listing
+        Route::post('/filter', 'filter')->name('filter'); // Listing with filters
         Route::get('/{id}', 'show')->name('show');
     });
 
@@ -112,8 +113,17 @@ Route::prefix('admin')
         Route::get('profile', [AdminAuthController::class, 'profile'])
             ->name('admin.profile');
 
-        Route::apiResource('properties', PropertyController::class)
-            ->except(['show']);
+        Route::controller(PropertyController::class)
+            ->prefix('properties')
+            ->name('admin.properties.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{id}', 'show')->name('show');
+                Route::match(['put', 'patch'], '/{id}', 'update')->name('update');
+                Route::delete('/{id}', 'destroy')->name('destroy');
+            });
 
         // Residents
         Route::apiResource('residents', ResidentController::class);

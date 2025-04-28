@@ -6,18 +6,26 @@ use App\Http\Requests\PropertyRequest;
 use App\Http\Resources\PropertyResource;
 use App\Models\Property;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Throwable;
 
 class PropertyController extends Controller
 {
-  public function index(PropertyRequest $request): ResourceCollection|JsonResponse
+  /**
+   * Get all properties with optional pagination
+   * 
+   * @param Request $request
+   * @return ResourceCollection|JsonResponse
+   */
+  public function index(Request $request): ResourceCollection|JsonResponse
   {
     try {
+      $perPage = $request->get('per_page', 10);
+
       $properties = Property::query()
-        ->filter($request)
         ->sort($request)
-        ->paginate($request->get('per_page', 10));
+        ->paginate($perPage);
 
       return PropertyResource::collection($properties);
     } catch (Throwable $e) {
@@ -25,6 +33,34 @@ class PropertyController extends Controller
     }
   }
 
+  /**
+   * Get filtered properties
+   * 
+   * @param PropertyRequest $request
+   * @return ResourceCollection|JsonResponse
+   */
+  public function filter(PropertyRequest $request): ResourceCollection|JsonResponse
+  {
+    try {
+      $perPage = $request->get('per_page', 10);
+
+      $properties = Property::query()
+        ->filter($request)
+        ->sort($request)
+        ->paginate($perPage);
+
+      return PropertyResource::collection($properties);
+    } catch (Throwable $e) {
+      return $this->handleException($e);
+    }
+  }
+
+  /**
+   * Get a single property
+   * 
+   * @param int $id
+   * @return JsonResponse
+   */
   public function show($id): JsonResponse
   {
     try {
@@ -43,10 +79,24 @@ class PropertyController extends Controller
     }
   }
 
+  /**
+   * Create a new property
+   * 
+   * @param PropertyRequest $request
+   * @return JsonResponse
+   */
   public function store(PropertyRequest $request): JsonResponse
   {
     try {
-      $property = Property::create($request->validated());
+      $validated = $request->validated();
+
+      // Handle image uploads
+      if ($request->hasFile('images')) {
+        $images = $this->handleImageUploads($request->file('images'));
+        $validated['images'] = $images;
+      }
+
+      $property = Property::create($validated);
 
       return $this->createdResponse(
         'Property created successfully',
@@ -57,6 +107,13 @@ class PropertyController extends Controller
     }
   }
 
+  /**
+   * Update an existing property
+   * 
+   * @param PropertyRequest $request
+   * @param int $id
+   * @return JsonResponse
+   */
   public function update(PropertyRequest $request, $id): JsonResponse
   {
     try {
@@ -66,7 +123,20 @@ class PropertyController extends Controller
         return $this->notFoundResponse('Property not found');
       }
 
-      $property->update($request->validated());
+      $validated = $request->validated();
+
+      // Handle image uploads
+      if ($request->hasFile('images')) {
+        // Remove old images if they exist
+        if (!empty($property->images)) {
+          $this->removeOldImages($property->images);
+        }
+
+        $images = $this->handleImageUploads($request->file('images'));
+        $validated['images'] = $images;
+      }
+
+      $property->update($validated);
 
       return $this->successResponse(
         'Property updated successfully',
@@ -77,6 +147,12 @@ class PropertyController extends Controller
     }
   }
 
+  /**
+   * Delete a property
+   * 
+   * @param int $id
+   * @return JsonResponse
+   */
   public function destroy($id): JsonResponse
   {
     try {
@@ -86,11 +162,52 @@ class PropertyController extends Controller
         return $this->notFoundResponse('Property not found');
       }
 
+      // Remove property images
+      if (!empty($property->images)) {
+        $this->removeOldImages($property->images);
+      }
+
       $property->delete();
 
       return $this->successResponse('Property deleted successfully');
     } catch (Throwable $e) {
       return $this->handleException($e);
+    }
+  }
+
+  /**
+   * Handle uploading property images
+   * 
+   * @param array $images
+   * @return array
+   */
+  private function handleImageUploads($images): array
+  {
+    $uploadedImages = [];
+
+    foreach ($images as $image) {
+      $filename = time() . '_' . $image->getClientOriginalName();
+      // Store in public directory instead of storage
+      $image->move(public_path('property-images'), $filename);
+      $uploadedImages[] = 'property-images/' . $filename;
+    }
+
+    return $uploadedImages;
+  }
+
+  /**
+   * Remove old property images
+   * 
+   * @param array $images
+   * @return void
+   */
+  private function removeOldImages($images): void
+  {
+    foreach ($images as $image) {
+      $path = public_path($image);
+      if (file_exists($path)) {
+        unlink($path);
+      }
     }
   }
 }

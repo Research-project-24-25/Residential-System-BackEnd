@@ -26,7 +26,7 @@ class PropertyRequest extends FormRequest
         $action = $this->route() ? $this->route()->getActionMethod() : null;
 
         // Rules for filtering properties
-        if ($action === 'index' || $this->has('filters')) {
+        if ($action === 'filter') {
             return $this->getFilterRules();
         }
 
@@ -44,7 +44,7 @@ class PropertyRequest extends FormRequest
 
             // Support for single value or array of values
             'filters.type' => 'sometimes',
-            'filters.type.*' => 'string|in:apartment,house,villa',
+            'filters.type.*' => 'string|in:apartment,house,villa,studio',
 
             'filters.status' => 'sometimes',
             'filters.status.*' => 'string|in:available_now,under_construction,sold,rented',
@@ -92,6 +92,9 @@ class PropertyRequest extends FormRequest
             'sort' => 'sometimes|array',
             'sort.field' => 'sometimes|string',
             'sort.direction' => 'sometimes|string|in:asc,desc',
+
+            // Pagination
+            'per_page' => 'sometimes|integer|min:1|max:100',
         ];
     }
 
@@ -105,7 +108,7 @@ class PropertyRequest extends FormRequest
 
         $rules = [
             'label' => [$required, 'string', 'max:255'],
-            'type' => [$required, 'string', 'in:apartment,house,villa'],
+            'type' => [$required, 'string', 'in:apartment,house,villa,studio'],
             'price' => [$required, 'numeric', 'min:0'],
             'currency' => 'sometimes|string|max:3',
             'status' => 'sometimes|string|in:available_now,under_construction,sold,rented',
@@ -114,11 +117,18 @@ class PropertyRequest extends FormRequest
             'bedrooms' => 'sometimes|integer|min:0',
             'bathrooms' => 'sometimes|integer|min:0',
             'area' => 'sometimes|integer|min:0',
-            'images' => 'sometimes|nullable|array',
-            'images.*' => 'sometimes|string|url',
             'features' => 'sometimes|nullable|array',
             'features.*' => 'sometimes|string',
         ];
+
+        // Image upload validation
+        if ($isUpdate) {
+            $rules['images'] = 'sometimes|nullable|array';
+            $rules['images.*'] = 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048';
+        } else {
+            $rules['images'] = 'sometimes|nullable|array';
+            $rules['images.*'] = 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048';
+        }
 
         // Add unique rule for label on create or when changing label on update
         if (!$isUpdate) {
