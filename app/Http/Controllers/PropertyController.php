@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Throwable;
+use Illuminate\Support\Facades\Log;
 
 class PropertyController extends Controller
 {
@@ -26,6 +27,10 @@ class PropertyController extends Controller
       $properties = Property::query()
         ->sort($request)
         ->paginate($perPage);
+
+
+      Log::info($request);
+
 
       return PropertyResource::collection($properties);
     } catch (Throwable $e) {

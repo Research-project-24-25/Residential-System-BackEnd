@@ -6,6 +6,7 @@ use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 
 class Property extends Model
 {
@@ -88,13 +89,11 @@ class Property extends Model
 
         $imagesArray = is_string($images) ? json_decode($images, true) : $images;
 
-        if (empty($imagesArray)) {
+        if (!is_array($imagesArray)) {
             return [];
         }
 
-        return array_map(function ($image) {
-            return url($image);
-        }, $imagesArray);
+        return array_map(fn($image) => url($image), $imagesArray);
     }
 
     /**
