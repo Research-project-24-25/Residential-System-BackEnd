@@ -102,7 +102,7 @@ class ResidentRequest extends FormRequest
                 'phone_number' => ['sometimes', 'string'],
                 'age' => ['sometimes', 'integer', 'min:0'],
                 'gender' => ['sometimes', 'in:male,female'],
-                'profile_image' => ['sometimes', 'nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+                'profile_image' => ['sometimes', 'nullable'],
 
                 'property_id' => ['sometimes', 'integer', 'exists:properties,id'],
                 'relationship_type' => ['sometimes', 'in:buyer,co_buyer,renter'],

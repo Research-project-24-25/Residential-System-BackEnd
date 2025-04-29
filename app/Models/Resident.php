@@ -70,6 +70,17 @@ class Resident extends Authenticatable
         return url($value);
     }
 
+    /**
+     * Set profile image attribute
+     * 
+     * @param mixed $value
+     * @return void
+     */
+    public function setProfileImageAttribute($value)
+    {
+        $this->attributes['profile_image'] = $value;
+    }
+
     /* Relationships */
     public function properties()
     {

@@ -6,7 +6,6 @@ use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Log;
 
 class Property extends Model
 {
@@ -99,11 +98,16 @@ class Property extends Model
     /**
      * Set images as JSON
      *
-     * @param array $images
+     * @param mixed $images
      * @return void
      */
     public function setImagesAttribute($images)
     {
+        if (is_null($images)) {
+            $this->attributes['images'] = json_encode([]);
+            return;
+        }
+
         $this->attributes['images'] = is_array($images) ? json_encode($images) : $images;
     }
 

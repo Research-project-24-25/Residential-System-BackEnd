@@ -119,22 +119,23 @@ class PropertyRequest extends FormRequest
             'area' => 'sometimes|integer|min:0',
             'features' => 'sometimes|nullable|array',
             'features.*' => 'sometimes|string',
+            'images' => 'sometimes|nullable',
         ];
 
         // Image upload validation
         if ($isUpdate) {
-            $rules['images'] = 'sometimes|nullable|array';
-            $rules['images.*'] = 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048';
+            // For updates, allow an array of files or null to remove images
+            $rules['images[]'] = 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048';
         } else {
-            $rules['images'] = 'sometimes|nullable|array';
-            $rules['images.*'] = 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048';
+            // For creation, allow an array of files
+            $rules['images[]'] = 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048';
         }
 
         // Add unique rule for label on create or when changing label on update
         if (!$isUpdate) {
             $rules['label'][] = 'unique:properties,label';
         } else {
-            $rules['label'][] = Rule::unique('properties', 'label')->ignore($this->route('property'));
+            $rules['label'][] = Rule::unique('properties', 'label')->ignore($this->route('id'));
         }
 
         return $rules;

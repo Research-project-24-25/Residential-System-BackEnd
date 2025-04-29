@@ -28,10 +28,6 @@ class PropertyController extends Controller
         ->sort($request)
         ->paginate($perPage);
 
-
-      Log::info($request);
-
-
       return PropertyResource::collection($properties);
     } catch (Throwable $e) {
       return $this->handleException($e);
@@ -99,6 +95,9 @@ class PropertyController extends Controller
       if ($request->hasFile('images')) {
         $images = $this->handleImageUploads($request->file('images'));
         $validated['images'] = $images;
+      } else {
+        // Initialize with empty array if no images are provided
+        $validated['images'] = [];
       }
 
       $property = Property::create($validated);
@@ -133,12 +132,21 @@ class PropertyController extends Controller
       // Handle image uploads
       if ($request->hasFile('images')) {
         // Remove old images if they exist
-        if (!empty($property->images)) {
-          $this->removeOldImages($property->images);
+        if (!empty($property->getRawOriginal('images'))) {
+          $this->removeOldImages(json_decode($property->getRawOriginal('images'), true) ?? []);
         }
 
         $images = $this->handleImageUploads($request->file('images'));
         $validated['images'] = $images;
+      } elseif (isset($validated['images']) && $validated['images'] === null) {
+        // If images is explicitly set to null, remove existing images
+        if (!empty($property->getRawOriginal('images'))) {
+          $this->removeOldImages(json_decode($property->getRawOriginal('images'), true) ?? []);
+        }
+        $validated['images'] = [];
+      } elseif (!isset($validated['images'])) {
+        // If images field is not present in the request, don't update it
+        unset($validated['images']);
       }
 
       $property->update($validated);
@@ -168,8 +176,8 @@ class PropertyController extends Controller
       }
 
       // Remove property images
-      if (!empty($property->images)) {
-        $this->removeOldImages($property->images);
+      if (!empty($property->getRawOriginal('images'))) {
+        $this->removeOldImages(json_decode($property->getRawOriginal('images'), true) ?? []);
       }
 
       $property->delete();
@@ -208,6 +216,10 @@ class PropertyController extends Controller
    */
   private function removeOldImages($images): void
   {
+    if (!is_array($images)) {
+      return;
+    }
+
     foreach ($images as $image) {
       $path = public_path($image);
       if (file_exists($path)) {

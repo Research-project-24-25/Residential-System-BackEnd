@@ -116,6 +116,8 @@ class ResidentController extends Controller
             // Handle profile image if provided
             if ($request->hasFile('profile_image')) {
                 $residentData['profile_image'] = $this->handleProfileImage($request->file('profile_image'));
+            } else {
+                $residentData['profile_image'] = null;
             }
 
             // Prepare pivot data
@@ -171,11 +173,17 @@ class ResidentController extends Controller
             // Handle profile image if provided
             if ($request->hasFile('profile_image')) {
                 // Remove old profile image if exists
-                if (!empty($resident->profile_image)) {
-                    $this->removeOldProfileImage($resident->profile_image);
+                if ($resident->getRawOriginal('profile_image')) {
+                    $this->removeOldProfileImage($resident->getRawOriginal('profile_image'));
                 }
 
                 $updateData['profile_image'] = $this->handleProfileImage($request->file('profile_image'));
+            } elseif (isset($updateData['profile_image']) && $updateData['profile_image'] === null) {
+                // If profile_image is explicitly set to null, remove existing image
+                if ($resident->getRawOriginal('profile_image')) {
+                    $this->removeOldProfileImage($resident->getRawOriginal('profile_image'));
+                }
+                $updateData['profile_image'] = null;
             }
 
             $resident->update($updateData);
@@ -217,8 +225,8 @@ class ResidentController extends Controller
             $resident = Resident::findOrFail($id);
 
             // Remove profile image if exists
-            if (!empty($resident->profile_image)) {
-                $this->removeOldProfileImage($resident->profile_image);
+            if ($resident->getRawOriginal('profile_image')) {
+                $this->removeOldProfileImage($resident->getRawOriginal('profile_image'));
             }
 
             $resident->delete();
@@ -235,7 +243,7 @@ class ResidentController extends Controller
      * @param UploadedFile $image
      * @return string
      */
-    private function handleProfileImage($image): string
+    private function handleProfileImage(UploadedFile $image): string
     {
         $filename = time() . '_' . $image->getClientOriginalName();
         $image->move(public_path('resident-images'), $filename);
@@ -245,11 +253,15 @@ class ResidentController extends Controller
     /**
      * Remove old profile image
      * 
-     * @param string $imagePath
+     * @param string|null $imagePath
      * @return void
      */
-    private function removeOldProfileImage($imagePath): void
+    private function removeOldProfileImage(?string $imagePath): void
     {
+        if (empty($imagePath)) {
+            return;
+        }
+
         $path = public_path($imagePath);
         if (file_exists($path)) {
             unlink($path);
