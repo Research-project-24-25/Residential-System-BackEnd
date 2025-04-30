@@ -43,6 +43,10 @@ class NewMeetingRequest extends Notification implements ShouldQueue
             ->line("A new meeting request has been submitted by {$user->name} for property {$property->label}.")
             ->line("Requested Date: " . $this->meetingRequest->requested_date->format('F j, Y \a\t g:i A'))
             ->line("Purpose: " . $this->meetingRequest->purpose)
+            ->when($this->meetingRequest->notes, function ($mail) {
+                return $mail->line("Notes: " . $this->meetingRequest->notes);
+            })
+            ->line("ID Document: " . ($this->meetingRequest->id_document ? "Uploaded" : "Not Provided"))
             ->action('View Request', url("/admin/meeting-requests/{$this->meetingRequest->id}"))
             ->line('Please review this request at your earliest convenience.');
     }
@@ -64,6 +68,7 @@ class NewMeetingRequest extends Notification implements ShouldQueue
             'user_id' => $user->id,
             'user_name' => $user->name,
             'requested_date' => $this->meetingRequest->requested_date->format('Y-m-d H:i:s'),
+            'purpose' => $this->meetingRequest->purpose,
             'type' => 'new_meeting_request',
             'message' => "New meeting request from {$user->name} for property {$property->label}",
         ];

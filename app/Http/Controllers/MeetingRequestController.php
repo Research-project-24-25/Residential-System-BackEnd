@@ -7,11 +7,13 @@ use App\Http\Requests\MeetingRequestUpdateRequest;
 use App\Http\Resources\MeetingRequestResource;
 use App\Models\MeetingRequest;
 use App\Models\Property;
+use App\Models\Admin;
 use App\Notifications\MeetingRequestStatusChanged;
 use App\Notifications\NewMeetingRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class MeetingRequestController extends Controller
@@ -55,12 +57,9 @@ class MeetingRequestController extends Controller
             $user = $request->user();
             $property = Property::findorFail($request->property_id);
 
-            if (!$property) {
-                return $this->notFoundResponse('Property not found');
-            }
-
             $data = $request->validated();
             $data['user_id'] = $user->id;
+            $data['status'] = 'pending';
 
             // Handle ID document upload
             if ($request->hasFile('id_document')) {
@@ -94,10 +93,6 @@ class MeetingRequestController extends Controller
             $user = $request->user();
             $meetingRequest = MeetingRequest::findorFail($id);
 
-            if (!$meetingRequest) {
-                return $this->notFoundResponse('Meeting request not found');
-            }
-
             // Check if user is authorized to view this meeting request
             if (!$user->tokenCan('admin') && !$user->tokenCan('super_admin') && $meetingRequest->user_id !== $user->id) {
                 return $this->forbiddenResponse('You are not authorized to view this meeting request');
@@ -128,10 +123,6 @@ class MeetingRequestController extends Controller
             $admin = $request->user();
             $meetingRequest = MeetingRequest::findorFail($id);
 
-            if (!$meetingRequest) {
-                return $this->notFoundResponse('Meeting request not found');
-            }
-
             $data = $request->validated();
 
             // Set admin who processed this request
@@ -140,15 +131,16 @@ class MeetingRequestController extends Controller
             // Previous status to check if status has changed
             $previousStatus = $meetingRequest->status;
 
-            if ($data['status'] === 'approved') {
-                $data['approved_date'] = now();
+            // Set approved_date if status is being changed to approved
+            if (isset($data['status']) && $data['status'] === 'approved' && $previousStatus !== 'approved') {
+                $data['approved_date'] = $data['approved_date'] ?? now();
             }
 
             $meetingRequest->update($data);
             $meetingRequest->load(['property', 'user', 'admin']);
 
             // Notify user if status has changed
-            if ($previousStatus !== $meetingRequest->status) {
+            if (isset($data['status']) && $previousStatus !== $data['status']) {
                 $meetingRequest->user->notify(new MeetingRequestStatusChanged($meetingRequest));
             }
 
@@ -169,10 +161,6 @@ class MeetingRequestController extends Controller
         try {
             $user = $request->user();
             $meetingRequest = MeetingRequest::findorFail($id);
-
-            if (!$meetingRequest) {
-                return $this->notFoundResponse('Meeting request not found');
-            }
 
             // Check if user is authorized to cancel this meeting request
             if ($meetingRequest->user_id !== $user->id) {
@@ -199,13 +187,17 @@ class MeetingRequestController extends Controller
         }
     }
 
+    /**
+     * Delete a meeting request (Admin only).
+     */
     public function destroy($id): JsonResponse
     {
         try {
             $meetingRequest = MeetingRequest::findOrFail($id);
 
-            if (!$meetingRequest) {
-                return $this->notFoundResponse('Meeting request not found');
+            // Delete ID document if exists
+            if ($meetingRequest->id_document) {
+                Storage::disk('public')->delete($meetingRequest->id_document);
             }
 
             $meetingRequest->delete();
@@ -245,7 +237,7 @@ class MeetingRequestController extends Controller
     private function notifyAdmins(MeetingRequest $meetingRequest): void
     {
         // Get all admins
-        $admins = \App\Models\Admin::all();
+        $admins = Admin::all();
 
         // Notify each admin
         foreach ($admins as $admin) {

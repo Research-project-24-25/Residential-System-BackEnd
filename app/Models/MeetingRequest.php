@@ -48,6 +48,8 @@ class MeetingRequest extends Model
         'status',
         'requested_date',
         'approved_date',
+        'property_id',  // Add property_id as filterable
+        'user_id',      // Add user_id as filterable
         'created_at',
         'updated_at'
     ];

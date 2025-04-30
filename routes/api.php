@@ -138,7 +138,7 @@ Route::prefix('admin')
                 Route::delete('/{id}', 'destroy')->name('destroy');
             });
 
-        // Meeting requests
+        // Meeting requests management
         Route::controller(MeetingRequestController::class)
             ->prefix('meeting-requests')
             ->name('admin.meeting-requests.')

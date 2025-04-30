@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\MeetingRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -49,6 +48,10 @@ class MeetingRequestStatusChanged extends Notification implements ShouldQueue
                 ->line("Please arrive on time for your scheduled appointment.");
         } elseif ($status === 'rejected') {
             $mail->line("We're sorry we couldn't accommodate your meeting request at this time.");
+        } elseif ($status === 'completed') {
+            $mail->line("Thank you for attending the meeting. We hope it was informative.");
+        } elseif ($status === 'cancelled') {
+            $mail->line("Your meeting request has been cancelled as requested.");
         }
 
         // Add admin notes if available
@@ -78,6 +81,8 @@ class MeetingRequestStatusChanged extends Notification implements ShouldQueue
             'status' => $this->meetingRequest->status,
             'type' => 'meeting_request_status_changed',
             'message' => "Your meeting request for property {$property->label} has been {$this->meetingRequest->status}",
+            'approved_date' => $this->meetingRequest->approved_date ? $this->meetingRequest->approved_date->format('Y-m-d H:i:s') : null,
+            'admin_notes' => $this->meetingRequest->admin_notes,
         ];
     }
 }

@@ -24,6 +24,13 @@ return new class extends Migration
             $table->foreignId('admin_id')->nullable()->constrained()->onDelete('set null'); // Admin who handled the request
             $table->text('admin_notes')->nullable(); // Notes from admin
             $table->timestamps();
+
+            // Indexes for performance
+            $table->index('user_id');
+            $table->index('property_id');
+            $table->index('status');
+            $table->index('requested_date');
+            $table->index('approved_date');
         });
     }
 
