@@ -24,22 +24,49 @@ class MeetingRequestController extends Controller
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
-            $user = $request->user();
+            $perPage = $request->get('per_page', 10);
             $query = MeetingRequest::query();
 
-            // If admin, show all requests
-            if ($user->tokenCan('admin') || $user->tokenCan('super_admin')) {
+            if ($request->user()->tokenCan('admin') || $request->user()->tokenCan('super_admin')) {
+                $requests = $query->with(['property', 'user', 'admin'])
+                    ->sort($request)
+                    ->paginate($perPage);
+            } else {
+                $requests = $query->where('user_id', $request->user()->id)
+                    ->with('property')
+                    ->sort($request)
+                    ->paginate($perPage);
+            }
+
+            return MeetingRequestResource::collection($requests);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Get filtered meeting requests
+     * 
+     * @param Request $request
+     * @return ResourceCollection|JsonResponse
+     */
+    public function filter(Request $request): ResourceCollection|JsonResponse
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+            $query = MeetingRequest::query();
+
+            if ($request->user()->tokenCan('admin') || $request->user()->tokenCan('super_admin')) {
                 $requests = $query->with(['property', 'user', 'admin'])
                     ->filter($request)
                     ->sort($request)
-                    ->paginate($request->get('per_page', 10));
+                    ->paginate($perPage);
             } else {
-                // Regular user only sees their own requests
-                $requests = $query->where('user_id', $user->id)
+                $requests = $query->where('user_id', $request->user()->id)
                     ->with('property')
                     ->filter($request)
                     ->sort($request)
-                    ->paginate($request->get('per_page', 10));
+                    ->paginate($perPage);
             }
 
             return MeetingRequestResource::collection($requests);

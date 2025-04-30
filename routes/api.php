@@ -92,6 +92,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         ->name('meeting-requests.')
         ->group(function () {
             Route::get('/',           'index')->name('index');
+            Route::post('/filter',    'filter')->name('filter');
             Route::post('/',          'store')->name('store');
             Route::get('/upcoming',   'upcoming')->name('upcoming');
             Route::get('/{id}',       'show')->name('show');
@@ -144,6 +145,7 @@ Route::prefix('admin')
             ->name('admin.meeting-requests.')
             ->group(function () {
                 Route::get('/',       'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
                 Route::get('/{id}',   'show')->name('show');
                 Route::patch('/{id}', 'update')->name('update');
                 Route::delete('/{id}', 'destroy')->name('destroy');
