@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class MeetingRequestResource extends JsonResource
 {
@@ -28,11 +27,11 @@ class MeetingRequestResource extends JsonResource
         ];
 
         // Include admin data if user is an admin
-        if ($request->user() && ($request->user()->tokenCan('admin') || $request->user()->tokenCan('super_admin'))) {
+        if ($request->user()->getTable() === 'admins') {
             $data['user'] = new UserResource($this->whenLoaded('user'));
             $data['admin_notes'] = $this->admin_notes;
             $data['admin'] = new AdminResource($this->whenLoaded('admin'));
-            $data['id_document'] = $this->id_document ? Storage::url($this->id_document) : null;
+            $data['id_document'] = $this->id_document ? asset('meeting-documents/' . basename($this->id_document)) : null;
         }
 
         return $data;

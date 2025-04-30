@@ -27,7 +27,7 @@ class MeetingRequestController extends Controller
             $perPage = $request->get('per_page', 10);
             $query = MeetingRequest::query();
 
-            if ($request->user()->tokenCan('admin') || $request->user()->tokenCan('super_admin')) {
+            if ($request->user()->getTable() === 'admins') {
                 $requests = $query->with(['property', 'user', 'admin'])
                     ->sort($request)
                     ->paginate($perPage);
@@ -56,7 +56,7 @@ class MeetingRequestController extends Controller
             $perPage = $request->get('per_page', 10);
             $query = MeetingRequest::query();
 
-            if ($request->user()->tokenCan('admin') || $request->user()->tokenCan('super_admin')) {
+            if ($request->user()->getTable() === 'admins') {
                 $requests = $query->with(['property', 'user', 'admin'])
                     ->filter($request)
                     ->sort($request)
@@ -90,8 +90,10 @@ class MeetingRequestController extends Controller
 
             // Handle ID document upload
             if ($request->hasFile('id_document')) {
-                $path = $request->file('id_document')->store('id_documents', 'public');
-                $data['id_document'] = $path;
+                $image = $request->file('id_document');
+                $filename = time() . '_' . $image->getClientOriginalName();
+                $image->move(public_path('meeting-documents'), $filename);
+                $data['id_document'] = 'meeting-documents/' . $filename;
             }
 
             $meetingRequest = MeetingRequest::create($data);
@@ -121,12 +123,12 @@ class MeetingRequestController extends Controller
             $meetingRequest = MeetingRequest::findorFail($id);
 
             // Check if user is authorized to view this meeting request
-            if (!$user->tokenCan('admin') && !$user->tokenCan('super_admin') && $meetingRequest->user_id !== $user->id) {
+            if ($user->getTable() !== 'admins' && $meetingRequest->user_id !== $user->id) {
                 return $this->forbiddenResponse('You are not authorized to view this meeting request');
             }
 
             // Load appropriate relationships based on user role
-            if ($user->tokenCan('admin') || $user->tokenCan('super_admin')) {
+            if ($user->getTable() === 'admins') {
                 $meetingRequest->load(['property', 'user', 'admin']);
             } else {
                 $meetingRequest->load('property');
