@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\NotificationController;
 use App\Models\User;
 
 // Controllers
@@ -97,6 +98,18 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
             Route::get('/upcoming',   'upcoming')->name('upcoming');
             Route::get('/{id}',       'show')->name('show');
             Route::patch('/{id}/cancel', 'cancel')->name('cancel');
+        });
+
+    Route::controller(NotificationController::class)
+        ->prefix('notifications')
+        ->name('notifications.')
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/unread', 'unread')->name('unread');
+            Route::get('/count', 'count')->name('count');
+            Route::post('/{id}/read', 'markAsRead')->name('mark-read');
+            Route::post('/read-all', 'markAllAsRead')->name('mark-all-read');
+            Route::delete('/{id}', 'destroy')->name('destroy');
         });
 });
 

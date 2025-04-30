@@ -170,6 +170,15 @@ class MeetingRequestController extends Controller
 
             // Notify user if status has changed
             if (isset($data['status']) && $previousStatus !== $data['status']) {
+                // Make sure user and property are loaded
+                if (!$meetingRequest->relationLoaded('user')) {
+                    $meetingRequest->load('user');
+                }
+
+                if (!$meetingRequest->relationLoaded('property')) {
+                    $meetingRequest->load('property');
+                }
+
                 $meetingRequest->user->notify(new MeetingRequestStatusChanged($meetingRequest));
             }
 
@@ -206,6 +215,12 @@ class MeetingRequestController extends Controller
             ]);
 
             $meetingRequest->load('property');
+
+            // Notify admins about cancellation
+            $admins = Admin::all();
+            foreach ($admins as $admin) {
+                $admin->notify(new MeetingRequestStatusChanged($meetingRequest));
+            }
 
             return $this->successResponse(
                 'Meeting request cancelled successfully',

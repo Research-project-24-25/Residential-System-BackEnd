@@ -31,4 +31,12 @@ class Admin extends Authenticatable
     {
         return $this->role === 'admin';
     }
+
+    /**
+     * Get the unread notifications for the admin.
+     */
+    public function unreadNotifications()
+    {
+        return $this->notifications()->whereNull('read_at');
+    }
 }
