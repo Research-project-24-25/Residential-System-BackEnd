@@ -6,6 +6,14 @@ use Illuminate\Database\Seeder;
 use App\Models\Admin;
 use App\Models\Resident;
 use App\Models\Property;
+use App\Models\PropertyResident;
+use App\Models\User;
+use App\Models\Service;
+use App\Models\ServiceRequest;
+use App\Models\PaymentMethod;
+use App\Models\Bill;
+use App\Models\Payment;
+use App\Models\MeetingRequest;
 
 class DatabaseSeeder extends Seeder
 {
@@ -33,10 +41,73 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin'
         ]);
 
-        // Create properties 
-        Property::factory(100)->create();
+        // Create test user
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'user@example.com',
+        ]);
 
-        // Create residents
-        Resident::factory(20)->create();
+        // Create regular users
+        User::factory(15)->create();
+
+        // Create properties 
+        $properties = Property::factory(50)->create();
+
+        // Create test resident
+        $resident = Resident::factory()->create([
+            'username' => 'resident',
+            'email' => 'resident@example.com',
+            'password' => bcrypt('password'),
+            'created_by' => Admin::first()->id,
+        ]);
+
+        // Create regular residents
+        $residents = Resident::factory(25)->create();
+
+        // Create property-resident relationships
+        foreach ($residents as $resident) {
+            PropertyResident::factory()
+                ->count(rand(1, 2))
+                ->create(['resident_id' => $resident->id]);
+        }
+
+        // Create payment methods
+        foreach ($residents as $resident) {
+            PaymentMethod::factory()
+                ->count(rand(1, 3))
+                ->create(['resident_id' => $resident->id]);
+        }
+
+        // Create services
+        Service::factory(15)->create();
+
+        // Create bills for residents
+        $bills = [];
+        foreach ($residents as $resident) {
+            $bills = array_merge(
+                $bills,
+                Bill::factory()
+                    ->count(rand(1, 5))
+                    ->create(['resident_id' => $resident->id])
+                    ->toArray()
+            );
+        }
+
+        // Create payments for bills
+        foreach ($bills as $bill) {
+            if (rand(0, 1)) { // 50% chance of having a payment
+                Payment::factory()->create([
+                    'bill_id' => $bill['id'],
+                    'resident_id' => $bill['resident_id'],
+                    'payment_method_id' => PaymentMethod::where('resident_id', $bill['resident_id'])->inRandomOrder()->first()->id,
+                ]);
+            }
+        }
+
+        // Create meeting requests
+        MeetingRequest::factory(20)->create();
+
+        // Create service requests
+        ServiceRequest::factory(30)->create();
     }
 }
