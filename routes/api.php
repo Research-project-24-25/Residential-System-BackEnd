@@ -82,6 +82,15 @@ Route::controller(PropertyController::class)
         Route::get('/{id}', 'show')->name('show');
     });
 
+Route::controller(ServiceController::class)
+    ->prefix('services')
+    ->name('services.')
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/filter', 'filter')->name('filter');
+        Route::get('/{id}', 'show')->name('show');
+    });
+
 Route::post('auth/register', [UserAuthController::class, 'register'])
     ->name('auth.register');
 
@@ -312,4 +321,20 @@ Route::prefix('resident')
             Route::post('payment-methods/{id}/set-default', 'setDefault')
                 ->name('resident.payment-methods.set-default');
         });
+
+        // Service Requests
+        Route::controller(ServiceRequestController::class)
+            ->prefix('service-requests')
+            ->name('resident.service-requests.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{id}', 'show')->name('show');
+                Route::match(['put', 'patch'], '/{id}', 'update')->name('update');
+                Route::post('/{id}/cancel', 'cancel')->name('cancel');
+
+                // Get requests for a specific property (that the resident belongs to)
+                Route::get('/properties/{propertyId}', 'propertyServiceRequests')->name('by-property');
+            });
     });
