@@ -27,8 +27,8 @@ class PropertyFactory extends Factory
             'bedrooms' => $this->faker->numberBetween(1, 5),
             'bathrooms' => $this->faker->numberBetween(1, 5),
             'area' => $this->faker->numberBetween(50, 500), // in square meters
-            'images' => json_encode($this->faker->imageUrl(640, 480, 'property')),
-            'features' => json_encode($this->faker->words(5, true)), // array of property features
+            'images' => [$this->faker->imageUrl(640, 480, 'property')], // Provide as array
+            'features' => $this->faker->words(5), // Provide as array
         ];
     }
 }
