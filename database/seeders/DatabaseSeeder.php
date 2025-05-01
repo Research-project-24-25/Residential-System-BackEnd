@@ -66,9 +66,13 @@ class DatabaseSeeder extends Seeder
 
         // Create property-resident relationships
         foreach ($residents as $resident) {
-            PropertyResident::factory()
-                ->count(rand(1, 2))
-                ->create(['resident_id' => $resident->id]);
+            $randomProperties = $properties->random(rand(1, 2));
+            foreach ($randomProperties as $property) {
+                PropertyResident::factory()->create([
+                    'resident_id' => $resident->id,
+                    'property_id' => $property->id
+                ]);
+            }
         }
 
         // Create payment methods
