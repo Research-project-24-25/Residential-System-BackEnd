@@ -18,6 +18,8 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\ServiceRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -175,6 +177,44 @@ Route::prefix('admin')
                 Route::get('/revenue', 'revenue')->name('revenue');
                 Route::get('/properties', 'properties')->name('properties');
                 Route::get('/users', 'users')->name('users');
+                Route::get('/services', 'services')->name('services'); // Add this line
+            });
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Services Management
+    |--------------------------------------------------------------------------
+    */
+        // Services
+        Route::controller(ServiceController::class)
+            ->prefix('services')
+            ->name('admin.services.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{id}', 'show')->name('show');
+                Route::match(['put', 'patch'], '/{id}', 'update')->name('update');
+                Route::delete('/{id}', 'destroy')->name('destroy');
+                Route::post('/{id}/toggle-active', 'toggleActive')->name('toggle-active');
+            });
+
+        // Service Requests
+        Route::controller(ServiceRequestController::class)
+            ->prefix('service-requests')
+            ->name('admin.service-requests.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{id}', 'show')->name('show');
+                Route::match(['put', 'patch'], '/{id}', 'update')->name('update');
+                Route::delete('/{id}', 'destroy')->name('destroy');
+
+                // Property / resident scopes
+                Route::get('/properties/{propertyId}', 'propertyServiceRequests')->name('by-property');
+                Route::get('/residents/{residentId}', 'residentServiceRequests')->name('by-resident');
             });
 
         /*
