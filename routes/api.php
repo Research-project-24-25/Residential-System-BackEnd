@@ -17,6 +17,7 @@ use App\Http\Controllers\BillController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -162,6 +163,18 @@ Route::prefix('admin')
                 Route::get('/{id}',   'show')->name('show');
                 Route::patch('/{id}', 'update')->name('update');
                 Route::delete('/{id}', 'destroy')->name('destroy');
+            });
+
+        // Dashboard routes
+        Route::controller(DashboardController::class)
+            ->prefix('dashboard')
+            ->name('admin.dashboard.')
+            ->group(function () {
+                Route::get('/', 'overview')->name('overview');
+                Route::get('/recent-activity', 'recentActivity')->name('recent-activity');
+                Route::get('/revenue', 'revenue')->name('revenue');
+                Route::get('/properties', 'properties')->name('properties');
+                Route::get('/users', 'users')->name('users');
             });
 
         /*
