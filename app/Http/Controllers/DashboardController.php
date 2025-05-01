@@ -112,4 +112,23 @@ class DashboardController extends Controller
             return $this->handleException($e);
         }
     }
+
+    /**
+     * Get service statistics
+     *
+     * @return JsonResponse
+     */
+    public function services(): JsonResponse
+    {
+        try {
+            $stats = $this->dashboardService->getServiceStats();
+
+            return $this->successResponse(
+                'Service statistics retrieved successfully',
+                $stats
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
 }

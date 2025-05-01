@@ -10,6 +10,8 @@ use App\Models\PaymentMethod;
 use App\Models\Property;
 use App\Models\Resident;
 use App\Models\User;
+use App\Models\Service;
+use App\Models\ServiceRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -53,6 +55,16 @@ class DashboardService
                 'rented' => Property::where('status', 'rented')->count(),
                 'sold' => Property::where('status', 'sold')->count(),
                 'under_construction' => Property::where('status', 'under_construction')->count(),
+            ],
+            'services' => [
+                'total' => Service::count(),
+                'active' => Service::where('is_active', true)->count(),
+                'requests' => [
+                    'total' => ServiceRequest::count(),
+                    'pending' => ServiceRequest::where('status', 'pending')->count(),
+                    'in_progress' => ServiceRequest::whereIn('status', ['approved', 'scheduled', 'in_progress'])->count(),
+                    'completed' => ServiceRequest::where('status', 'completed')->count(),
+                ],
             ],
         ];
     }
@@ -113,6 +125,31 @@ class DashboardService
                             'name' => $meeting->user->name,
                         ] : null,
                         'created_at' => $meeting->created_at,
+                    ];
+                }),
+            'recent_service_requests' => ServiceRequest::with(['service', 'property', 'resident'])
+                ->orderBy('created_at', 'desc')
+                ->limit($limit)
+                ->get()
+                ->map(function ($serviceRequest) {
+                    return [
+                        'id' => $serviceRequest->id,
+                        'status' => $serviceRequest->status,
+                        'requested_date' => $serviceRequest->requested_date,
+                        'service' => $serviceRequest->service ? [
+                            'id' => $serviceRequest->service->id,
+                            'name' => $serviceRequest->service->name,
+                            'type' => $serviceRequest->service->type,
+                        ] : null,
+                        'property' => $serviceRequest->property ? [
+                            'id' => $serviceRequest->property->id,
+                            'label' => $serviceRequest->property->label,
+                        ] : null,
+                        'resident' => $serviceRequest->resident ? [
+                            'id' => $serviceRequest->resident->id,
+                            'name' => $serviceRequest->resident->name,
+                        ] : null,
+                        'created_at' => $serviceRequest->created_at,
                     ];
                 }),
         ];
@@ -215,6 +252,64 @@ class DashboardService
                 'residents' => Resident::whereMonth('created_at', now()->month)->count(),
                 'regular_users' => User::whereMonth('created_at', now()->month)->count(),
             ],
+        ];
+    }
+
+    /**
+     * Get service statistics
+     *
+     * @return array
+     */
+    public function getServiceStats(): array
+    {
+        // Get counts by service type
+        $byType = Service::select('type', DB::raw('count(*) as total'))
+            ->groupBy('type')
+            ->get()
+            ->pluck('total', 'type')
+            ->toArray();
+
+        // Get active vs inactive
+        $activeStatus = [
+            'active' => Service::where('is_active', true)->count(),
+            'inactive' => Service::where('is_active', false)->count(),
+        ];
+
+        // Get service request statistics
+        $requestsByStatus = ServiceRequest::select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->get()
+            ->pluck('total', 'status')
+            ->toArray();
+
+        // Get service requests created this month
+        $requestsThisMonth = ServiceRequest::whereMonth('created_at', now()->month)
+            ->count();
+
+        // Get most requested services
+        $mostRequested = Service::join('service_requests', 'services.id', '=', 'service_requests.service_id')
+            ->select('services.id', 'services.name', DB::raw('count(service_requests.id) as request_count'))
+            ->groupBy('services.id', 'services.name')
+            ->orderBy('request_count', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'request_count' => $item->request_count,
+                ];
+            })
+            ->toArray();
+
+        return [
+            'total_services' => Service::count(),
+            'total_service_requests' => ServiceRequest::count(),
+            'services_by_type' => $byType,
+            'service_status' => $activeStatus,
+            'requests_by_status' => $requestsByStatus,
+            'requests_this_month' => $requestsThisMonth,
+            'most_requested_services' => $mostRequested,
         ];
     }
 
