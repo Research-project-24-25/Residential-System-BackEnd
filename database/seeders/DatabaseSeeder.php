@@ -14,6 +14,7 @@ use App\Models\PaymentMethod;
 use App\Models\Bill;
 use App\Models\Payment;
 use App\Models\MeetingRequest;
+use App\Models\Notification;
 
 class DatabaseSeeder extends Seeder
 {
@@ -113,5 +114,11 @@ class DatabaseSeeder extends Seeder
 
         // Create service requests
         ServiceRequest::factory(30)->create();
+
+        // Create notifications
+        Notification::factory(100)->create([
+            'notifiable_type' => User::class,
+            'notifiable_id' => 1,
+        ]);
     }
 }

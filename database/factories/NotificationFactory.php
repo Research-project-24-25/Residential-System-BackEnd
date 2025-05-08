@@ -30,20 +30,14 @@ class NotificationFactory extends Factory
         $notifiable = $notifiableType::factory()->create(); // Create the related model instance
 
         return [
-            'id' => Str::uuid()->toString(), // Standard Laravel notifications use UUIDs by default, even if DB uses int
             'type' => $this->faker->randomElement([ // Example notification types
                 \App\Notifications\NewMeetingRequest::class,
                 \App\Notifications\MeetingRequestStatusChanged::class,
                 \App\Notifications\ServiceRequestStatusChanged::class,
-                // Add other relevant notification classes here
             ]),
             'notifiable_type' => $notifiableType,
             'notifiable_id' => $notifiable->id,
-            'data' => [ // Example data structure
-                'message' => $this->faker->sentence,
-                'link' => $this->faker->url,
-                'related_id' => $this->faker->randomNumber(),
-            ],
+            'data' => $this->faker->text(200),
             'read_at' => $this->faker->optional(0.3)->dateTimeThisMonth, // 30% chance of being read
         ];
     }

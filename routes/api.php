@@ -108,7 +108,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
             Route::post('/filter',    'filter')->name('filter');
             Route::post('/',          'store')->name('store');
             Route::get('/{id}',       'show')->name('show');
-            Route::patch('/{id}',     'update')->name('update'); 
+            Route::patch('/{id}',     'update')->name('update');
             Route::patch('/{id}/cancel', 'cancel')->name('cancel');
         });
 
@@ -117,8 +117,6 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         ->name('notifications.')
         ->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::get('/unread', 'unread')->name('unread');
-            Route::get('/count', 'count')->name('count');
             Route::post('/{id}/read', 'markAsRead')->name('mark-read');
             Route::post('/read-all', 'markAllAsRead')->name('mark-all-read');
             Route::delete('/{id}', 'destroy')->name('destroy');
