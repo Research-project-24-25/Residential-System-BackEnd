@@ -45,37 +45,6 @@ class MeetingRequestController extends Controller
     }
 
     /**
-     * Get filtered meeting requests
-     * 
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
-    public function filter(Request $request): ResourceCollection|JsonResponse
-    {
-        try {
-            $perPage = $request->get('per_page', 10);
-            $query = MeetingRequest::query();
-
-            if ($request->user()->getTable() === 'admins') {
-                $requests = $query->with(['property', 'user', 'admin'])
-                    ->filter($request)
-                    ->sort($request)
-                    ->paginate($perPage);
-            } else {
-                $requests = $query->where('user_id', $request->user()->id)
-                    ->with('property')
-                    ->filter($request)
-                    ->sort($request)
-                    ->paginate($perPage);
-            }
-
-            return MeetingRequestResource::collection($requests);
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(MeetingRequestStoreRequest $request): JsonResponse
@@ -144,32 +113,45 @@ class MeetingRequestController extends Controller
     }
 
     /**
-     * Update a meeting request (Admin only).
+     * Update a meeting request.
      */
     public function update(MeetingRequestUpdateRequest $request, $id): JsonResponse
     {
         try {
-            $admin = $request->user();
+            $user = $request->user();
             $meetingRequest = MeetingRequest::findorFail($id);
 
             $data = $request->validated();
 
-            // Set admin who processed this request
-            $data['admin_id'] = $admin->id;
+            // Handle admin updates
+            if ($user->getTable() === 'admins') {
+                // Set admin who processed this request
+                $data['admin_id'] = $user->id;
 
-            // Previous status to check if status has changed
-            $previousStatus = $meetingRequest->status;
+                // Previous status to check if status has changed
+                $previousStatus = $meetingRequest->status;
 
-            // Set approved_date if status is being changed to approved
-            if (isset($data['status']) && $data['status'] === 'approved' && $previousStatus !== 'approved') {
-                $data['approved_date'] = $data['approved_date'] ?? now();
+                // Set approved_date if status is being changed to approved
+                if (isset($data['status']) && $data['status'] === 'approved' && $previousStatus !== 'approved') {
+                    $data['approved_date'] = $data['approved_date'] ?? now();
+                }
             }
 
             $meetingRequest->update($data);
-            $meetingRequest->load(['property', 'user', 'admin']);
 
-            // Notify user if status has changed
-            if (isset($data['status']) && $previousStatus !== $data['status']) {
+            // Load relationships based on user type
+            if ($user->getTable() === 'admins') {
+                $meetingRequest->load(['property', 'user', 'admin']);
+            } else {
+                $meetingRequest->load('property');
+            }
+
+            // Notify user if status has changed (by admin)
+            if (
+                isset($data['status']) &&
+                $user->getTable() === 'admins' &&
+                $meetingRequest->getOriginal('status') !== $data['status']
+            ) {
                 // Make sure user and property are loaded
                 if (!$meetingRequest->relationLoaded('user')) {
                     $meetingRequest->load('user');
@@ -186,6 +168,37 @@ class MeetingRequestController extends Controller
                 'Meeting request updated successfully',
                 new MeetingRequestResource($meetingRequest)
             );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Get filtered meeting requests
+     * 
+     * @param Request $request
+     * @return ResourceCollection|JsonResponse
+     */
+    public function filter(Request $request): ResourceCollection|JsonResponse
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+            $query = MeetingRequest::query()
+                ->sort($request)
+                ->filter($request);
+
+            $user = $request->user();
+
+            if ($user->getTable() === 'admins') {
+                $requests = $query->with(['property', 'user', 'admin'])
+                    ->paginate($perPage);
+            } else {
+                $requests = $query->where('user_id', $user->id)
+                    ->with('property')
+                    ->paginate($perPage);
+            }
+
+            return MeetingRequestResource::collection($requests);
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
