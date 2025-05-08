@@ -11,36 +11,36 @@ use Throwable;
 
 class NotificationController extends Controller
 {
-
     /**
-     * Get all notifications for the authenticated user with counts
+     * Get all notifications for the authenticated user
      *
      * @param Request $request
      * @return ResourceCollection|JsonResponse
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
-            $perPage = $request->get('per_page', 10);
             $user = $request->user();
-            $getUnreadOnly = $request->boolean('unread_only', false);
 
-            $query = Notification::where('notifiable_type', get_class($user))
-                ->where('notifiable_id', $user->id);
+            $query = Notification::where('notifiable_id', $user->id)
+                ->where('notifiable_type', get_class($user))
+                ->latest();
 
-            // Apply unread filter if requested
-            if ($getUnreadOnly) {
+            // Filter by unread if the query parameter is present and truthy
+            if ($request->boolean('unread')) {
                 $query->unread();
             }
 
-            // Get paginated notifications
-            $notifications = $query->orderBy('created_at', 'desc')
-                ->paginate($perPage);
+            $notifications = $query->paginate(10);
 
-            return $this->successResponse(
-                'Notifications retrieved successfully',
-                NotificationResource::collection($notifications),
-            );
+            // Always provide the count of unread notifications
+            $unread_count = Notification::where('notifiable_id', $user->id)
+                ->where('notifiable_type', get_class($user))
+                ->unread()
+                ->count();
+
+            return NotificationResource::collection($notifications)
+                ->additional(['meta' => ['unread_count' => $unread_count]]);
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
@@ -119,6 +119,27 @@ class NotificationController extends Controller
             $notification->delete();
 
             return $this->successResponse('Notification deleted successfully');
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Delete all notifications
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function destroyAll(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            Notification::where('notifiable_type', get_class($user))
+                ->where('notifiable_id', $user->id)
+                ->delete();
+
+            return $this->successResponse('All notifications deleted successfully');
         } catch (Throwable $e) {
             return $this->handleException($e);
         }

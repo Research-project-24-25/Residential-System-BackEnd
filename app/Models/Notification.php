@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -17,12 +16,6 @@ class Notification extends Model
      * @var array
      */
     protected $guarded = [];
-
-    protected $appends = [
-        'unread_count',
-        'read_count',
-        'total_count',
-    ];
 
     /**
      * The attributes that should be cast.
@@ -110,49 +103,5 @@ class Notification extends Model
     public function scopeUnread($query)
     {
         return $query->whereNull('read_at');
-    }
-
-    /**
-     * Get the count of unread notifications
-     * 
-     * @return Attribute
-     */
-    public function getUnreadCountAttribute(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => static::whereNull('read_at')
-                ->where('notifiable_type', $this->notifiable_type)
-                ->where('notifiable_id', $this->notifiable_id)
-                ->count()
-        );
-    }
-
-    /**
-     * Get the count of read notifications
-     * 
-     * @return Attribute
-     */
-    public function getReadCountAttribute(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => static::whereNotNull('read_at')
-                ->where('notifiable_type', $this->notifiable_type)
-                ->where('notifiable_id', $this->notifiable_id)
-                ->count()
-        );
-    }
-
-    /**
-     * Get the total count of notifications
-     * 
-     * @return Attribute
-     */
-    public function getTotalCountAttribute(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => static::where('notifiable_type', $this->notifiable_type)
-                ->where('notifiable_id', $this->notifiable_id)
-                ->count()
-        );
     }
 }
