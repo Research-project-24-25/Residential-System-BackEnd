@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'substitute_auth_id' => \App\Http\Middleware\SubstituteAuthId::class,
+            'resident' => \App\Http\Middleware\EnsureUserIsResident::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
