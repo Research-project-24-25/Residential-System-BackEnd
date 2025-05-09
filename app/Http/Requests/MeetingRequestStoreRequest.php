@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+// FormRequest import removed as BaseFormRequest handles it.
 
-class MeetingRequestStoreRequest extends FormRequest
+class MeetingRequestStoreRequest extends BaseFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -12,7 +12,7 @@ class MeetingRequestStoreRequest extends FormRequest
     public function authorize(): bool
     {
         // Only authenticated users can create meeting requests
-        return $this->user() !== null;
+        return $this->isAuthenticated();
     }
 
     /**
@@ -22,13 +22,14 @@ class MeetingRequestStoreRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'property_id' => 'required|exists:properties,id',
-            'requested_date' => 'required|date|after:now', // Must be in the future
-            'purpose' => 'required|string|max:500',
-            'notes' => 'nullable|string|max:1000',
-            'id_document' => 'required|file|mimes:jpeg,png,jpg,pdf|max:5120', // Max 5MB
+        $specificRules = [
+            'property_id' => ['required', 'exists:properties,id'],
+            'requested_date' => ['required', 'date', 'after:now'], // Must be in the future
+            'purpose' => ['required', 'string', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'id_document' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:5120'], // Max 5MB
         ];
+        return array_merge(parent::rules(), $specificRules); // parent::rules() will be empty
     }
 
     /**
@@ -38,7 +39,8 @@ class MeetingRequestStoreRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [
+        $parentMessages = parent::messages(); // parent::messages() will be empty
+        $specificMessages = [
             'property_id.required' => 'Please select a property for the meeting.',
             'property_id.exists' => 'The selected property does not exist.',
             'requested_date.required' => 'Please select a date and time for the meeting.',
@@ -50,5 +52,6 @@ class MeetingRequestStoreRequest extends FormRequest
             'id_document.mimes' => 'The ID document must be a JPEG, PNG, or PDF file.',
             'id_document.max' => 'The ID document may not be larger than 5MB.',
         ];
+        return array_merge($parentMessages, $specificMessages);
     }
 }
