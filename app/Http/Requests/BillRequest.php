@@ -2,10 +2,11 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+// No need to import FormRequest directly if BaseFormRequest handles it
+// use Illuminate\Foundation\Http\FormRequest;
 
-class BillRequest extends FormRequest
+class BillRequest extends BaseFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -13,7 +14,7 @@ class BillRequest extends FormRequest
     public function authorize(): bool
     {
         // Only admins can create/update bills
-        return $this->user()->getTable() === 'admins';
+        return $this->isAdmin();
     }
 
     /**
@@ -23,7 +24,7 @@ class BillRequest extends FormRequest
      */
     public function rules(): array
     {
-        $rules = [
+        $specificRules = [
             'property_id' => ['required', 'exists:properties,id'],
             'resident_id' => ['required', 'exists:residents,id'],
             'bill_type' => ['required', 'string', Rule::in([
@@ -50,12 +51,12 @@ class BillRequest extends FormRequest
         ];
 
         // If we're updating a bill, make resident_id and property_id optional
-        if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
-            $rules['property_id'] = ['nullable', 'exists:properties,id'];
-            $rules['resident_id'] = ['nullable', 'exists:residents,id'];
-            $rules['due_date'] = ['nullable', 'date']; // Allow updating past due dates
+        if ($this->isUpdateRequest()) {
+            $specificRules['property_id'] = ['nullable', 'exists:properties,id'];
+            $specificRules['resident_id'] = ['nullable', 'exists:residents,id'];
+            $specificRules['due_date'] = ['nullable', 'date']; // Allow updating past due dates
         }
 
-        return $rules;
+        return array_merge(parent::rules(), $specificRules);
     }
 }
