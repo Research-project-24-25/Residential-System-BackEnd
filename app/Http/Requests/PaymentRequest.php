@@ -3,10 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Models\Bill;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+// FormRequest is extended by BaseFormRequest
 
-class PaymentRequest extends FormRequest
+class PaymentRequest extends BaseFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -14,7 +14,7 @@ class PaymentRequest extends FormRequest
     public function authorize(): bool
     {
         // Both residents and admins can make payments, with different rules
-        return $this->user() !== null;
+        return $this->isAuthenticated();
     }
 
     /**
@@ -24,12 +24,13 @@ class PaymentRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isAdmin = $this->user()->getTable() === 'admins';
-        $isResident = $this->user()->getTable() === 'residents';
+        $specificRules = [];
+        $isAdmin = $this->isAdmin();
+        $isResident = $this->isResident();
 
         if ($this->isMethod('POST')) {
             // Creating new payment
-            $rules = [
+            $specificRules = [
                 'bill_id' => ['required', 'exists:bills,id'],
                 'payment_method_id' => ['nullable', 'exists:payment_methods,id'],
                 'amount' => ['required', 'numeric', 'min:0.01'],
@@ -40,19 +41,23 @@ class PaymentRequest extends FormRequest
 
             // If it's a resident, they can only pay their own bills
             if ($isResident) {
-                $rules['bill_id'] = [
+                $specificRules['bill_id'] = [
                     'required',
                     Rule::exists('bills', 'id')->where(function ($query) {
-                        $query->where('resident_id', $this->user()->id);
+                        if ($this->user()) {
+                           $query->where('resident_id', $this->user()->id);
+                        }
                     })
                 ];
 
                 // Residents can only use their own payment methods
                 if ($this->filled('payment_method_id')) {
-                    $rules['payment_method_id'] = [
-                        'exists:payment_methods,id',
+                    $specificRules['payment_method_id'] = [
+                        'exists:payment_methods,id', // Basic existence check
                         Rule::exists('payment_methods', 'id')->where(function ($query) {
-                            $query->where('resident_id', $this->user()->id);
+                           if ($this->user()) {
+                               $query->where('resident_id', $this->user()->id);
+                           }
                         })
                     ];
                 }
@@ -60,21 +65,30 @@ class PaymentRequest extends FormRequest
 
             // If admin, allow specifying more fields
             if ($isAdmin) {
-                $rules['status'] = ['nullable', Rule::in(['pending', 'processing', 'completed', 'failed', 'refunded'])];
-                $rules['transaction_id'] = ['nullable', 'string', 'max:255'];
-                $rules['receipt_url'] = ['nullable', 'url', 'max:255'];
-                $rules['payment_date'] = ['nullable', 'date'];
-                $rules['resident_id'] = ['nullable', 'exists:residents,id'];
+                $specificRules['status'] = ['nullable', Rule::in(['pending', 'processing', 'completed', 'failed', 'refunded'])];
+                $specificRules['transaction_id'] = ['nullable', 'string', 'max:255'];
+                $specificRules['receipt_url'] = ['nullable', 'url', 'max:255'];
+                $specificRules['payment_date'] = ['nullable', 'date'];
+                $specificRules['resident_id'] = ['nullable', 'exists:residents,id']; // Admin can specify resident
             }
 
-            return $rules;
-        } else {
+        } else { // Assuming PUT/PATCH for updates
             // Updating existing payment - only admins can update payments
             if (!$isAdmin) {
-                return [];
+                // Non-admins cannot update payments. Return empty or perhaps specific prohibitions.
+                // For now, returning empty means no validation rules apply from this block for non-admins.
+                // Consider if this should be an authorization failure instead.
+                // For safety, let's prohibit fields if a non-admin attempts an update.
+                return [
+                    'status' => ['prohibited'],
+                    'transaction_id' => ['prohibited'],
+                    'receipt_url' => ['prohibited'],
+                    'notes' => ['prohibited'],
+                    'metadata' => ['prohibited'],
+                ];
             }
 
-            return [
+            $specificRules = [
                 'status' => ['required', Rule::in(['pending', 'processing', 'completed', 'failed', 'refunded'])],
                 'transaction_id' => ['nullable', 'string', 'max:255'],
                 'receipt_url' => ['nullable', 'url', 'max:255'],
@@ -82,6 +96,7 @@ class PaymentRequest extends FormRequest
                 'metadata' => ['nullable', 'array'],
             ];
         }
+        return array_merge(parent::rules(), $specificRules); // parent::rules() will be empty
     }
 
     /**
@@ -91,10 +106,14 @@ class PaymentRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [
+        $parentMessages = parent::messages(); // parent::messages() will be empty
+        $specificMessages = [
             'bill_id.exists' => 'The selected bill does not exist or you do not have permission to pay it.',
             'payment_method_id.exists' => 'The selected payment method does not exist or does not belong to you.',
+            'status.prohibited' => 'You are not authorized to update the payment status.',
+            // Add other prohibited messages if needed
         ];
+        return array_merge($parentMessages, $specificMessages);
     }
 
     /**
