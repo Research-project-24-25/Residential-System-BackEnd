@@ -2,18 +2,11 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class ServiceRequest extends FormRequest
+class ServiceRequest extends BaseFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
+    // authorize() method can be removed as parent::authorize() defaults to true.
 
     /**
      * Get the validation rules that apply to the request.
@@ -22,20 +15,15 @@ class ServiceRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isAdmin = $this->user()->getTable() === 'admins';
-        $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH');
+        $parentRules = parent::rules(); // Gets common filter rules if isFilterAction() is true
 
-        // Get the current route name or action to determine the context
-        $action = $this->route() ? $this->route()->getActionMethod() : null;
-
-        // Rules for filtering services
-        if ($action === 'filter') {
-            return $this->getFilterRules();
+        if ($this->isFilterAction()) {
+            return array_merge($parentRules, $this->getSpecificFilterRules());
         }
 
-        // Base rules that apply to both create and update
-        $rules = [
-            'name' => ['required', 'string', 'max:255'],
+        // Entity specific rules for create/update
+        $specificRules = [
+            'name' => ['required', 'string', 'max:255', Rule::unique('services', 'name')->ignore($this->route('service'))],
             'description' => ['nullable', 'string', 'max:1000'],
             'type' => ['required', 'string', Rule::in(['utility', 'security', 'cleaning', 'other'])],
             'base_price' => ['required', 'numeric', 'min:0'],
@@ -47,56 +35,52 @@ class ServiceRequest extends FormRequest
             'metadata' => ['nullable', 'array'],
         ];
 
-        // For updates, make fields optional
-        if ($isUpdate) {
-            $rules['name'] = ['sometimes', 'string', 'max:255'];
-            $rules['type'] = ['sometimes', 'string', Rule::in(['utility', 'security', 'cleaning', 'other'])];
-            $rules['base_price'] = ['sometimes', 'numeric', 'min:0'];
+        if ($this->isUpdateRequest()) {
+            $specificRules['name'] = ['sometimes', 'string', 'max:255', Rule::unique('services', 'name')->ignore($this->route('service'))];
+            $specificRules['type'] = ['sometimes', 'string', Rule::in(['utility', 'security', 'cleaning', 'other'])];
+            $specificRules['base_price'] = ['sometimes', 'numeric', 'min:0'];
+        } else {
+            // For create, ensure name is unique without ignore
+            $specificRules['name'] = ['required', 'string', 'max:255', Rule::unique('services', 'name')];
         }
 
-        return $rules;
+
+        return array_merge($parentRules, $specificRules); // parentRules will be empty if not filter action
     }
 
     /**
-     * Get rules for filtering services
+     * Get specific rules for filtering services.
+     * Common filter rules are handled by BaseFormRequest.
      */
-    private function getFilterRules(): array
+    private function getSpecificFilterRules(): array
     {
         return [
-            'filters' => 'sometimes|array',
-
             // Support for single value or array of values
-            'filters.type' => 'sometimes',
-            'filters.type.*' => 'string|in:utility,security,cleaning,other',
+            'filters.type' => ['sometimes', 'nullable'],
+            'filters.type.*' => ['string', Rule::in(['utility', 'security', 'cleaning', 'other'])],
 
             // Boolean filters
-            'filters.is_recurring' => 'sometimes|boolean',
-            'filters.is_active' => 'sometimes|boolean',
+            'filters.is_recurring' => ['sometimes', 'boolean'],
+            'filters.is_active' => ['sometimes', 'boolean'],
 
             // Range filters
-            'filters.base_price' => 'sometimes|array',
-            'filters.base_price.min' => 'sometimes|numeric|min:0',
-            'filters.base_price.max' => 'sometimes|numeric|gt:filters.base_price.min',
-
-            // Date filters
-            'filters.created_at' => 'sometimes|array',
-            'filters.created_at.from' => 'sometimes|date',
-            'filters.created_at.to' => 'sometimes|date|after_or_equal:filters.created_at.from',
-
-            'filters.updated_at' => 'sometimes|array',
-            'filters.updated_at.from' => 'sometimes|date',
-            'filters.updated_at.to' => 'sometimes|date|after_or_equal:filters.updated_at.from',
-
-            // Search
-            'filters.search' => 'sometimes|string|max:255',
-
-            // Sorting
-            'sort' => 'sometimes|array',
-            'sort.field' => 'sometimes|string',
-            'sort.direction' => 'sometimes|string|in:asc,desc',
-
-            // Pagination
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'filters.base_price' => ['sometimes', 'array'],
+            'filters.base_price.min' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'filters.base_price.max' => ['sometimes', 'nullable', 'numeric', 'min:0', 'gt:filters.base_price.min'],
         ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     */
+    public function messages(): array
+    {
+        $parentMessages = parent::messages();
+        $specificMessages = [
+            'name.unique' => 'A service with this name already exists.',
+            'recurrence.required_if' => 'The recurrence field is required when the service is recurring.',
+            // Add other specific messages if needed
+        ];
+        return array_merge($parentMessages, $specificMessages);
     }
 }
