@@ -37,7 +37,7 @@ class ServiceRequest extends FormRequest
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'type' => ['required', 'string', Rule::in(['maintenance', 'utility', 'security', 'cleaning', 'other'])],
+            'type' => ['required', 'string', Rule::in(['utility', 'security', 'cleaning', 'other'])],
             'base_price' => ['required', 'numeric', 'min:0'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'unit_of_measure' => ['nullable', 'string', 'max:50'],
@@ -50,7 +50,7 @@ class ServiceRequest extends FormRequest
         // For updates, make fields optional
         if ($isUpdate) {
             $rules['name'] = ['sometimes', 'string', 'max:255'];
-            $rules['type'] = ['sometimes', 'string', Rule::in(['maintenance', 'utility', 'security', 'cleaning', 'other'])];
+            $rules['type'] = ['sometimes', 'string', Rule::in(['utility', 'security', 'cleaning', 'other'])];
             $rules['base_price'] = ['sometimes', 'numeric', 'min:0'];
         }
 
@@ -67,7 +67,7 @@ class ServiceRequest extends FormRequest
 
             // Support for single value or array of values
             'filters.type' => 'sometimes',
-            'filters.type.*' => 'string|in:maintenance,utility,security,cleaning,other',
+            'filters.type.*' => 'string|in:utility,security,cleaning,other',
 
             // Boolean filters
             'filters.is_recurring' => 'sometimes|boolean',

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->enum('type', ['maintenance', 'utility', 'security', 'cleaning', 'other']);
+            $table->enum('type', ['utility', 'security', 'cleaning', 'other']);
             $table->decimal('base_price', 10, 2);
             $table->string('currency', 3)->default('USD');
             $table->string('unit_of_measure')->nullable(); // e.g., 'hour', 'visit', 'month'
