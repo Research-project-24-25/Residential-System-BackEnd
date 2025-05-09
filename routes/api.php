@@ -20,6 +20,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceRequestController;
+use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\MaintenanceRequestController;
+use App\Http\Controllers\MaintenanceFeedbackController;
 
 /*
 |--------------------------------------------------------------------------
@@ -285,7 +288,7 @@ Route::middleware(['auth:sanctum', 'admin:super_admin'])
 |--------------------------------------------------------------------------
 */
 Route::prefix('resident')
-    ->middleware('auth:sanctum')
+    ->middleware(['auth:sanctum', 'resident'])
     ->group(function () {
 
         // Profile
@@ -334,5 +337,42 @@ Route::prefix('resident')
 
                 // Get requests for a specific property (that the resident belongs to)
                 Route::get('/properties/{propertyId}', 'propertyServiceRequests')->name('by-property');
+            });
+
+        // Maintenance types
+        Route::controller(MaintenanceController::class)
+            ->prefix('maintenance-types')
+            ->name('maintenance-types.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
+                Route::get('/{id}', 'show')->name('show');
+                Route::get('/categories/list', 'categories')->name('categories');
+            });
+
+        // Maintenance requests
+        Route::controller(MaintenanceRequestController::class)
+            ->prefix('maintenance-requests')
+            ->name('maintenance-requests.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{id}', 'show')->name('show');
+                Route::patch('/{id}', 'update')->name('update');
+                Route::patch('/{id}/cancel', 'cancel')->name('cancel');
+                Route::get('/properties/{propertyId}', 'propertyMaintenanceRequests')->name('by-property');
+            });
+
+        // Maintenance feedback
+        Route::controller(MaintenanceFeedbackController::class)
+            ->name('maintenance-feedback.')
+            ->group(function () {
+                Route::post('/maintenance-requests/{maintenanceRequestId}/feedback', 'store')->name('store');
+                Route::get('/maintenance-requests/{maintenanceRequestId}/feedback', 'show')->name('show');
+                Route::patch('/maintenance-requests/{maintenanceRequestId}/feedback', 'update')->name('update');
+                Route::get('/feedback', 'residentFeedback')
+                    ->middleware('substitute_auth_id')
+                    ->name('index');
             });
     });

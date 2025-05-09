@@ -24,8 +24,8 @@ class MaintenanceController extends Controller
             $perPage = $request->get('per_page', 10);
 
             $maintenances = Maintenance::query()
-                ->when($request->user() && $request->user()->getTable() !== 'admins', function ($query) {
-                    // Only show active maintenance types to non-admin users
+                // Only show active maintenance types to residents, show all to admins
+                ->when($request->user()->getTable() === 'residents', function ($query) {
                     return $query->where('is_active', true);
                 })
                 ->sort($request)

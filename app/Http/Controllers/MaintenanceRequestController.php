@@ -41,6 +41,10 @@ class MaintenanceRequestController extends Controller
             if ($request->user()->getTable() === 'residents') {
                 $query->where('resident_id', $request->user()->id);
             }
+            // Ensure only admins and residents can access this endpoint
+            else if ($request->user()->getTable() !== 'admins') {
+                return $this->forbiddenResponse('Unauthorized to access maintenance requests');
+            }
 
             $maintenanceRequests = $query->with(['maintenance', 'property', 'resident', 'admin', 'feedback'])
                 ->sort($request)
