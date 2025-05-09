@@ -29,15 +29,15 @@ class DashboardService
 
         return [
             'counts' => [
-                'properties' => Property::count(),
+                'properties' => $this->countModel(Property::class),
                 'users' => [
                     'total' => $this->getTotalUserCount(),
-                    'admins' => Admin::count(),
-                    'residents' => Resident::count(),
-                    'regular_users' => User::count(),
+                    'admins' => $this->countModel(Admin::class),
+                    'residents' => $this->countModel(Resident::class),
+                    'regular_users' => $this->countModel(User::class),
                 ],
-                'bills' => Bill::count(),
-                'payments' => Payment::count(),
+                'bills' => $this->countModel(Bill::class),
+                'payments' => $this->countModel(Payment::class),
             ],
             'revenue' => [
                 'total' => $this->calculateTotalRevenue($dateRange['start'], $dateRange['end']),
@@ -51,19 +51,19 @@ class DashboardService
             ],
             'profit' => $this->calculateProfit($dateRange['start'], $dateRange['end']),
             'property_stats' => [
-                'available' => Property::where('status', 'available_now')->count(),
-                'rented' => Property::where('status', 'rented')->count(),
-                'sold' => Property::where('status', 'sold')->count(),
-                'under_construction' => Property::where('status', 'under_construction')->count(),
+                'available' => $this->countModel(Property::class, ['status' => 'available_now']),
+                'rented' => $this->countModel(Property::class, ['status' => 'rented']),
+                'sold' => $this->countModel(Property::class, ['status' => 'sold']),
+                'under_construction' => $this->countModel(Property::class, ['status' => 'under_construction']),
             ],
             'services' => [
-                'total' => Service::count(),
-                'active' => Service::where('is_active', true)->count(),
+                'total' => $this->countModel(Service::class),
+                'active' => $this->countModel(Service::class, ['is_active' => true]),
                 'requests' => [
-                    'total' => ServiceRequest::count(),
-                    'pending' => ServiceRequest::where('status', 'pending')->count(),
-                    'in_progress' => ServiceRequest::whereIn('status', ['approved', 'scheduled', 'in_progress'])->count(),
-                    'completed' => ServiceRequest::where('status', 'completed')->count(),
+                    'total' => $this->countModel(ServiceRequest::class),
+                    'pending' => $this->countModel(ServiceRequest::class, ['status' => 'pending']),
+                    'in_progress' => $this->countModel(ServiceRequest::class, ['status' => ['approved', 'scheduled', 'in_progress']]),
+                    'completed' => $this->countModel(ServiceRequest::class, ['status' => 'completed']),
                 ],
             ],
         ];
@@ -78,10 +78,7 @@ class DashboardService
     public function getRecentActivity(int $limit = 5): array
     {
         return [
-            'recent_payments' => Payment::with(['resident', 'bill'])
-                ->orderBy('created_at', 'desc')
-                ->limit($limit)
-                ->get()
+            'recent_payments' => $this->fetchRecent(Payment::class, ['resident', 'bill'], $limit)
                 ->map(function ($payment) {
                     return [
                         'id' => $payment->id,
@@ -96,9 +93,7 @@ class DashboardService
                         'created_at' => $payment->created_at,
                     ];
                 }),
-            'recent_residents' => Resident::orderBy('created_at', 'desc')
-                ->limit($limit)
-                ->get()
+            'recent_residents' => $this->fetchRecent(Resident::class, [], $limit)
                 ->map(function ($resident) {
                     return [
                         'id' => $resident->id,
@@ -107,10 +102,7 @@ class DashboardService
                         'created_at' => $resident->created_at,
                     ];
                 }),
-            'recent_meeting_requests' => MeetingRequest::with(['property', 'user'])
-                ->orderBy('created_at', 'desc')
-                ->limit($limit)
-                ->get()
+            'recent_meeting_requests' => $this->fetchRecent(MeetingRequest::class, ['property', 'user'], $limit)
                 ->map(function ($meeting) {
                     return [
                         'id' => $meeting->id,
@@ -127,10 +119,7 @@ class DashboardService
                         'created_at' => $meeting->created_at,
                     ];
                 }),
-            'recent_service_requests' => ServiceRequest::with(['service', 'property', 'resident'])
-                ->orderBy('created_at', 'desc')
-                ->limit($limit)
-                ->get()
+            'recent_service_requests' => $this->fetchRecent(ServiceRequest::class, ['service', 'property', 'resident'], $limit)
                 ->map(function ($serviceRequest) {
                     return [
                         'id' => $serviceRequest->id,
@@ -193,18 +182,10 @@ class DashboardService
     public function getPropertyStats(): array
     {
         // Get counts by property type
-        $byType = Property::select('type', DB::raw('count(*) as total'))
-            ->groupBy('type')
-            ->get()
-            ->pluck('total', 'type')
-            ->toArray();
+        $byType = $this->getGroupedCount(Property::class, 'type');
 
         // Get counts by property status
-        $byStatus = Property::select('status', DB::raw('count(*) as total'))
-            ->groupBy('status')
-            ->get()
-            ->pluck('total', 'status')
-            ->toArray();
+        $byStatus = $this->getGroupedCount(Property::class, 'status');
 
         // Get avg price by property type
         $avgPriceByType = Property::select('type', DB::raw('avg(price) as avg_price'))
@@ -216,7 +197,7 @@ class DashboardService
             ->toArray();
 
         return [
-            'total' => Property::count(),
+            'total' => $this->countModel(Property::class),
             'by_type' => $byType,
             'by_status' => $byStatus,
             'avg_price_by_type' => $avgPriceByType,
@@ -234,23 +215,23 @@ class DashboardService
         return [
             'total' => $this->getTotalUserCount(),
             'counts' => [
-                'admins' => Admin::count(),
-                'residents' => Resident::count(),
-                'regular_users' => User::count(),
+                'admins' => $this->countModel(Admin::class),
+                'residents' => $this->countModel(Resident::class),
+                'regular_users' => $this->countModel(User::class),
             ],
             'admins_by_role' => [
-                'admin' => Admin::where('role', 'admin')->count(),
-                'super_admin' => Admin::where('role', 'super_admin')->count(),
+                'admin' => $this->countModel(Admin::class, ['role' => 'admin']),
+                'super_admin' => $this->countModel(Admin::class, ['role' => 'super_admin']),
             ],
             'residents_by_gender' => [
-                'male' => Resident::where('gender', 'male')->count(),
-                'female' => Resident::where('gender', 'female')->count(),
+                'male' => $this->countModel(Resident::class, ['gender' => 'male']),
+                'female' => $this->countModel(Resident::class, ['gender' => 'female']),
             ],
             'residents_by_age_group' => $this->getResidentsByAgeGroup(),
             'new_users_this_month' => [
-                'admins' => Admin::whereMonth('created_at', now()->month)->count(),
-                'residents' => Resident::whereMonth('created_at', now()->month)->count(),
-                'regular_users' => User::whereMonth('created_at', now()->month)->count(),
+                'admins' => Admin::query()->whereMonth('created_at', now()->month)->count(),
+                'residents' => Resident::query()->whereMonth('created_at', now()->month)->count(),
+                'regular_users' => User::query()->whereMonth('created_at', now()->month)->count(),
             ],
         ];
     }
@@ -263,27 +244,19 @@ class DashboardService
     public function getServiceStats(): array
     {
         // Get counts by service type
-        $byType = Service::select('type', DB::raw('count(*) as total'))
-            ->groupBy('type')
-            ->get()
-            ->pluck('total', 'type')
-            ->toArray();
+        $byType = $this->getGroupedCount(Service::class, 'type');
 
         // Get active vs inactive
         $activeStatus = [
-            'active' => Service::where('is_active', true)->count(),
-            'inactive' => Service::where('is_active', false)->count(),
+            'active' => $this->countModel(Service::class, ['is_active' => true]),
+            'inactive' => $this->countModel(Service::class, ['is_active' => false]),
         ];
 
         // Get service request statistics
-        $requestsByStatus = ServiceRequest::select('status', DB::raw('count(*) as total'))
-            ->groupBy('status')
-            ->get()
-            ->pluck('total', 'status')
-            ->toArray();
+        $requestsByStatus = $this->getGroupedCount(ServiceRequest::class, 'status');
 
         // Get service requests created this month
-        $requestsThisMonth = ServiceRequest::whereMonth('created_at', now()->month)
+        $requestsThisMonth = ServiceRequest::query()->whereMonth('created_at', now()->month)
             ->count();
 
         // Get most requested services
@@ -303,8 +276,8 @@ class DashboardService
             ->toArray();
 
         return [
-            'total_services' => Service::count(),
-            'total_service_requests' => ServiceRequest::count(),
+            'total_services' => $this->countModel(Service::class),
+            'total_service_requests' => $this->countModel(ServiceRequest::class),
             'services_by_type' => $byType,
             'service_status' => $activeStatus,
             'requests_by_status' => $requestsByStatus,
@@ -322,9 +295,7 @@ class DashboardService
      */
     private function calculateTotalRevenue(Carbon $startDate, Carbon $endDate): float
     {
-        return Payment::where('status', 'completed')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('amount');
+        return $this->sumPaymentsInDateRange($startDate, $endDate);
     }
 
     /**
@@ -336,10 +307,7 @@ class DashboardService
     private function calculateCurrentPeriodRevenue(string $period): float
     {
         $dateRange = $this->getCurrentPeriodDates($period);
-
-        return Payment::where('status', 'completed')
-            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
-            ->sum('amount');
+        return $this->sumPaymentsInDateRange($dateRange['start'], $dateRange['end']);
     }
 
     /**
@@ -353,9 +321,7 @@ class DashboardService
     {
         // For simplicity, we're calculating costs as the total of expenses-type bills
         // In a real system, this would likely be more complex
-        return Bill::whereIn('bill_type', ['maintenance', 'security', 'cleaning'])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('amount');
+        return $this->sumBillsInDateRange($startDate, $endDate, ['maintenance', 'security', 'cleaning']);
     }
 
     /**
@@ -367,9 +333,35 @@ class DashboardService
     private function calculateCurrentPeriodCosts(string $period): float
     {
         $dateRange = $this->getCurrentPeriodDates($period);
+        return $this->sumBillsInDateRange($dateRange['start'], $dateRange['end'], ['maintenance', 'security', 'cleaning']);
+    }
 
-        return Bill::whereIn('bill_type', ['maintenance', 'security', 'cleaning'])
-            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+    /**
+     * Sums payments within a given date range.
+     *
+     * @param Carbon $startDate
+     * @param Carbon $endDate
+     * @return float
+     */
+    private function sumPaymentsInDateRange(Carbon $startDate, Carbon $endDate): float
+    {
+        return Payment::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+    }
+
+    /**
+     * Sums bills of specified types within a given date range.
+     *
+     * @param Carbon $startDate
+     * @param Carbon $endDate
+     * @param array $billTypes
+     * @return float
+     */
+    private function sumBillsInDateRange(Carbon $startDate, Carbon $endDate, array $billTypes): float
+    {
+        return Bill::whereIn('bill_type', $billTypes)
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('amount');
     }
 
@@ -445,13 +437,13 @@ class DashboardService
      */
     private function calculateOccupancyRate(): float
     {
-        $totalProperties = Property::count();
+        $totalProperties = $this->countModel(Property::class);
 
         if ($totalProperties === 0) {
             return 0;
         }
 
-        $occupiedProperties = Property::whereIn('status', ['rented', 'sold'])->count();
+        $occupiedProperties = $this->countModel(Property::class, ['status' => ['rented', 'sold']]);
 
         return round(($occupiedProperties / $totalProperties) * 100, 2);
     }
@@ -479,28 +471,7 @@ class DashboardService
      */
     private function getDateRange(string $period): array
     {
-        $end = Carbon::now();
-
-        switch ($period) {
-            case 'month':
-                $start = Carbon::now()->startOfMonth();
-                break;
-            case 'quarter':
-                $start = Carbon::now()->startOfQuarter();
-                break;
-            case 'year':
-                $start = Carbon::now()->startOfYear();
-                break;
-            case 'all':
-            default:
-                $start = Carbon::createFromDate(2000, 1, 1); // Very old date to include everything
-                break;
-        }
-
-        return [
-            'start' => $start,
-            'end' => $end,
-        ];
+        return $this->calculateDateRange($period, false);
     }
 
     /**
@@ -511,30 +482,60 @@ class DashboardService
      */
     private function getCurrentPeriodDates(string $period): array
     {
+        return $this->calculateDateRange($period, true);
+    }
+
+    /**
+     * Calculate date range based on period and whether it's for the current, ongoing period.
+     *
+     * @param string $period (month, quarter, year, all)
+     * @param bool $forCurrentOngoingPeriod If true, end date is Carbon::now().
+     * @return array ['start' => Carbon, 'end' => Carbon]
+     */
+    private function calculateDateRange(string $period, bool $forCurrentOngoingPeriod): array
+    {
         $now = Carbon::now();
+        $start = null;
+        $end = null;
+
+        // Handle default for getCurrentPeriodDates if period is not recognized before the switch
+        if ($forCurrentOngoingPeriod && !in_array($period, ['month', 'quarter', 'year', 'all'])) {
+            $period = 'month'; // Default to month for current period if not specified
+        }
 
         switch ($period) {
             case 'month':
-                return [
-                    'start' => $now->copy()->startOfMonth(),
-                    'end' => $now,
-                ];
+                $start = $now->copy()->startOfMonth();
+                // For getDateRange (forCurrentOngoingPeriod = false), end will be adjusted later if not 'all'
+                // For getCurrentPeriodDates (forCurrentOngoingPeriod = true), end is $now
+                $end = $forCurrentOngoingPeriod ? $now : $now->copy()->endOfMonth();
+                break;
             case 'quarter':
-                return [
-                    'start' => $now->copy()->startOfQuarter(),
-                    'end' => $now,
-                ];
+                $start = $now->copy()->startOfQuarter();
+                $end = $forCurrentOngoingPeriod ? $now : $now->copy()->endOfQuarter();
+                break;
             case 'year':
-                return [
-                    'start' => $now->copy()->startOfYear(),
-                    'end' => $now,
-                ];
+                $start = $now->copy()->startOfYear();
+                $end = $forCurrentOngoingPeriod ? $now : $now->copy()->endOfYear();
+                break;
+            case 'all':
+                $start = Carbon::createFromDate(2000, 1, 1); // Very old date to include everything
+                $end = $now; // For 'all', end is always now.
+                break;
             default:
-                return [
-                    'start' => $now->copy()->startOfMonth(),
-                    'end' => $now,
-                ];
+                // This case handles unknown periods for getDateRange (when forCurrentOngoingPeriod is false)
+                // For getCurrentPeriodDates, unknown periods are defaulted to 'month' above.
+                $start = Carbon::createFromDate(2000, 1, 1);
+                $end = $now;
+                break;
         }
+
+        // Original getDateRange (when $forCurrentOngoingPeriod is false) always used Carbon::now() as the end date for specific periods.
+        if (!$forCurrentOngoingPeriod && $period !== 'all') {
+            $end = Carbon::now();
+        }
+
+        return ['start' => $start, 'end' => $end];
     }
 
     /**
@@ -566,6 +567,61 @@ class DashboardService
      */
     private function getTotalUserCount(): int
     {
-        return Admin::count() + Resident::count() + User::count();
+        return $this->countModel(Admin::class) + $this->countModel(Resident::class) + $this->countModel(User::class);
+    }
+
+    /**
+     * Count records for a given model with optional conditions.
+     *
+     * @param string $modelClass The fully qualified class name of the model.
+     * @param array $conditions An associative array of conditions, e.g., ['status' => 'active', 'type' => ['type1', 'type2']].
+     * @return int
+     */
+    private function countModel(string $modelClass, array $conditions = []): int
+    {
+        $query = $modelClass::query();
+
+        foreach ($conditions as $column => $value) {
+            if (is_array($value)) {
+                $query->whereIn($column, $value);
+            } else {
+                $query->where($column, $value);
+            }
+        }
+
+        return $query->count();
+    }
+
+    /**
+     * Fetches recent items from a model.
+     *
+     * @param string $modelClass
+     * @param array $relations
+     * @param int $limit
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    private function fetchRecent(string $modelClass, array $relations = [], int $limit = 5): \Illuminate\Database\Eloquent\Collection
+    {
+        return $modelClass::with($relations)
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * Get counts grouped by a specific column.
+     *
+     * @param string $modelClass
+     * @param string $groupByColumn
+     * @param string $countColumn
+     * @param string $alias
+     * @return array
+     */
+    private function getGroupedCount(string $modelClass, string $groupByColumn, string $countColumn = '*', string $alias = 'total'): array
+    {
+        return $modelClass::select($groupByColumn, DB::raw("count($countColumn) as $alias"))
+            ->groupBy($groupByColumn)
+            ->pluck($alias, $groupByColumn)
+            ->toArray();
     }
 }
