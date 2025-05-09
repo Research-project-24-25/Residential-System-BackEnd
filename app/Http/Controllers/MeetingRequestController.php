@@ -45,6 +45,37 @@ class MeetingRequestController extends Controller
     }
 
     /**
+     * Get filtered meeting requests
+     * 
+     * @param Request $request
+     * @return ResourceCollection|JsonResponse
+     */
+    public function filter(Request $request): ResourceCollection|JsonResponse
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+            $query = MeetingRequest::query()
+                ->sort($request)
+                ->filter($request);
+
+            $user = $request->user();
+
+            if ($user->getTable() === 'admins') {
+                $requests = $query->with(['property', 'user', 'admin'])
+                    ->paginate($perPage);
+            } else {
+                $requests = $query->where('user_id', $user->id)
+                    ->with('property')
+                    ->paginate($perPage);
+            }
+
+            return MeetingRequestResource::collection($requests);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(MeetingRequestStoreRequest $request): JsonResponse
@@ -168,37 +199,6 @@ class MeetingRequestController extends Controller
                 'Meeting request updated successfully',
                 new MeetingRequestResource($meetingRequest)
             );
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
-    /**
-     * Get filtered meeting requests
-     * 
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
-    public function filter(Request $request): ResourceCollection|JsonResponse
-    {
-        try {
-            $perPage = $request->get('per_page', 10);
-            $query = MeetingRequest::query()
-                ->sort($request)
-                ->filter($request);
-
-            $user = $request->user();
-
-            if ($user->getTable() === 'admins') {
-                $requests = $query->with(['property', 'user', 'admin'])
-                    ->paginate($perPage);
-            } else {
-                $requests = $query->where('user_id', $user->id)
-                    ->with('property')
-                    ->paginate($perPage);
-            }
-
-            return MeetingRequestResource::collection($requests);
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
