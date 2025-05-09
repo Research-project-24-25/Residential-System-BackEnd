@@ -371,6 +371,16 @@ Route::prefix('resident')
                 ->name('resident.payment-methods.set-default');
         });
 
+        // Services
+        Route::controller(ServiceController::class)
+            ->prefix('services')
+            ->name('resident.services.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
+                Route::get('/{id}', 'show')->name('show');
+            });
+
         // Service Requests
         Route::controller(ServiceRequestController::class)
             ->prefix('service-requests')
