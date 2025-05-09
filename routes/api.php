@@ -271,6 +271,54 @@ Route::prefix('admin')
             Route::post('payment-methods/{id}/set-default', 'setDefault')
                 ->name('admin.payment-methods.set-default');
         });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Maintenances Management
+        |--------------------------------------------------------------------------
+        */
+
+        // Maintenance types
+        Route::controller(MaintenanceController::class)
+            ->prefix('maintenance-types')
+            ->name('admin.maintenance-types.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{id}', 'show')->name('show');
+                Route::match(['put', 'patch'], '/{id}', 'update')->name('update');
+                Route::delete('/{id}', 'destroy')->name('destroy');
+            });
+
+        // Maintenance requests
+        Route::controller(MaintenanceRequestController::class)
+            ->prefix('maintenance-requests')
+            ->name('admin.maintenance-requests.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/filter', 'filter')->name('filter');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{id}', 'show')->name('show');
+                Route::match(['put', 'patch'], '/{id}', 'update')->name('update');
+                Route::delete('/{id}', 'destroy')->name('destroy');
+
+                // Property / resident scopes
+                Route::get('/properties/{propertyId}', 'propertyMaintenanceRequests')->name('by-property');
+                Route::get('/residents/{residentId}',  'residentMaintenanceRequests')->name('by-resident');
+            });
+
+        // Maintenance feedback
+        Route::controller(MaintenanceFeedbackController::class)
+            ->prefix('maintenance-feedback')
+            ->name('admin.maintenance-feedback.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{id}', 'show')->name('show');
+                Route::match(['put', 'patch'], '/{id}', 'update')->name('update');
+                Route::delete('/{id}', 'destroy')->name('destroy');
+            });
     });
 
 /*
