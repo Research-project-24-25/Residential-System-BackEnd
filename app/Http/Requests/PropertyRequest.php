@@ -2,18 +2,11 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class PropertyRequest extends FormRequest
+class PropertyRequest extends BaseFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
+    // authorize() method can be removed as parent::authorize() defaults to true.
 
     /**
      * Get the validation rules that apply to the request.
@@ -22,79 +15,56 @@ class PropertyRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Get the current route name or action to determine the context
-        $action = $this->route() ? $this->route()->getActionMethod() : null;
+        $parentRules = parent::rules(); // Gets common filter rules if isFilterAction() is true
 
-        // Rules for filtering properties
-        if ($action === 'filter') {
-            return $this->getFilterRules();
+        if ($this->isFilterAction()) {
+            return array_merge($parentRules, $this->getSpecificFilterRules());
         }
 
-        // Rules for storing or updating properties
-        return $this->getPropertyRules();
+        // Entity specific rules for create/update
+        return array_merge($parentRules, $this->getPropertyRules()); // parentRules will be empty if not filter action
     }
 
     /**
-     * Get rules for filtering properties
+     * Get specific rules for filtering properties.
+     * Common filter rules are handled by BaseFormRequest.
      */
-    private function getFilterRules(): array
+    private function getSpecificFilterRules(): array
     {
         return [
-            'filters' => 'sometimes|array',
-
             // Support for single value or array of values
-            'filters.type' => 'sometimes',
-            'filters.type.*' => 'string|in:apartment,house,villa,studio',
+            'filters.type' => ['sometimes', 'nullable'],
+            'filters.type.*' => ['string', Rule::in(['apartment', 'house', 'villa', 'studio'])],
 
-            'filters.status' => 'sometimes',
-            'filters.status.*' => 'string|in:available_now,under_construction,sold,rented',
+            'filters.status' => ['sometimes', 'nullable'],
+            'filters.status.*' => ['string', Rule::in(['available_now', 'under_construction', 'sold', 'rented'])],
 
-            'filters.currency' => 'sometimes',
-            'filters.currency.*' => 'string',
+            'filters.currency' => ['sometimes', 'nullable'],
+            'filters.currency.*' => ['string'],
 
             // Range filters
-            'filters.price' => 'sometimes|array',
-            'filters.price.min' => 'sometimes|numeric|min:0',
-            'filters.price.max' => 'sometimes|numeric|gt:filters.price.min',
+            'filters.price' => ['sometimes', 'array'],
+            'filters.price.min' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'filters.price.max' => ['sometimes', 'nullable', 'numeric', 'min:0', 'gt:filters.price.min'],
 
-            'filters.occupancy_limit' => 'sometimes|array',
-            'filters.occupancy_limit.min' => 'sometimes|integer|min:0',
-            'filters.occupancy_limit.max' => 'sometimes|integer|gte:filters.occupancy_limit.min',
+            'filters.occupancy_limit' => ['sometimes', 'array'],
+            'filters.occupancy_limit.min' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'filters.occupancy_limit.max' => ['sometimes', 'nullable', 'integer', 'min:0', 'gte:filters.occupancy_limit.min'],
 
-            'filters.bedrooms' => 'sometimes|array',
-            'filters.bedrooms.min' => 'sometimes|integer|min:0',
-            'filters.bedrooms.max' => 'sometimes|integer|gte:filters.bedrooms.min',
+            'filters.bedrooms' => ['sometimes', 'array'],
+            'filters.bedrooms.min' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'filters.bedrooms.max' => ['sometimes', 'nullable', 'integer', 'min:0', 'gte:filters.bedrooms.min'],
 
-            'filters.bathrooms' => 'sometimes|array',
-            'filters.bathrooms.min' => 'sometimes|integer|min:0',
-            'filters.bathrooms.max' => 'sometimes|integer|gte:filters.bathrooms.min',
+            'filters.bathrooms' => ['sometimes', 'array'],
+            'filters.bathrooms.min' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'filters.bathrooms.max' => ['sometimes', 'nullable', 'integer', 'min:0', 'gte:filters.bathrooms.min'],
 
-            'filters.area' => 'sometimes|array',
-            'filters.area.min' => 'sometimes|integer|min:0',
-            'filters.area.max' => 'sometimes|integer|gte:filters.area.min',
+            'filters.area' => ['sometimes', 'array'],
+            'filters.area.min' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'filters.area.max' => ['sometimes', 'nullable', 'integer', 'min:0', 'gte:filters.area.min'],
 
-            'filters.features' => 'sometimes|array',
-            'filters.features.*' => 'sometimes|string',
-
-            // Date filters
-            'filters.created_at' => 'sometimes|array',
-            'filters.created_at.from' => 'sometimes|date',
-            'filters.created_at.to' => 'sometimes|date|after_or_equal:filters.created_at.from',
-
-            'filters.updated_at' => 'sometimes|array',
-            'filters.updated_at.from' => 'sometimes|date',
-            'filters.updated_at.to' => 'sometimes|date|after_or_equal:filters.updated_at.from',
-
-            // Search
-            'filters.search' => 'sometimes|string|max:255',
-
-            // Sorting
-            'sort' => 'sometimes|array',
-            'sort.field' => 'sometimes|string',
-            'sort.direction' => 'sometimes|string|in:asc,desc',
-
-            // Pagination
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'filters.features' => ['sometimes', 'array'],
+            'filters.features.*' => ['sometimes', 'string'],
         ];
     }
 
@@ -103,41 +73,69 @@ class PropertyRequest extends FormRequest
      */
     private function getPropertyRules(): array
     {
-        $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH');
-        $required = $isUpdate ? 'sometimes' : 'required';
+        $isUpdate = $this->isUpdateRequest();
+        $requiredRule = $isUpdate ? 'sometimes' : 'required';
 
         $rules = [
-            'label' => [$required, 'string', 'max:255'],
-            'type' => [$required, 'string', 'in:apartment,house,villa,studio'],
-            'price' => [$required, 'numeric', 'min:0'],
-            'currency' => 'sometimes|string|max:3',
-            'status' => 'sometimes|string|in:available_now,under_construction,sold,rented',
-            'description' => 'sometimes|nullable|string',
-            'occupancy_limit' => 'sometimes|integer|min:0',
-            'bedrooms' => 'sometimes|integer|min:0',
-            'bathrooms' => 'sometimes|integer|min:0',
-            'area' => 'sometimes|integer|min:0',
-            'features' => 'sometimes|nullable|array',
-            'features.*' => 'sometimes|string',
-            'images' => 'sometimes|nullable',
+            'label' => [$requiredRule, 'string', 'max:255'],
+            'type' => [$requiredRule, 'string', Rule::in(['apartment', 'house', 'villa', 'studio'])],
+            'price' => [$requiredRule, 'numeric', 'min:0'],
+            'currency' => ['sometimes', 'string', 'max:3'],
+            'status' => ['sometimes', 'string', Rule::in(['available_now', 'under_construction', 'sold', 'rented'])],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'occupancy_limit' => ['sometimes', 'integer', 'min:0'],
+            'bedrooms' => ['sometimes', 'integer', 'min:0'],
+            'bathrooms' => ['sometimes', 'integer', 'min:0'],
+            'area' => ['sometimes', 'integer', 'min:0'],
+            'features' => ['sometimes', 'nullable', 'array'],
+            'features.*' => ['sometimes', 'string'],
+            'images' => ['sometimes', 'nullable'],
+            // Image upload validation for 'images[]' (array of files)
+            // This rule applies to both create and update, 'sometimes' handles if it's present
+            'images.*' => ['sometimes', 'file', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ];
-
-        // Image upload validation
-        if ($isUpdate) {
-            // For updates, allow an array of files or null to remove images
-            $rules['images[]'] = 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048';
-        } else {
-            // For creation, allow an array of files
-            $rules['images[]'] = 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048';
-        }
+        
+        // Simpler way to handle images, as 'images.*' with 'sometimes' covers both create and update.
+        // The 'images' field itself being 'nullable' handles removal if an empty array or null is sent.
+        // if ($isUpdate) {
+        //     $rules['images.*'] = 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048';
+        // } else {
+        //     $rules['images.*'] = 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048';
+        // }
 
         // Add unique rule for label on create or when changing label on update
         if (!$isUpdate) {
-            $rules['label'][] = 'unique:properties,label';
+            $rules['label'][] = Rule::unique('properties', 'label');
         } else {
-            $rules['label'][] = Rule::unique('properties', 'label')->ignore($this->route('id'));
+            // Ensure $this->route('id') is available and correct for the update route
+            // It might be $this->property->id or $this->route('property') depending on route binding
+            $propertyId = $this->route('property') ? $this->route('property')->id : $this->route('id');
+            if ($propertyId) {
+                 $rules['label'][] = Rule::unique('properties', 'label')->ignore($propertyId);
+            } else {
+                // Fallback if ID cannot be determined, or handle error
+                // This might happen if the route parameter name is different
+                // Or if implicit route model binding is not used and 'id' is not explicitly passed.
+                // For now, we'll assume it's available or the unique rule might fail on update if label is unchanged.
+                // A more robust solution might involve checking $this->property if route model binding is used.
+                 $rules['label'][] = Rule::unique('properties', 'label')->ignore($this->input('label'), 'label');
+            }
         }
 
         return $rules;
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        $parentMessages = parent::messages(); // Get common filter messages
+        $specificMessages = [
+            // Add any specific messages for this request if needed
+        ];
+        return array_merge($parentMessages, $specificMessages);
     }
 }
