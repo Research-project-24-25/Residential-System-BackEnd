@@ -2,25 +2,33 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
-use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
-
-class EnsureUserIsAdmin
+class EnsureUserIsAdmin extends EnsureUserType
 {
     /**
-     * Handle an incoming request.
+     * Check if the user is an admin with the required role
      */
-    public function handle(Request $request, Closure $next, string $role = 'admin'): Response
+    protected function checkUserType($user, ?string $role): bool
     {
-        if (!$request->user() || !$request->user() instanceof \App\Models\Admin) {
-            return response()->json(['message' => 'Unauthorized.'], 403);
+        if (!$user instanceof \App\Models\Admin) {
+            return false;
         }
 
-        if ($role === 'super_admin' && !$request->user()->isSuperAdmin()) {
-            return response()->json(['message' => 'This action requires super admin privileges.'], 403);
+        if ($role === 'super_admin' && !$user->isSuperAdmin()) {
+            return false;
         }
 
-        return $next($request);
+        return true;
+    }
+
+    /**
+     * Get the error message for unauthorized access
+     */
+    protected function getErrorMessage(?string $role): string
+    {
+        if ($role === 'super_admin') {
+            return 'This action requires super admin privileges.';
+        }
+
+        return 'Unauthorized.';
     }
 }
