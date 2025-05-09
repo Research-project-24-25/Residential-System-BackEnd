@@ -1,0 +1,242 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\MaintenanceRequest;
+use App\Http\Resources\MaintenanceResource;
+use App\Models\Maintenance;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
+use Throwable;
+
+class MaintenanceController extends Controller
+{
+    /**
+     * Display a listing of maintenance types.
+     *
+     * @param Request $request
+     * @return ResourceCollection|JsonResponse
+     */
+    public function index(Request $request): ResourceCollection|JsonResponse
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+
+            $maintenances = Maintenance::query()
+                ->when($request->user() && $request->user()->getTable() !== 'admins', function ($query) {
+                    // Only show active maintenance types to non-admin users
+                    return $query->where('is_active', true);
+                })
+                ->sort($request)
+                ->paginate($perPage);
+
+            return MaintenanceResource::collection($maintenances);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Get filtered maintenance types
+     * 
+     * @param MaintenanceRequest $request
+     * @return ResourceCollection|JsonResponse
+     */
+    public function filter(MaintenanceRequest $request): ResourceCollection|JsonResponse
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+
+            $maintenances = Maintenance::query()
+                ->when($request->user() && $request->user()->getTable() !== 'admins', function ($query) {
+                    // Only show active maintenance types to non-admin users
+                    return $query->where('is_active', true);
+                })
+                ->filter($request)
+                ->sort($request)
+                ->paginate($perPage);
+
+            return MaintenanceResource::collection($maintenances);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Store a newly created maintenance type in storage.
+     *
+     * @param MaintenanceRequest $request
+     * @return JsonResponse
+     */
+    public function store(MaintenanceRequest $request): JsonResponse
+    {
+        try {
+            // Only admins can create maintenance types
+            if ($request->user()->getTable() !== 'admins') {
+                return $this->forbiddenResponse('Only administrators can create maintenance types');
+            }
+
+            $validated = $request->validated();
+            $maintenance = Maintenance::create($validated);
+
+            return $this->createdResponse(
+                'Maintenance type created successfully',
+                new MaintenanceResource($maintenance)
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Display the specified maintenance type.
+     *
+     * @param int $id
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function show(int $id, Request $request): JsonResponse
+    {
+        try {
+            $maintenance = Maintenance::findOrFail($id);
+
+            // Non-admin users can only view active maintenance types
+            if ($request->user()->getTable() !== 'admins' && !$maintenance->is_active) {
+                return $this->forbiddenResponse('Maintenance type not available');
+            }
+
+            // Count active requests if admin
+            if ($request->user()->getTable() === 'admins') {
+                $maintenance->loadCount('activeRequests');
+            }
+
+            return $this->successResponse(
+                'Maintenance type retrieved successfully',
+                new MaintenanceResource($maintenance)
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Update the specified maintenance type in storage.
+     *
+     * @param MaintenanceRequest $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function update(MaintenanceRequest $request, int $id): JsonResponse
+    {
+        try {
+            // Only admins can update maintenance types
+            if ($request->user()->getTable() !== 'admins') {
+                return $this->forbiddenResponse('Only administrators can update maintenance types');
+            }
+
+            $maintenance = Maintenance::findOrFail($id);
+            $validated = $request->validated();
+
+            $maintenance->update($validated);
+
+            return $this->successResponse(
+                'Maintenance type updated successfully',
+                new MaintenanceResource($maintenance)
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Remove the specified maintenance type from storage.
+     *
+     * @param int $id
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function destroy(int $id, Request $request): JsonResponse
+    {
+        try {
+            // Only admins can delete maintenance types
+            if ($request->user()->getTable() !== 'admins') {
+                return $this->forbiddenResponse('Only administrators can delete maintenance types');
+            }
+
+            $maintenance = Maintenance::findOrFail($id);
+
+            // Check if there are any maintenance requests associated with this type
+            if ($maintenance->maintenanceRequests()->exists()) {
+                return $this->errorResponse(
+                    'Cannot delete maintenance type because it has associated maintenance requests',
+                    422
+                );
+            }
+
+            $maintenance->delete();
+
+            return $this->successResponse('Maintenance type deleted successfully');
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Toggle maintenance type active status
+     *
+     * @param int $id
+     * @param Request $request
+     * @return JsonResponse 
+     */
+    public function toggleActive(int $id, Request $request): JsonResponse
+    {
+        try {
+            // Only admins can toggle maintenance type status
+            if ($request->user()->getTable() !== 'admins') {
+                return $this->forbiddenResponse('Only administrators can change maintenance type status');
+            }
+
+            $maintenance = Maintenance::findOrFail($id);
+            $maintenance->is_active = !$maintenance->is_active;
+            $maintenance->save();
+
+            $status = $maintenance->is_active ? 'activated' : 'deactivated';
+
+            return $this->successResponse(
+                "Maintenance type {$status} successfully",
+                new MaintenanceResource($maintenance)
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Get maintenance categories
+     *
+     * @return JsonResponse
+     */
+    public function categories(): JsonResponse
+    {
+        try {
+            $categories = [
+                'plumbing',
+                'electrical',
+                'hvac',
+                'structural',
+                'appliances',
+                'landscaping',
+                'painting',
+                'other'
+            ];
+
+            return $this->successResponse(
+                'Maintenance categories retrieved successfully',
+                $categories
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+}
