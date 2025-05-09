@@ -266,29 +266,6 @@ class MeetingRequestController extends Controller
     }
 
     /**
-     * Get upcoming meetings for the authenticated user.
-     */
-    public function upcoming(Request $request): ResourceCollection|JsonResponse
-    {
-        try {
-            $user = $request->user();
-            $query = MeetingRequest::query();
-
-            // Only approved meetings with dates in the future
-            $upcomingMeetings = $query->where('user_id', $user->id)
-                ->where('status', 'approved')
-                ->where('approved_date', '>=', now())
-                ->with('property')
-                ->orderBy('approved_date')
-                ->paginate($request->get('per_page', 10));
-
-            return MeetingRequestResource::collection($upcomingMeetings);
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
-    /**
      * Notify admins about new meeting request.
      */
     private function notifyAdmins(MeetingRequest $meetingRequest): void
