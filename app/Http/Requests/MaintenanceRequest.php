@@ -2,18 +2,11 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class MaintenanceRequest extends FormRequest
+class MaintenanceRequest extends BaseFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
+    // authorize() method can be removed as parent::authorize() defaults to true.
 
     /**
      * Get the validation rules that apply to the request.
@@ -22,19 +15,14 @@ class MaintenanceRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isAdmin = $this->user()->getTable() === 'admins';
-        $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH');
+        $parentRules = parent::rules(); // Gets common filter rules if isFilterAction() is true
 
-        // Get the current route name or action to determine the context
-        $action = $this->route() ? $this->route()->getActionMethod() : null;
-
-        // Rules for filtering maintenance types
-        if ($action === 'filter') {
-            return $this->getFilterRules();
+        if ($this->isFilterAction()) {
+            return array_merge($parentRules, $this->getSpecificFilterRules());
         }
 
-        // Base rules that apply to both create and update
-        $rules = [
+        // Entity specific rules for create/update
+        $specificRules = [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'category' => ['required', 'string', Rule::in(['plumbing', 'electrical', 'hvac', 'structural', 'appliances', 'landscaping', 'painting', 'other'])],
@@ -44,58 +32,52 @@ class MaintenanceRequest extends FormRequest
             'is_active' => ['sometimes', 'boolean'],
         ];
 
-        // For updates, make fields optional
-        if ($isUpdate) {
-            $rules['name'] = ['sometimes', 'string', 'max:255'];
-            $rules['category'] = ['sometimes', 'string', Rule::in(['plumbing', 'electrical', 'hvac', 'structural', 'appliances', 'landscaping', 'painting', 'other'])];
+        if ($this->isUpdateRequest()) {
+            $specificRules['name'] = ['sometimes', 'string', 'max:255'];
+            $specificRules['category'] = ['sometimes', 'string', Rule::in(['plumbing', 'electrical', 'hvac', 'structural', 'appliances', 'landscaping', 'painting', 'other'])];
         }
 
-        return $rules;
+        return array_merge($parentRules, $specificRules); // parentRules will be empty if not filter action
     }
 
     /**
-     * Get rules for filtering maintenance types
+     * Get specific rules for filtering maintenance types.
+     * Common filter rules (search, sort, pagination, created_at/updated_at) are handled by BaseFormRequest.
      */
-    private function getFilterRules(): array
+    private function getSpecificFilterRules(): array
     {
         return [
-            'filters' => 'sometimes|array',
-
+            // 'filters' => 'sometimes|array', // This is in common rules
             // Support for single value or array of values
-            'filters.category' => 'sometimes',
-            'filters.category.*' => 'string|in:plumbing,electrical,hvac,structural,appliances,landscaping,painting,other',
+            'filters.category' => ['sometimes', 'nullable'], // Making it nullable if empty string is passed
+            'filters.category.*' => ['string', Rule::in(['plumbing', 'electrical', 'hvac', 'structural', 'appliances', 'landscaping', 'painting', 'other'])],
 
             // Boolean filters
-            'filters.is_active' => 'sometimes|boolean',
+            'filters.is_active' => ['sometimes', 'boolean'],
 
             // Range filters
-            'filters.estimated_cost' => 'sometimes|array',
-            'filters.estimated_cost.min' => 'sometimes|numeric|min:0',
-            'filters.estimated_cost.max' => 'sometimes|numeric|gt:filters.estimated_cost.min',
+            'filters.estimated_cost' => ['sometimes', 'array'],
+            'filters.estimated_cost.min' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'filters.estimated_cost.max' => ['sometimes', 'nullable', 'numeric', 'min:0', 'gt:filters.estimated_cost.min'], // min:0 added for consistency if min is not present
 
-            'filters.estimated_hours' => 'sometimes|array',
-            'filters.estimated_hours.min' => 'sometimes|integer|min:0',
-            'filters.estimated_hours.max' => 'sometimes|integer|gt:filters.estimated_hours.min',
-
-            // Date filters
-            'filters.created_at' => 'sometimes|array',
-            'filters.created_at.from' => 'sometimes|date',
-            'filters.created_at.to' => 'sometimes|date|after_or_equal:filters.created_at.from',
-
-            'filters.updated_at' => 'sometimes|array',
-            'filters.updated_at.from' => 'sometimes|date',
-            'filters.updated_at.to' => 'sometimes|date|after_or_equal:filters.updated_at.from',
-
-            // Search
-            'filters.search' => 'sometimes|string|max:255',
-
-            // Sorting
-            'sort' => 'sometimes|array',
-            'sort.field' => 'sometimes|string',
-            'sort.direction' => 'sometimes|string|in:asc,desc',
-
-            // Pagination
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'filters.estimated_hours' => ['sometimes', 'array'],
+            'filters.estimated_hours.min' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'filters.estimated_hours.max' => ['sometimes', 'nullable', 'integer', 'min:0', 'gt:filters.estimated_hours.min'], // min:0 added
         ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        $parentMessages = parent::messages(); // Get common filter messages
+        $specificMessages = [
+            // Add any specific messages for this request if needed
+            // e.g. 'filters.category.*.in' => 'Invalid category selected for filtering.',
+        ];
+        return array_merge($parentMessages, $specificMessages);
     }
 }
