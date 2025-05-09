@@ -15,6 +15,9 @@ use App\Models\Bill;
 use App\Models\Payment;
 use App\Models\MeetingRequest;
 use App\Models\Notification;
+use App\Models\Maintenance;
+use App\Models\MaintenanceRequest;
+use App\Models\MaintenanceFeedback;
 
 class DatabaseSeeder extends Seeder
 {
@@ -120,5 +123,23 @@ class DatabaseSeeder extends Seeder
             'notifiable_type' => User::class,
             'notifiable_id' => 1,
         ]);
+
+        // Create maintenance types
+        Maintenance::factory(10)->create();
+
+        // Create maintenance requests
+        $maintenanceRequests = MaintenanceRequest::factory(30)->create();
+
+        // Create feedback for some completed maintenance requests
+        $completedRequests = MaintenanceRequest::where('status', 'completed')
+            ->where('has_feedback', true)
+            ->get();
+
+        foreach ($completedRequests as $request) {
+            MaintenanceFeedback::factory()->create([
+                'maintenance_request_id' => $request->id,
+                'resident_id' => $request->resident_id,
+            ]);
+        }
     }
 }
