@@ -2,18 +2,11 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class MaintenanceRequestRequest extends FormRequest
+class MaintenanceRequestRequest extends BaseFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
+    // authorize() method can be removed as parent::authorize() defaults to true.
 
     /**
      * Get the validation rules that apply to the request.
@@ -22,16 +15,24 @@ class MaintenanceRequestRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isAdmin = $this->user()->getTable() === 'admins';
-        $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH');
+        $parentRules = parent::rules(); // Gets common filter rules if isFilterAction() is true
 
-        // Get the current route name or action to determine the context
-        $action = $this->route() ? $this->route()->getActionMethod() : null;
-
-        // Rules for filtering maintenance requests
-        if ($action === 'filter') {
-            return $this->getFilterRules();
+        if ($this->isFilterAction()) {
+            return array_merge($parentRules, $this->getSpecificFilterRules());
         }
+
+        // Entity specific rules for create/update
+        $specificRules = $this->getEntityRules();
+        return array_merge($parentRules, $specificRules); // parentRules will be empty if not filter action
+    }
+
+    /**
+     * Get entity specific rules for creating/updating maintenance requests.
+     */
+    private function getEntityRules(): array
+    {
+        $isAdmin = $this->isAdmin();
+        $isUpdate = $this->isUpdateRequest();
 
         // Base rules for residents creating maintenance requests
         $rules = [
@@ -50,7 +51,9 @@ class MaintenanceRequestRequest extends FormRequest
             $rules['property_id'] = [
                 'required',
                 Rule::exists('property_resident', 'property_id')->where(function ($query) {
-                    $query->where('resident_id', $this->user()->id);
+                    if ($this->user()) { // Ensure user is available
+                        $query->where('resident_id', $this->user()->id);
+                    }
                 }),
             ];
         }
@@ -68,79 +71,79 @@ class MaintenanceRequestRequest extends FormRequest
                 'bill_id' => ['nullable', 'exists:bills,id'],
                 'has_feedback' => ['sometimes', 'boolean'],
             ];
-
             $rules = array_merge($rules, $additionalRules);
         }
 
         // For updates, make certain fields optional
         if ($isUpdate) {
             $rules['maintenance_id'] = ['sometimes', 'nullable', 'exists:maintenances,id'];
-            $rules['property_id'] = ['sometimes', 'exists:properties,id'];
+            $rules['property_id'] = ['sometimes', 'exists:properties,id']; // Admin can change property_id
             $rules['description'] = ['sometimes', 'string', 'max:1000'];
             $rules['requested_date'] = ['sometimes', 'date'];
 
-            // If it's a resident updating, they can only update the description and issue details
+            // If it's a resident updating, they can only update limited fields
             if (!$isAdmin) {
-                // Restrict what residents can update to just these fields
-                $rules = [
+                $rules = [ // Override rules for resident update
                     'description' => ['sometimes', 'string', 'max:1000'],
                     'issue_details' => ['sometimes', 'string', 'max:5000'],
                     'images' => ['sometimes', 'nullable'],
                     'images.*' => ['sometimes', 'file', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
                 ];
+                 // Ensure other fields are not submittable by residents on update
+                $rules['maintenance_id'] = ['prohibited'];
+                $rules['property_id'] = ['prohibited'];
+                $rules['priority'] = ['prohibited'];
+                $rules['requested_date'] = ['prohibited'];
             }
         }
-
         return $rules;
     }
 
+
     /**
-     * Get rules for filtering maintenance requests
+     * Get specific rules for filtering maintenance requests.
+     * Common filter rules are handled by BaseFormRequest.
      */
-    private function getFilterRules(): array
+    private function getSpecificFilterRules(): array
     {
         return [
-            'filters' => 'sometimes|array',
-
             // Support for single value or array of values
-            'filters.status' => 'sometimes',
-            'filters.status.*' => 'string|in:pending,approved,scheduled,in_progress,completed,cancelled',
+            'filters.status' => ['sometimes', 'nullable'],
+            'filters.status.*' => ['string', Rule::in(['pending', 'approved', 'scheduled', 'in_progress', 'completed', 'cancelled'])],
 
-            'filters.priority' => 'sometimes',
-            'filters.priority.*' => 'string|in:low,medium,high,emergency',
+            'filters.priority' => ['sometimes', 'nullable'],
+            'filters.priority.*' => ['string', Rule::in(['low', 'medium', 'high', 'emergency'])],
 
-            'filters.maintenance_id' => 'sometimes|exists:maintenances,id',
-            'filters.property_id' => 'sometimes|exists:properties,id',
-            'filters.resident_id' => 'sometimes|exists:residents,id',
-            'filters.has_feedback' => 'sometimes|boolean',
+            'filters.maintenance_id' => ['sometimes', 'nullable', 'exists:maintenances,id'],
+            'filters.property_id' => ['sometimes', 'nullable', 'exists:properties,id'],
+            'filters.resident_id' => ['sometimes', 'nullable', 'exists:residents,id'],
+            'filters.has_feedback' => ['sometimes', 'boolean'],
 
-            // Date filters
-            'filters.requested_date' => 'sometimes|array',
-            'filters.requested_date.from' => 'sometimes|date',
-            'filters.requested_date.to' => 'sometimes|date|after_or_equal:filters.requested_date.from',
+            // Date filters (specific to this request beyond created_at/updated_at)
+            'filters.requested_date' => ['sometimes', 'array'],
+            'filters.requested_date.from' => ['sometimes', 'nullable', 'date'],
+            'filters.requested_date.to' => ['sometimes', 'nullable', 'date', 'after_or_equal:filters.requested_date.from'],
 
-            'filters.scheduled_date' => 'sometimes|array',
-            'filters.scheduled_date.from' => 'sometimes|date',
-            'filters.scheduled_date.to' => 'sometimes|date|after_or_equal:filters.scheduled_date.from',
+            'filters.scheduled_date' => ['sometimes', 'array'],
+            'filters.scheduled_date.from' => ['sometimes', 'nullable', 'date'],
+            'filters.scheduled_date.to' => ['sometimes', 'nullable', 'date', 'after_or_equal:filters.scheduled_date.from'],
 
-            'filters.completion_date' => 'sometimes|array',
-            'filters.completion_date.from' => 'sometimes|date',
-            'filters.completion_date.to' => 'sometimes|date|after_or_equal:filters.completion_date.from',
-
-            'filters.created_at' => 'sometimes|array',
-            'filters.created_at.from' => 'sometimes|date',
-            'filters.created_at.to' => 'sometimes|date|after_or_equal:filters.created_at.from',
-
-            // Search
-            'filters.search' => 'sometimes|string|max:255',
-
-            // Sorting
-            'sort' => 'sometimes|array',
-            'sort.field' => 'sometimes|string',
-            'sort.direction' => 'sometimes|string|in:asc,desc',
-
-            // Pagination
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'filters.completion_date' => ['sometimes', 'array'],
+            'filters.completion_date.from' => ['sometimes', 'nullable', 'date'],
+            'filters.completion_date.to' => ['sometimes', 'nullable', 'date', 'after_or_equal:filters.completion_date.from'],
         ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     */
+    public function messages(): array
+    {
+        $parentMessages = parent::messages();
+        $specificMessages = [
+            // Add any specific messages if needed
+            'property_id.exists' => 'The selected property is invalid or you do not have access to it for this request.',
+        ];
+        return array_merge($parentMessages, $specificMessages);
     }
 }
