@@ -3,8 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
-// No need to import FormRequest directly if BaseFormRequest handles it
-// use Illuminate\Foundation\Http\FormRequest;
 
 class BillRequest extends BaseFormRequest
 {
@@ -17,11 +15,6 @@ class BillRequest extends BaseFormRequest
         return $this->isAdmin();
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
-     */
     public function rules(): array
     {
         $specificRules = [

@@ -11,12 +11,6 @@ use Throwable;
 
 class NotificationController extends Controller
 {
-    /**
-     * Get all notifications for the authenticated user
-     *
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -46,13 +40,6 @@ class NotificationController extends Controller
         }
     }
 
-    /**
-     * Mark a notification as read
-     *
-     * @param Request $request
-     * @param string $id
-     * @return JsonResponse
-     */
     public function markAsRead(Request $request, string $id): JsonResponse
     {
         try {
@@ -74,12 +61,6 @@ class NotificationController extends Controller
         }
     }
 
-    /**
-     * Mark all notifications as read
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function markAllAsRead(Request $request): JsonResponse
     {
         try {
@@ -96,13 +77,6 @@ class NotificationController extends Controller
         }
     }
 
-    /**
-     * Delete a notification
-     *
-     * @param Request $request
-     * @param string $id
-     * @return JsonResponse
-     */
     public function destroy(Request $request, string $id): JsonResponse
     {
         try {
@@ -124,12 +98,6 @@ class NotificationController extends Controller
         }
     }
 
-    /**
-     * Delete all notifications
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function destroyAll(Request $request): JsonResponse
     {
         try {

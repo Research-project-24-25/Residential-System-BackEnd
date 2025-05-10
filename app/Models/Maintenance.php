@@ -11,11 +11,6 @@ class Maintenance extends Model
 {
     use HasFactory, Filterable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'description',
@@ -26,22 +21,12 @@ class Maintenance extends Model
         'is_active'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'estimated_cost' => 'decimal:2',
         'estimated_hours' => 'integer',
         'is_active' => 'boolean',
     ];
 
-    /**
-     * Define the filterable fields for this model.
-     *
-     * @var array<int, string>
-     */
     protected array $filterableFields = [
         'category',
         'is_active',
@@ -51,11 +36,6 @@ class Maintenance extends Model
         'updated_at'
     ];
 
-    /**
-     * Define the searchable fields for this model.
-     *
-     * @var array<int, string>
-     */
     protected array $searchableFields = [
         'name',
         'description',

@@ -8,19 +8,11 @@ use Illuminate\Validation\Rule;
 
 class ServiceRequestRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
-     */
     public function rules(): array
     {
         $isAdmin = $this->user()->getTable() === 'admins';
@@ -92,9 +84,6 @@ class ServiceRequestRequest extends FormRequest
         return $rules;
     }
 
-    /**
-     * Get rules for filtering service requests
-     */
     private function getFilterRules(): array
     {
         return [

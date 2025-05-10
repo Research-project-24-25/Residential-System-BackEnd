@@ -2,8 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule; // Kept for good practice, though not strictly used in this exact ruleset
-use App\Models\MaintenanceRequest as MaintenanceRequestModel; // Alias to avoid conflict if any
+use App\Models\MaintenanceRequest as MaintenanceRequestModel;
 
 class MaintenanceFeedbackRequest extends BaseFormRequest
 {
@@ -24,11 +23,6 @@ class MaintenanceFeedbackRequest extends BaseFormRequest
         return false; // Default to false if no maintenanceRequestId
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
-     */
     public function rules(): array
     {
         // Base rules for creating feedback
@@ -54,11 +48,6 @@ class MaintenanceFeedbackRequest extends BaseFormRequest
         return array_merge(parent::rules(), $specificRules); // parent::rules() will be empty here
     }
 
-    /**
-     * Get custom messages for validator errors.
-     *
-     * @return array<string, string>
-     */
     public function messages(): array
     {
         $parentMessages = parent::messages(); // parent::messages() will be empty here

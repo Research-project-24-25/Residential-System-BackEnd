@@ -12,12 +12,6 @@ use Throwable;
 
 class MaintenanceController extends Controller
 {
-    /**
-     * Display a listing of maintenance types.
-     *
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -37,12 +31,6 @@ class MaintenanceController extends Controller
         }
     }
 
-    /**
-     * Get filtered maintenance types
-     * 
-     * @param MaintenanceRequest $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function filter(MaintenanceRequest $request): ResourceCollection|JsonResponse
     {
         try {
@@ -63,12 +51,6 @@ class MaintenanceController extends Controller
         }
     }
 
-    /**
-     * Store a newly created maintenance type in storage.
-     *
-     * @param MaintenanceRequest $request
-     * @return JsonResponse
-     */
     public function store(MaintenanceRequest $request): JsonResponse
     {
         try {
@@ -89,13 +71,6 @@ class MaintenanceController extends Controller
         }
     }
 
-    /**
-     * Display the specified maintenance type.
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function show(int $id, Request $request): JsonResponse
     {
         try {
@@ -120,13 +95,6 @@ class MaintenanceController extends Controller
         }
     }
 
-    /**
-     * Update the specified maintenance type in storage.
-     *
-     * @param MaintenanceRequest $request
-     * @param int $id
-     * @return JsonResponse
-     */
     public function update(MaintenanceRequest $request, int $id): JsonResponse
     {
         try {
@@ -149,13 +117,6 @@ class MaintenanceController extends Controller
         }
     }
 
-    /**
-     * Remove the specified maintenance type from storage.
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function destroy(int $id, Request $request): JsonResponse
     {
         try {
@@ -182,13 +143,6 @@ class MaintenanceController extends Controller
         }
     }
 
-    /**
-     * Toggle maintenance type active status
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse 
-     */
     public function toggleActive(int $id, Request $request): JsonResponse
     {
         try {
@@ -212,11 +166,6 @@ class MaintenanceController extends Controller
         }
     }
 
-    /**
-     * Get maintenance categories
-     *
-     * @return JsonResponse
-     */
     public function categories(): JsonResponse
     {
         try {

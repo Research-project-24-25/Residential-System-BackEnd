@@ -13,12 +13,6 @@ use Throwable;
 
 class PaymentMethodController extends Controller
 {
-    /**
-     * List all payment methods
-     *
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -39,13 +33,6 @@ class PaymentMethodController extends Controller
         }
     }
 
-    /**
-     * Show a specific payment method
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function show(int $id, Request $request): JsonResponse
     {
         try {
@@ -68,12 +55,6 @@ class PaymentMethodController extends Controller
         }
     }
 
-    /**
-     * Create a new payment method
-     *
-     * @param PaymentMethodRequest $request
-     * @return JsonResponse
-     */
     public function store(PaymentMethodRequest $request): JsonResponse
     {
         try {
@@ -107,13 +88,6 @@ class PaymentMethodController extends Controller
         }
     }
 
-    /**
-     * Update a payment method
-     *
-     * @param int $id
-     * @param PaymentMethodRequest $request
-     * @return JsonResponse
-     */
     public function update(int $id, PaymentMethodRequest $request): JsonResponse
     {
         try {
@@ -146,13 +120,6 @@ class PaymentMethodController extends Controller
         }
     }
 
-    /**
-     * Delete a payment method
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function destroy(int $id, Request $request): JsonResponse
     {
         try {
@@ -179,13 +146,6 @@ class PaymentMethodController extends Controller
         }
     }
 
-    /**
-     * Get payment methods for a specific resident
-     *
-     * @param int $residentId
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function residentPaymentMethods(int $residentId, Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -210,13 +170,6 @@ class PaymentMethodController extends Controller
         }
     }
 
-    /**
-     * Set a payment method as the default for a resident
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function setDefault(int $id, Request $request): JsonResponse
     {
         try {

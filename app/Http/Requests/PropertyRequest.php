@@ -6,13 +6,6 @@ use Illuminate\Validation\Rule;
 
 class PropertyRequest extends BaseFormRequest
 {
-    // authorize() method can be removed as parent::authorize() defaults to true.
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
-     */
     public function rules(): array
     {
         $parentRules = parent::rules(); // Gets common filter rules if isFilterAction() is true
@@ -25,14 +18,9 @@ class PropertyRequest extends BaseFormRequest
         return array_merge($parentRules, $this->getPropertyRules()); // parentRules will be empty if not filter action
     }
 
-    /**
-     * Get specific rules for filtering properties.
-     * Common filter rules are handled by BaseFormRequest.
-     */
     private function getSpecificFilterRules(): array
     {
         return [
-            // Support for single value or array of values
             'filters.type' => ['sometimes', 'nullable'],
             'filters.type.*' => ['string', Rule::in(['apartment', 'house', 'villa', 'studio'])],
 
@@ -68,9 +56,6 @@ class PropertyRequest extends BaseFormRequest
         ];
     }
 
-    /**
-     * Get rules for creating and updating properties
-     */
     private function getPropertyRules(): array
     {
         $isUpdate = $this->isUpdateRequest();
@@ -125,11 +110,6 @@ class PropertyRequest extends BaseFormRequest
         return $rules;
     }
 
-    /**
-     * Get custom messages for validator errors.
-     *
-     * @return array<string, string>
-     */
     public function messages(): array
     {
         $parentMessages = parent::messages(); // Get common filter messages

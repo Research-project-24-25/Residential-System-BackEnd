@@ -11,11 +11,6 @@ class MaintenanceFeedback extends Model
 {
     use HasFactory, Filterable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'maintenance_request_id',
         'resident_id',
@@ -26,22 +21,12 @@ class MaintenanceFeedback extends Model
         'would_recommend'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'rating' => 'integer',
         'resolved_satisfactorily' => 'boolean',
         'would_recommend' => 'boolean'
     ];
 
-    /**
-     * Define the filterable fields for this model.
-     *
-     * @var array<int, string>
-     */
     protected array $filterableFields = [
         'maintenance_request_id',
         'resident_id',
@@ -52,11 +37,6 @@ class MaintenanceFeedback extends Model
         'updated_at'
     ];
 
-    /**
-     * Define the searchable fields for this model.
-     *
-     * @var array<int, string>
-     */
     protected array $searchableFields = [
         'comments',
         'improvement_suggestions'

@@ -34,9 +34,6 @@ class Bill extends Model
         'metadata' => 'array',
     ];
 
-    /**
-     * Define the filterable fields for this model.
-     */
     protected array $filterableFields = [
         'bill_type',
         'property_id',
@@ -48,40 +45,25 @@ class Bill extends Model
         'updated_at'
     ];
 
-    /**
-     * Define the searchable fields for this model.
-     */
     protected array $searchableFields = [
         'description',
     ];
 
-    /**
-     * Get the property that the bill is for.
-     */
     public function property(): BelongsTo
     {
         return $this->belongsTo(Property::class);
     }
 
-    /**
-     * Get the resident that the bill is for.
-     */
     public function resident(): BelongsTo
     {
         return $this->belongsTo(Resident::class);
     }
 
-    /**
-     * Get the admin who created the bill.
-     */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'created_by');
     }
 
-    /**
-     * Get the payments for this bill.
-     */
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
@@ -105,50 +87,32 @@ class Bill extends Model
         return $this->amount - $this->paid_amount;
     }
 
-    /**
-     * Check if the bill is fully paid.
-     */
     public function getIsFullyPaidAttribute(): bool
     {
         return $this->remaining_balance <= 0;
     }
 
-    /**
-     * Check if the bill is overdue.
-     */
     public function getIsOverdueAttribute(): bool
     {
         return !$this->is_fully_paid && $this->due_date < now();
     }
 
-    /**
-     * Scope a query to only include unpaid bills.
-     */
     public function scopeUnpaid($query)
     {
         return $query->where('status', '!=', 'paid');
     }
 
-    /**
-     * Scope a query to only include overdue bills.
-     */
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now())
             ->where('status', '!=', 'paid');
     }
 
-    /**
-     * Scope a query to only include bills for a specific resident.
-     */
     public function scopeForResident($query, $residentId)
     {
         return $query->where('resident_id', $residentId);
     }
 
-    /**
-     * Scope a query to only include bills for a specific property.
-     */
     public function scopeForProperty($query, $propertyId)
     {
         return $query->where('property_id', $propertyId);

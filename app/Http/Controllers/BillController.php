@@ -17,12 +17,6 @@ class BillController extends Controller
 {
     public function __construct(private BillingService $billingService) {}
 
-    /**
-     * List all bills with filtering and pagination
-     *
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -38,12 +32,6 @@ class BillController extends Controller
         }
     }
 
-    /**
-     * Get a single bill
-     *
-     * @param int $id
-     * @return JsonResponse
-     */
     public function show($id): JsonResponse
     {
         try {
@@ -58,12 +46,6 @@ class BillController extends Controller
         }
     }
 
-    /**
-     * Create a new bill
-     *
-     * @param BillRequest $request
-     * @return JsonResponse
-     */
     public function store(BillRequest $request): JsonResponse
     {
         try {
@@ -94,13 +76,6 @@ class BillController extends Controller
         }
     }
 
-    /**
-     * Update an existing bill
-     *
-     * @param int $id
-     * @param BillRequest $request
-     * @return JsonResponse
-     */
     public function update($id, BillRequest $request): JsonResponse
     {
         try {
@@ -124,12 +99,6 @@ class BillController extends Controller
         }
     }
 
-    /**
-     * Delete a bill
-     *
-     * @param int $id
-     * @return JsonResponse
-     */
     public function destroy($id): JsonResponse
     {
         try {
@@ -148,13 +117,6 @@ class BillController extends Controller
         }
     }
 
-    /**
-     * Get bills for a specific property
-     *
-     * @param int $propertyId
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function propertyBills($propertyId, Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -172,13 +134,6 @@ class BillController extends Controller
         }
     }
 
-    /**
-     * Get bills for a specific resident
-     *
-     * @param int $residentId
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function residentBills($residentId, Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -196,12 +151,6 @@ class BillController extends Controller
         }
     }
 
-    /**
-     * Generate recurring bills 
-     * This method is intended to be called by a scheduled task
-     *
-     * @return JsonResponse
-     */
     public function generateRecurringBills(): JsonResponse
     {
         try {

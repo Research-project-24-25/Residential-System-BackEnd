@@ -12,11 +12,6 @@ class MaintenanceRequest extends Model
 {
     use HasFactory, Filterable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'maintenance_id',
         'property_id',
@@ -37,11 +32,6 @@ class MaintenanceRequest extends Model
         'has_feedback'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'requested_date' => 'date',
         'scheduled_date' => 'date',
@@ -52,11 +42,6 @@ class MaintenanceRequest extends Model
         'has_feedback' => 'boolean'
     ];
 
-    /**
-     * Define the filterable fields for this model.
-     *
-     * @var array<int, string>
-     */
     protected array $filterableFields = [
         'maintenance_id',
         'property_id',
@@ -72,11 +57,6 @@ class MaintenanceRequest extends Model
         'has_feedback'
     ];
 
-    /**
-     * Define the searchable fields for this model.
-     *
-     * @var array<int, string>
-     */
     protected array $searchableFields = [
         'description',
         'issue_details',
@@ -131,12 +111,7 @@ class MaintenanceRequest extends Model
         return $this->hasOne(MaintenanceFeedback::class);
     }
 
-    /**
-     * Get images with full URLs
-     *
-     * @param mixed $images
-     * @return array
-     */
+    // get images full URL
     public function getImagesAttribute($images)
     {
         if (empty($images)) {
@@ -152,12 +127,7 @@ class MaintenanceRequest extends Model
         return array_map(fn($image) => url($image), $imagesArray);
     }
 
-    /**
-     * Set images as JSON
-     *
-     * @param mixed $images
-     * @return void
-     */
+    // set images as JSON
     public function setImagesAttribute($images)
     {
         if (is_null($images)) {

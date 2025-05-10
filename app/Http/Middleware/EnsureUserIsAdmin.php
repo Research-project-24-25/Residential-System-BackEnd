@@ -4,9 +4,6 @@ namespace App\Http\Middleware;
 
 class EnsureUserIsAdmin extends EnsureUserType
 {
-    /**
-     * Check if the user is an admin with the required role
-     */
     protected function checkUserType($user, ?string $role): bool
     {
         if (!$user instanceof \App\Models\Admin) {
@@ -20,9 +17,6 @@ class EnsureUserIsAdmin extends EnsureUserType
         return true;
     }
 
-    /**
-     * Get the error message for unauthorized access
-     */
     protected function getErrorMessage(?string $role): string
     {
         if ($role === 'super_admin') {

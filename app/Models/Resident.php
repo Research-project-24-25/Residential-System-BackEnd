@@ -25,9 +25,6 @@ class Resident extends Authenticatable
         'password' => 'hashed',
     ];
 
-    /**
-     * Define the filterable fields for this model.
-     */
     protected array $filterableFields = [
         'username',
         'first_name',
@@ -39,9 +36,6 @@ class Resident extends Authenticatable
         'updated_at'
     ];
 
-    /**
-     * Define the searchable fields for this model.
-     */
     protected array $searchableFields = [
         'username',
         'first_name',
@@ -50,17 +44,11 @@ class Resident extends Authenticatable
         'phone_number'
     ];
 
-    /**
-     * Get the full name attribute
-     */
     public function getNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
     }
 
-    /**
-     * Get profile image URL
-     */
     public function getProfileImageAttribute($value)
     {
         if (empty($value)) {
@@ -70,12 +58,6 @@ class Resident extends Authenticatable
         return url($value);
     }
 
-    /**
-     * Set profile image attribute
-     * 
-     * @param mixed $value
-     * @return void
-     */
     public function setProfileImageAttribute($value)
     {
         $this->attributes['profile_image'] = $value;
@@ -97,73 +79,46 @@ class Resident extends Authenticatable
             ->withTimestamps();
     }
 
-    /**
-     * Get the admin who created this resident
-     */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'created_by');
     }
 
-    /**
-     * Get all bills for this resident.
-     */
     public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
     }
 
-    /**
-     * Get all payments made by this resident.
-     */
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
     }
 
-    /**
-     * Get all payment methods for this resident.
-     */
     public function paymentMethods(): HasMany
     {
         return $this->hasMany(PaymentMethod::class);
     }
 
-    /**
-     * Get the default payment method for this resident.
-     */
     public function defaultPaymentMethod()
     {
         return $this->paymentMethods()->where('is_default', true)->first();
     }
 
-    /**
-     * Get properties where this resident is a buyer or co-buyer.
-     */
     public function ownedProperties()
     {
         return $this->properties()->wherePivotIn('relationship_type', ['buyer', 'co_buyer']);
     }
 
-    /**
-     * Get properties where this resident is a renter.
-     */
     public function rentedProperties()
     {
         return $this->properties()->where('relationship_type', 'renter');
     }
 
-    /**
-     * Get total unpaid bills for this resident.
-     */
     public function getUnpaidBillsTotalAttribute(): float
     {
         return $this->bills()->unpaid()->sum('amount');
     }
 
-    /**
-     * Get overdue bills for this resident.
-     */
     public function getOverdueBillsAttribute()
     {
         return $this->bills()->overdue()->get();

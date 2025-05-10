@@ -13,12 +13,6 @@ use Illuminate\Support\Facades\Log;
 
 class PropertyController extends Controller
 {
-  /**
-   * Get all properties with optional pagination
-   * 
-   * @param Request $request
-   * @return ResourceCollection|JsonResponse
-   */
   public function index(Request $request): ResourceCollection|JsonResponse
   {
     try {
@@ -34,12 +28,6 @@ class PropertyController extends Controller
     }
   }
 
-  /**
-   * Get filtered properties
-   * 
-   * @param PropertyRequest $request
-   * @return ResourceCollection|JsonResponse
-   */
   public function filter(PropertyRequest $request): ResourceCollection|JsonResponse
   {
     try {
@@ -56,12 +44,6 @@ class PropertyController extends Controller
     }
   }
 
-  /**
-   * Get a single property
-   * 
-   * @param int $id
-   * @return JsonResponse
-   */
   public function show($id): JsonResponse
   {
     try {
@@ -80,12 +62,6 @@ class PropertyController extends Controller
     }
   }
 
-  /**
-   * Create a new property
-   * 
-   * @param PropertyRequest $request
-   * @return JsonResponse
-   */
   public function store(PropertyRequest $request): JsonResponse
   {
     try {
@@ -111,13 +87,6 @@ class PropertyController extends Controller
     }
   }
 
-  /**
-   * Update an existing property
-   * 
-   * @param PropertyRequest $request
-   * @param int $id
-   * @return JsonResponse
-   */
   public function update(PropertyRequest $request, $id): JsonResponse
   {
     try {
@@ -160,12 +129,6 @@ class PropertyController extends Controller
     }
   }
 
-  /**
-   * Delete a property
-   * 
-   * @param int $id
-   * @return JsonResponse
-   */
   public function destroy($id): JsonResponse
   {
     try {
@@ -188,12 +151,6 @@ class PropertyController extends Controller
     }
   }
 
-  /**
-   * Handle uploading property images
-   * 
-   * @param array $images
-   * @return array
-   */
   private function handleImageUploads($images): array
   {
     $uploadedImages = [];
@@ -208,12 +165,6 @@ class PropertyController extends Controller
     return $uploadedImages;
   }
 
-  /**
-   * Remove old property images
-   * 
-   * @param array $images
-   * @return void
-   */
   private function removeOldImages($images): void
   {
     if (!is_array($images)) {

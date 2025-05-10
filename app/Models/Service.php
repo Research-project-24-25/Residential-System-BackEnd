@@ -11,11 +11,6 @@ class Service extends Model
 {
     use HasFactory, Filterable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'description',
@@ -29,11 +24,6 @@ class Service extends Model
         'metadata'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'base_price' => 'decimal:2',
         'is_recurring' => 'boolean',
@@ -41,11 +31,6 @@ class Service extends Model
         'metadata' => 'array',
     ];
 
-    /**
-     * Define the filterable fields for this model.
-     *
-     * @var array<int, string>
-     */
     protected array $filterableFields = [
         'type',
         'is_recurring',
@@ -55,52 +40,32 @@ class Service extends Model
         'updated_at'
     ];
 
-    /**
-     * Define the searchable fields for this model.
-     *
-     * @var array<int, string>
-     */
     protected array $searchableFields = [
         'name',
         'description',
     ];
 
-    /**
-     * Get all service requests for this service.
-     */
     public function serviceRequests(): HasMany
     {
         return $this->hasMany(ServiceRequest::class);
     }
 
-    /**
-     * Get all active requests for this service.
-     */
     public function activeRequests()
     {
         return $this->serviceRequests()
             ->whereNotIn('status', ['completed', 'cancelled']);
     }
 
-    /**
-     * Scope a query to only include active services.
-     */
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
 
-    /**
-     * Scope a query to only include recurring services.
-     */
     public function scopeRecurring($query)
     {
         return $query->where('is_recurring', true);
     }
 
-    /**
-     * Scope a query to filter by type.
-     */
     public function scopeOfType($query, $type)
     {
         return $query->where('type', $type);

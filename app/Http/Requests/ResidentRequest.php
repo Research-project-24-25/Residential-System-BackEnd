@@ -2,25 +2,15 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Admin;
 use Illuminate\Validation\Rule;
-// FormRequest is extended by BaseFormRequest
 
 class ResidentRequest extends BaseFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return $this->isAdmin();
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
-     */
     public function rules(): array
     {
         $parentRules = parent::rules(); // Gets common filter rules if isFilterAction() is true
@@ -33,10 +23,6 @@ class ResidentRequest extends BaseFormRequest
         return array_merge($parentRules, $this->getEntityRules()); // parentRules will be empty if not filter action
     }
 
-    /**
-     * Get specific filter rules for residents.
-     * Common filter rules are handled by BaseFormRequest.
-     */
     private function getSpecificFilterRules(): array
     {
         return [
@@ -114,9 +100,6 @@ class ResidentRequest extends BaseFormRequest
         return $rules;
     }
 
-    /**
-     * Get custom messages for validator errors.
-     */
     public function messages(): array
     {
         $parentMessages = parent::messages();

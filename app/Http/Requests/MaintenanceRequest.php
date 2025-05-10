@@ -6,13 +6,6 @@ use Illuminate\Validation\Rule;
 
 class MaintenanceRequest extends BaseFormRequest
 {
-    // authorize() method can be removed as parent::authorize() defaults to true.
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
-     */
     public function rules(): array
     {
         $parentRules = parent::rules(); // Gets common filter rules if isFilterAction() is true
@@ -49,10 +42,6 @@ class MaintenanceRequest extends BaseFormRequest
         return array_merge($parentRules, $specificRules); // parentRules will be empty if not filter action
     }
 
-    /**
-     * Get specific rules for filtering maintenance types.
-     * Common filter rules (search, sort, pagination, created_at/updated_at) are handled by BaseFormRequest.
-     */
     private function getSpecificFilterRules(): array
     {
         return [
@@ -75,11 +64,6 @@ class MaintenanceRequest extends BaseFormRequest
         ];
     }
 
-    /**
-     * Get custom messages for validator errors.
-     *
-     * @return array<string, string>
-     */
     public function messages(): array
     {
         $parentMessages = parent::messages(); // Get common filter messages

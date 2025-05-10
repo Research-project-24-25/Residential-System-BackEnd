@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ServiceRequestRequest;
 use App\Http\Resources\ServiceRequestResource;
-use App\Models\Bill;
 use App\Models\Property;
 use App\Models\Service;
 use App\Models\ServiceRequest;
@@ -24,12 +23,6 @@ class ServiceRequestController extends Controller
         $this->billingService = $billingService;
     }
 
-    /**
-     * Display a listing of the service requests.
-     *
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -51,12 +44,6 @@ class ServiceRequestController extends Controller
         }
     }
 
-    /**
-     * Get filtered service requests
-     * 
-     * @param ServiceRequestRequest $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function filter(ServiceRequestRequest $request): ResourceCollection|JsonResponse
     {
         try {
@@ -79,12 +66,6 @@ class ServiceRequestController extends Controller
         }
     }
 
-    /**
-     * Store a newly created service request in storage.
-     *
-     * @param ServiceRequestRequest $request
-     * @return JsonResponse
-     */
     public function store(ServiceRequestRequest $request): JsonResponse
     {
         try {
@@ -126,13 +107,6 @@ class ServiceRequestController extends Controller
         }
     }
 
-    /**
-     * Display the specified service request.
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function show(int $id, Request $request): JsonResponse
     {
         try {
@@ -153,13 +127,6 @@ class ServiceRequestController extends Controller
         }
     }
 
-    /**
-     * Update the specified service request in storage.
-     *
-     * @param ServiceRequestRequest $request
-     * @param int $id
-     * @return JsonResponse
-     */
     public function update(ServiceRequestRequest $request, int $id): JsonResponse
     {
         try {
@@ -247,13 +214,6 @@ class ServiceRequestController extends Controller
         }
     }
 
-    /**
-     * Cancel a service request (resident only)
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function cancel(int $id, Request $request): JsonResponse
     {
         try {
@@ -284,13 +244,6 @@ class ServiceRequestController extends Controller
         }
     }
 
-    /**
-     * Remove the specified service request from storage (admin only)
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function destroy(int $id, Request $request): JsonResponse
     {
         try {
@@ -314,13 +267,6 @@ class ServiceRequestController extends Controller
         }
     }
 
-    /**
-     * Get service requests for a specific property
-     *
-     * @param int $propertyId
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function propertyServiceRequests(int $propertyId, Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -351,13 +297,6 @@ class ServiceRequestController extends Controller
         }
     }
 
-    /**
-     * Get service requests for a specific resident
-     *
-     * @param int $residentId
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function residentServiceRequests(int $residentId, Request $request): ResourceCollection|JsonResponse
     {
         try {

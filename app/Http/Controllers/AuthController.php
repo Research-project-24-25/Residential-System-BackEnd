@@ -15,12 +15,6 @@ use Throwable;
 
 class AuthController extends Controller
 {
-    /**
-     * Unified login endpoint for all user types
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function login(Request $request): JsonResponse
     {
         try {
@@ -77,12 +71,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Unified logout endpoint for all user types
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function logout(Request $request): JsonResponse
     {
         try {

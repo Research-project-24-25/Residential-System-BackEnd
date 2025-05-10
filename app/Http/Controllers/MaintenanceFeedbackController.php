@@ -14,13 +14,6 @@ use Throwable;
 
 class MaintenanceFeedbackController extends Controller
 {
-    /**
-     * Store a newly created feedback in storage.
-     *
-     * @param int $maintenanceRequestId
-     * @param MaintenanceFeedbackRequest $request
-     * @return JsonResponse
-     */
     public function store(int $maintenanceRequestId, MaintenanceFeedbackRequest $request): JsonResponse
     {
         try {
@@ -64,13 +57,6 @@ class MaintenanceFeedbackController extends Controller
         }
     }
 
-    /**
-     * Display the specified feedback.
-     *
-     * @param int $maintenanceRequestId
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function show(int $maintenanceRequestId, Request $request): JsonResponse
     {
         try {
@@ -101,13 +87,6 @@ class MaintenanceFeedbackController extends Controller
         }
     }
 
-    /**
-     * Update the specified feedback in storage.
-     *
-     * @param int $maintenanceRequestId
-     * @param MaintenanceFeedbackRequest $request
-     * @return JsonResponse
-     */
     public function update(int $maintenanceRequestId, MaintenanceFeedbackRequest $request): JsonResponse
     {
         try {
@@ -133,13 +112,6 @@ class MaintenanceFeedbackController extends Controller
         }
     }
 
-    /**
-     * Remove the specified feedback from storage.
-     *
-     * @param int $maintenanceRequestId
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function destroy(int $maintenanceRequestId, Request $request): JsonResponse
     {
         try {
@@ -170,12 +142,6 @@ class MaintenanceFeedbackController extends Controller
         }
     }
 
-    /**
-     * List all feedback (admin only)
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function index(Request $request): JsonResponse
     {
         try {
@@ -216,13 +182,6 @@ class MaintenanceFeedbackController extends Controller
         }
     }
 
-    /**
-     * Get resident feedback (resident can view own)
-     *
-     * @param int $residentId
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function residentFeedback(int $residentId, Request $request): JsonResponse
     {
         try {
@@ -248,12 +207,6 @@ class MaintenanceFeedbackController extends Controller
         }
     }
 
-    /**
-     * Notify admins about new feedback
-     *
-     * @param MaintenanceFeedback $feedback
-     * @return void
-     */
     private function notifyAdmins(MaintenanceFeedback $feedback): void
     {
         // Get all admins

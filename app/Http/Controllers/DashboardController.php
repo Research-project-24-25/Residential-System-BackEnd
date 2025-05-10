@@ -12,12 +12,6 @@ class DashboardController extends Controller
 {
     public function __construct(private DashboardService $dashboardService) {}
 
-    /**
-     * Get dashboard overview data
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function overview(Request $request): JsonResponse
     {
         try {
@@ -33,12 +27,6 @@ class DashboardController extends Controller
         }
     }
 
-    /**
-     * Get recent activity for dashboard
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function recentActivity(Request $request): JsonResponse
     {
         try {
@@ -54,12 +42,6 @@ class DashboardController extends Controller
         }
     }
 
-    /**
-     * Get revenue statistics
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function revenue(Request $request): JsonResponse
     {
         try {
@@ -75,11 +57,6 @@ class DashboardController extends Controller
         }
     }
 
-    /**
-     * Get property statistics
-     *
-     * @return JsonResponse
-     */
     public function properties(): JsonResponse
     {
         try {
@@ -94,11 +71,6 @@ class DashboardController extends Controller
         }
     }
 
-    /**
-     * Get user statistics
-     *
-     * @return JsonResponse
-     */
     public function users(): JsonResponse
     {
         try {
@@ -113,11 +85,6 @@ class DashboardController extends Controller
         }
     }
 
-    /**
-     * Get service statistics
-     *
-     * @return JsonResponse
-     */
     public function services(): JsonResponse
     {
         try {

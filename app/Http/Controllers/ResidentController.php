@@ -17,12 +17,6 @@ class ResidentController extends Controller
 {
     public function __construct(private ResidentPropertyService $service) {}
 
-    /**
-     * Get all residents with optional pagination
-     * 
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function index(Request $request): JsonResponse
     {
         try {
@@ -42,12 +36,6 @@ class ResidentController extends Controller
         }
     }
 
-    /**
-     * Get filtered residents
-     * 
-     * @param ResidentRequest $request
-     * @return JsonResponse
-     */
     public function filter(ResidentRequest $request): JsonResponse
     {
         try {
@@ -66,12 +54,6 @@ class ResidentController extends Controller
         }
     }
 
-    /**
-     * Get a single resident
-     * 
-     * @param int $id
-     * @return JsonResponse
-     */
     public function show($id): JsonResponse
     {
         try {
@@ -86,12 +68,6 @@ class ResidentController extends Controller
         }
     }
 
-    /**
-     * Create a new resident and attach to property
-     * 
-     * @param ResidentRequest $request
-     * @return JsonResponse
-     */
     public function store(ResidentRequest $request): JsonResponse
     {
         try {
@@ -141,13 +117,6 @@ class ResidentController extends Controller
         }
     }
 
-    /**
-     * Update a resident
-     * 
-     * @param int $id
-     * @param ResidentRequest $request
-     * @return JsonResponse
-     */
     public function update($id, ResidentRequest $request): JsonResponse
     {
         try {
@@ -213,12 +182,6 @@ class ResidentController extends Controller
         }
     }
 
-    /**
-     * Delete a resident
-     * 
-     * @param int $id
-     * @return JsonResponse
-     */
     public function destroy($id): JsonResponse
     {
         try {
@@ -237,12 +200,6 @@ class ResidentController extends Controller
         }
     }
 
-    /**
-     * Handle uploading resident profile image
-     * 
-     * @param UploadedFile $image
-     * @return string
-     */
     private function handleProfileImage(UploadedFile $image): string
     {
         $filename = time() . '_' . $image->getClientOriginalName();
@@ -250,12 +207,6 @@ class ResidentController extends Controller
         return 'resident-images/' . $filename;
     }
 
-    /**
-     * Remove old profile image
-     * 
-     * @param string|null $imagePath
-     * @return void
-     */
     private function removeOldProfileImage(?string $imagePath): void
     {
         if (empty($imagePath)) {

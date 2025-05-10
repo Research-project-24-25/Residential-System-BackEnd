@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\MaintenanceRequestRequest;
 use App\Http\Resources\MaintenanceRequestResource;
 use App\Models\Admin;
-use App\Models\Bill;
 use App\Models\MaintenanceRequest;
 use App\Models\Property;
 use App\Services\BillingService;
@@ -25,12 +24,6 @@ class MaintenanceRequestController extends Controller
         $this->billingService = $billingService;
     }
 
-    /**
-     * Display a listing of the maintenance requests.
-     *
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -56,12 +49,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Get filtered maintenance requests
-     * 
-     * @param MaintenanceRequestRequest $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function filter(MaintenanceRequestRequest $request): ResourceCollection|JsonResponse
     {
         try {
@@ -84,12 +71,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Store a newly created maintenance request in storage.
-     *
-     * @param MaintenanceRequestRequest $request
-     * @return JsonResponse
-     */
     public function store(MaintenanceRequestRequest $request): JsonResponse
     {
         try {
@@ -141,13 +122,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Display the specified maintenance request.
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function show(int $id, Request $request): JsonResponse
     {
         try {
@@ -168,13 +142,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Update the specified maintenance request in storage.
-     *
-     * @param MaintenanceRequestRequest $request
-     * @param int $id
-     * @return JsonResponse
-     */
     public function update(MaintenanceRequestRequest $request, int $id): JsonResponse
     {
         try {
@@ -270,13 +237,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Cancel a maintenance request (resident only)
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function cancel(int $id, Request $request): JsonResponse
     {
         try {
@@ -307,13 +267,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Remove the specified maintenance request from storage (admin only)
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function destroy(int $id, Request $request): JsonResponse
     {
         try {
@@ -343,13 +296,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Get maintenance requests for a specific property
-     *
-     * @param int $propertyId
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function propertyMaintenanceRequests(int $propertyId, Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -380,13 +326,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Get maintenance requests for a specific resident
-     *
-     * @param int $residentId
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function residentMaintenanceRequests(int $residentId, Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -406,12 +345,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Get emergency maintenance requests (admin only)
-     *
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function emergencyRequests(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -432,12 +365,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Handle uploading maintenance request images
-     * 
-     * @param array $images
-     * @return array
-     */
     private function handleImageUploads($images): array
     {
         $uploadedImages = [];
@@ -452,12 +379,6 @@ class MaintenanceRequestController extends Controller
         return $uploadedImages;
     }
 
-    /**
-     * Remove maintenance request images
-     * 
-     * @param array $images
-     * @return void
-     */
     private function removeImages($images): void
     {
         if (!is_array($images)) {
@@ -472,12 +393,6 @@ class MaintenanceRequestController extends Controller
         }
     }
 
-    /**
-     * Notify admins about new maintenance request
-     * 
-     * @param MaintenanceRequest $maintenanceRequest
-     * @return void
-     */
     private function notifyAdmins(MaintenanceRequest $maintenanceRequest): void
     {
         // Get all admins

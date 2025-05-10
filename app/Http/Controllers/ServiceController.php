@@ -12,12 +12,6 @@ use Throwable;
 
 class ServiceController extends Controller
 {
-    /**
-     * Display a listing of the services.
-     *
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -39,12 +33,6 @@ class ServiceController extends Controller
         }
     }
 
-    /**
-     * Get filtered services
-     * 
-     * @param ServiceRequest $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function filter(ServiceRequest $request): ResourceCollection|JsonResponse
     {
         try {
@@ -67,12 +55,6 @@ class ServiceController extends Controller
         }
     }
 
-    /**
-     * Store a newly created service in storage.
-     *
-     * @param ServiceRequest $request
-     * @return JsonResponse
-     */
     public function store(ServiceRequest $request): JsonResponse
     {
         try {
@@ -93,13 +75,6 @@ class ServiceController extends Controller
         }
     }
 
-    /**
-     * Display the specified service.
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function show(int $id, Request $request): JsonResponse
     {
         try {
@@ -126,13 +101,6 @@ class ServiceController extends Controller
         }
     }
 
-    /**
-     * Update the specified service in storage.
-     *
-     * @param ServiceRequest $request
-     * @param int $id
-     * @return JsonResponse
-     */
     public function update(ServiceRequest $request, int $id): JsonResponse
     {
         try {
@@ -155,13 +123,6 @@ class ServiceController extends Controller
         }
     }
 
-    /**
-     * Remove the specified service from storage.
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function destroy(int $id, Request $request): JsonResponse
     {
         try {
@@ -188,13 +149,6 @@ class ServiceController extends Controller
         }
     }
 
-    /**
-     * Toggle service active status
-     *
-     * @param int $id
-     * @param Request $request
-     * @return JsonResponse 
-     */
     public function toggleActive(int $id, Request $request): JsonResponse
     {
         try {

@@ -5,7 +5,6 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use App\Models\Admin; // Assuming App\Models\Admin exists
-use App\Models\User; // For type hinting $this->user()
 
 abstract class BaseFormRequest extends FormRequest
 {

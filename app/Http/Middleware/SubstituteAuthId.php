@@ -8,11 +8,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SubstituteAuthId
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
         // If user is authenticated and this is a resident user

@@ -17,12 +17,6 @@ class PaymentController extends Controller
 {
     public function __construct(private PaymentService $paymentService) {}
 
-    /**
-     * List all payments with filtering and pagination
-     *
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -38,12 +32,6 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Get a single payment
-     *
-     * @param int $id
-     * @return JsonResponse
-     */
     public function show($id): JsonResponse
     {
         try {
@@ -58,12 +46,6 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Process a new payment
-     *
-     * @param PaymentRequest $request
-     * @return JsonResponse
-     */
     public function store(PaymentRequest $request): JsonResponse
     {
         try {
@@ -89,13 +71,6 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Update a payment (only status updates are allowed)
-     *
-     * @param int $id
-     * @param PaymentRequest $request
-     * @return JsonResponse
-     */
     public function update($id, PaymentRequest $request): JsonResponse
     {
         try {
@@ -123,13 +98,6 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Get payments for a specific bill
-     *
-     * @param int $billId
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function billPayments($billId, Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -147,13 +115,6 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Get payments for a specific resident
-     *
-     * @param int $residentId
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function residentPayments($residentId, Request $request): ResourceCollection|JsonResponse
     {
         try {

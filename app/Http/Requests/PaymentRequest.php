@@ -4,24 +4,14 @@ namespace App\Http\Requests;
 
 use App\Models\Bill;
 use Illuminate\Validation\Rule;
-// FormRequest is extended by BaseFormRequest
 
 class PaymentRequest extends BaseFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        // Both residents and admins can make payments, with different rules
         return $this->isAuthenticated();
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
-     */
     public function rules(): array
     {
         $specificRules = [];
@@ -72,7 +62,7 @@ class PaymentRequest extends BaseFormRequest
                 $specificRules['resident_id'] = ['nullable', 'exists:residents,id']; // Admin can specify resident
             }
 
-        } else { // Assuming PUT/PATCH for updates
+        } else {
             // Updating existing payment - only admins can update payments
             if (!$isAdmin) {
                 // Non-admins cannot update payments. Return empty or perhaps specific prohibitions.
@@ -96,32 +86,20 @@ class PaymentRequest extends BaseFormRequest
                 'metadata' => ['nullable', 'array'],
             ];
         }
-        return array_merge(parent::rules(), $specificRules); // parent::rules() will be empty
+        return array_merge(parent::rules(), $specificRules);
     }
 
-    /**
-     * Get the error messages for the defined validation rules.
-     *
-     * @return array<string, string>
-     */
     public function messages(): array
     {
-        $parentMessages = parent::messages(); // parent::messages() will be empty
+        $parentMessages = parent::messages();
         $specificMessages = [
             'bill_id.exists' => 'The selected bill does not exist or you do not have permission to pay it.',
             'payment_method_id.exists' => 'The selected payment method does not exist or does not belong to you.',
             'status.prohibited' => 'You are not authorized to update the payment status.',
-            // Add other prohibited messages if needed
         ];
         return array_merge($parentMessages, $specificMessages);
     }
 
-    /**
-     * Configure the validator instance.
-     *
-     * @param \Illuminate\Validation\Validator $validator
-     * @return void
-     */
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {

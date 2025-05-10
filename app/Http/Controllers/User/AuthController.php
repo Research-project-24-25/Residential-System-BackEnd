@@ -3,21 +3,14 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Events\Registered;
 use Throwable;
 
 class AuthController extends Controller
 {
-    use ApiResponse;
-
-    /**
-     * Register a new user and send verification email.
-     */
     public function register(Request $request)
     {
         try {
@@ -43,9 +36,7 @@ class AuthController extends Controller
             return $this->handleException($e);
         }
     }
-    /**
-     * Get the currently authenticated user.
-     */
+
     public function me(Request $request)
     {
         return $this->successResponse('User data fetched successfully', [

@@ -37,9 +37,6 @@ class PaymentMethod extends Model
         'account_number',
     ];
 
-    /**
-     * Define the filterable fields for this model.
-     */
     protected array $filterableFields = [
         'resident_id',
         'type',
@@ -51,25 +48,16 @@ class PaymentMethod extends Model
         'updated_at'
     ];
 
-    /**
-     * Get the resident that owns the payment method.
-     */
     public function resident(): BelongsTo
     {
         return $this->belongsTo(Resident::class);
     }
 
-    /**
-     * Get the payments made with this payment method.
-     */
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
     }
 
-    /**
-     * Get the masked account number.
-     */
     public function getMaskedAccountNumberAttribute(): string
     {
         if (empty($this->account_number)) {
@@ -82,17 +70,11 @@ class PaymentMethod extends Model
         return $masked . $visible;
     }
 
-    /**
-     * Scope a query to only include payment methods for a specific resident.
-     */
     public function scopeForResident($query, $residentId)
     {
         return $query->where('resident_id', $residentId);
     }
 
-    /**
-     * Scope a query to only include active payment methods.
-     */
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
