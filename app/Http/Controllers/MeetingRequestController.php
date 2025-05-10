@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\MeetingRequestStoreRequest;
-use App\Http\Requests\MeetingRequestUpdateRequest;
+use App\Http\Requests\MeetingRequestRequest;
 use App\Http\Resources\MeetingRequestResource;
 use App\Models\MeetingRequest;
 use App\Models\Property;
@@ -18,9 +17,6 @@ use Throwable;
 
 class MeetingRequestController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -44,12 +40,6 @@ class MeetingRequestController extends Controller
         }
     }
 
-    /**
-     * Get filtered meeting requests
-     * 
-     * @param Request $request
-     * @return ResourceCollection|JsonResponse
-     */
     public function filter(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -75,10 +65,7 @@ class MeetingRequestController extends Controller
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(MeetingRequestStoreRequest $request): JsonResponse
+    public function store(MeetingRequestRequest $request): JsonResponse
     {
         try {
             $user = $request->user();
@@ -113,9 +100,6 @@ class MeetingRequestController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Request $request, $id): JsonResponse
     {
         try {
@@ -143,10 +127,7 @@ class MeetingRequestController extends Controller
         }
     }
 
-    /**
-     * Update a meeting request.
-     */
-    public function update(MeetingRequestUpdateRequest $request, $id): JsonResponse
+    public function update(MeetingRequestRequest $request, $id): JsonResponse
     {
         try {
             $user = $request->user();
@@ -204,9 +185,6 @@ class MeetingRequestController extends Controller
         }
     }
 
-    /**
-     * Cancel a meeting request (User can cancel their own requests).
-     */
     public function cancel(Request $request, $id): JsonResponse
     {
         try {
@@ -244,9 +222,6 @@ class MeetingRequestController extends Controller
         }
     }
 
-    /**
-     * Delete a meeting request (Admin only).
-     */
     public function destroy($id): JsonResponse
     {
         try {
@@ -265,9 +240,6 @@ class MeetingRequestController extends Controller
         }
     }
 
-    /**
-     * Notify admins about new meeting request.
-     */
     private function notifyAdmins(MeetingRequest $meetingRequest): void
     {
         // Get all admins
