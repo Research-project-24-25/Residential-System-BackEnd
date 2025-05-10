@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class ServiceRequestRequest extends FormRequest
@@ -53,10 +54,15 @@ class ServiceRequestRequest extends FormRequest
 
         // Admin-specific rules for creating or updating service requests
         if ($isAdmin) {
+            $serviceRequestId = $this->route('id');
+            $serviceRequest = \App\Models\ServiceRequest::findOrFail($serviceRequestId);
+            $requested_date = $serviceRequest->requested_date ?? now()->toDateString();
+            $scheduled_date = $serviceRequest->scheduled_date ?? now()->toDateString();
+
             $additionalRules = [
                 'resident_id' => ['required', 'exists:residents,id'],
-                'scheduled_date' => ['nullable', 'date', 'after_or_equal:requested_date'],
-                'completion_date' => ['nullable', 'date', 'after_or_equal:requested_date'],
+                'scheduled_date' => ['nullable', 'date', 'after_or_equal:' . $requested_date],
+                'completion_date' => ['nullable', 'date', 'after_or_equal:' . $scheduled_date],
                 'status' => ['sometimes', Rule::in(['pending', 'approved', 'scheduled', 'in_progress', 'completed', 'cancelled'])],
                 'notes' => ['nullable', 'string', 'max:1000'],
                 'estimated_cost' => ['nullable', 'numeric', 'min:0'],

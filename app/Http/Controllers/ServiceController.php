@@ -21,10 +21,12 @@ class ServiceController extends Controller
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
+            $user = $request->user();
+
             $perPage = $request->get('per_page', 10);
 
             $services = Service::query()
-                ->when($request->user() && $request->user()->getTable() !== 'admins', function ($query) {
+                ->when($user && $user->getTable() !== 'admins', function ($query) {
                     // Only show active services to non-admin users
                     return $query->where('is_active', true);
                 })
@@ -46,10 +48,12 @@ class ServiceController extends Controller
     public function filter(ServiceRequest $request): ResourceCollection|JsonResponse
     {
         try {
+            $user = $request->user();
+
             $perPage = $request->get('per_page', 10);
 
             $services = Service::query()
-                ->when($request->user() && $request->user()->getTable() !== 'admins', function ($query) {
+                ->when($user && $user->getTable() !== 'admins', function ($query) {
                     // Only show active services to non-admin users
                     return $query->where('is_active', true);
                 })
@@ -99,15 +103,17 @@ class ServiceController extends Controller
     public function show(int $id, Request $request): JsonResponse
     {
         try {
+            $user = $request->user();
+
             $service = Service::findOrFail($id);
 
             // Non-admin users can only view active services
-            if ($request->user()->getTable() !== 'admins' && !$service->is_active) {
+            if ($user->getTable() !== 'admins' && !$service->is_active) {
                 return $this->forbiddenResponse('Service not available');
             }
 
             // Count active requests if admin
-            if ($request->user()->getTable() === 'admins') {
+            if ($user->getTable() === 'admins') {
                 $service->loadCount('activeRequests');
             }
 

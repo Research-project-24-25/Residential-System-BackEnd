@@ -85,15 +85,6 @@ Route::controller(PropertyController::class)
         Route::get('/{id}', 'show')->name('show');
     });
 
-Route::controller(ServiceController::class)
-    ->prefix('services')
-    ->name('services.')
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/filter', 'filter')->name('filter');
-        Route::get('/{id}', 'show')->name('show');
-    });
-
 Route::post('auth/register', [UserAuthController::class, 'register'])
     ->name('auth.register');
 
