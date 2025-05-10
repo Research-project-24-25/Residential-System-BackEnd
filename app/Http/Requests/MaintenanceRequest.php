@@ -25,7 +25,16 @@ class MaintenanceRequest extends BaseFormRequest
         $specificRules = [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'category' => ['required', 'string', Rule::in(['plumbing', 'electrical', 'hvac', 'structural', 'appliances', 'landscaping', 'painting', 'other'])],
+            'category' => [
+                'required', 
+                'string', 
+                function ($attribute, $value, $fail) {
+                    $allowedValues = ['plumbing', 'electrical', 'hvac', 'structural', 'appliances', 'landscaping', 'painting', 'other'];
+                    if (!in_array(strtolower($value), $allowedValues)) {
+                        $fail('The '.$attribute.' must be one of: '.implode(', ', $allowedValues));
+                    }
+                }
+            ],
             'estimated_cost' => ['nullable', 'numeric', 'min:0'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'estimated_hours' => ['nullable', 'integer', 'min:0'],

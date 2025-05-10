@@ -307,7 +307,6 @@ Route::prefix('admin')
                 Route::get('/', 'index')->name('index');
                 Route::post('/', 'store')->name('store');
                 Route::get('/{id}', 'show')->name('show');
-                Route::match(['put', 'patch'], '/{id}', 'update')->name('update');
                 Route::delete('/{id}', 'destroy')->name('destroy');
             });
     });
