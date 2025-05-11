@@ -20,10 +20,16 @@ class BillController extends Controller
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
-            $bills = Bill::query()
-                ->with(['property', 'resident'])
-                ->filter($request)
-                ->sort($request)
+            $user = $request->user();
+
+            $query = Bill::query()->with(['property', 'resident']);
+
+            // If user is not an admin, only show their bills
+            if ($user->getTable() === 'residents') {
+                $query->where('resident_id', $user->id);
+            }
+
+            $bills = $query->sort($request)
                 ->paginate($request->get('per_page', 10));
 
             return BillResource::collection($bills);
@@ -32,10 +38,39 @@ class BillController extends Controller
         }
     }
 
-    public function show($id): JsonResponse
+    public function filter(Request $request): ResourceCollection|JsonResponse
     {
         try {
+            $user = $request->user();
+
+            $query = Bill::query()->with(['property', 'resident']);
+
+            // If user is not an admin, only show their bills
+            if ($user->getTable() === 'residents') {
+                $query->where('resident_id', $user->id);
+            }
+
+            $bills = $query
+                ->sort($request)
+                ->filter($request)
+                ->paginate($request->get('per_page', 10));
+
+            return BillResource::collection($bills);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function show($id, Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
             $bill = Bill::with(['property', 'resident', 'payments'])->findOrFail($id);
+
+            if ($user->getTable() === 'residents' && $bill->resident_id !== $user->id) {
+                return $this->errorResponse('You are not authorized!');
+            }
 
             return $this->successResponse(
                 'Bill retrieved successfully',

@@ -142,9 +142,9 @@ Route::prefix('admin')
             ->only(['index', 'store', 'show', 'update']);
         Route::get('bills/{billId}/payments', [PaymentController::class, 'billPayments']);
         Route::get('residents/{residentId}/payments', [PaymentController::class, 'residentPayments']);
-    
+
         // Payment methods routes removed
-    
+
         // Maintenance types
         Route::apiResource('maintenance-types', MaintenanceController::class);
         Route::post('maintenance-types/filter', [MaintenanceController::class, 'filter']);
@@ -183,12 +183,12 @@ Route::prefix('resident')
         // Bills
         Route::apiResource('bills', BillController::class)
             ->only(['index', 'show']);
+        Route::post('bills/filter', [BillController::class, 'filter']);
 
         // Payments
         Route::apiResource('payments', PaymentController::class)
             ->only(['index', 'store', 'show']);
-
-        // Payment methods routes removed
+        Route::post('payments/filter', [PaymentController::class, 'filter']);
 
         // Services
         Route::apiResource('services', ServiceController::class)

@@ -20,9 +20,14 @@ class PaymentController extends Controller
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
-            $payments = Payment::query()
-                ->with(['bill', 'resident'])
-                ->filter($request)
+            $user = $request->user();
+            $query = Payment::query()->with(['bill', 'resident']);
+
+            if ($user && $user->getTable() === 'residents') {
+                $query->where('resident_id', $user->id);
+            }
+
+            $payments = $query
                 ->sort($request)
                 ->paginate($request->get('per_page', 10));
 
@@ -32,10 +37,35 @@ class PaymentController extends Controller
         }
     }
 
-    public function show($id): JsonResponse
+    public function filter(Request $request): ResourceCollection|JsonResponse
     {
         try {
+            $user = $request->user();
+            $query = Payment::query()->with(['bill', 'resident']);
+
+            if ($user && $user->getTable() === 'residents') {
+                $query->where('resident_id', $user->id);
+            }
+
+            $payments = $query->filter($request)
+                ->sort($request)
+                ->paginate($request->get('per_page', 10));
+
+            return PaymentResource::collection($payments);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function show($id, Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
             $payment = Payment::with(['bill', 'resident'])->findOrFail($id);
+
+            if ($user && $user->getTable() === 'residents' && $payment->resident_id !== $user->id) {
+                return $this->errorResponse('You are not authorized to view this payment.', 403);
+            }
 
             return $this->successResponse(
                 'Payment retrieved successfully',
