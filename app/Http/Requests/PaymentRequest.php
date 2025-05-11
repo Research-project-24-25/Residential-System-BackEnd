@@ -22,7 +22,6 @@ class PaymentRequest extends BaseFormRequest
             // Creating new payment
             $specificRules = [
                 'bill_id' => ['required', 'exists:bills,id'],
-                'payment_method_id' => ['nullable', 'integer'], // Ensure it's an integer if provided, though it won't be validated against a table
                 'amount' => ['required', 'numeric', 'min:0.01'],
                 'currency' => ['nullable', 'string', 'size:3'],
                 'notes' => ['nullable', 'string', 'max:500'],
@@ -39,8 +38,6 @@ class PaymentRequest extends BaseFormRequest
                         }
                     })
                 ];
-
-                // payment_method_id validation specific to residents is removed as payment_methods are removed
             }
     
             // If admin, allow specifying more fields
@@ -84,7 +81,6 @@ class PaymentRequest extends BaseFormRequest
         $parentMessages = parent::messages();
         $specificMessages = [
             'bill_id.exists' => 'The selected bill does not exist or you do not have permission to pay it.',
-            // 'payment_method_id.exists' message removed
             'status.prohibited' => 'You are not authorized to update the payment status.',
         ];
         return array_merge($parentMessages, $specificMessages);
