@@ -22,7 +22,7 @@ class PaymentRequest extends BaseFormRequest
             // Creating new payment
             $specificRules = [
                 'bill_id' => ['required', 'exists:bills,id'],
-                'payment_method_id' => ['nullable', 'exists:payment_methods,id'],
+                'payment_method_id' => ['nullable', 'integer'], // Ensure it's an integer if provided, though it won't be validated against a table
                 'amount' => ['required', 'numeric', 'min:0.01'],
                 'currency' => ['nullable', 'string', 'size:3'],
                 'notes' => ['nullable', 'string', 'max:500'],
@@ -40,19 +40,9 @@ class PaymentRequest extends BaseFormRequest
                     })
                 ];
 
-                // Residents can only use their own payment methods
-                if ($this->filled('payment_method_id')) {
-                    $specificRules['payment_method_id'] = [
-                        'exists:payment_methods,id', // Basic existence check
-                        Rule::exists('payment_methods', 'id')->where(function ($query) {
-                           if ($this->user()) {
-                               $query->where('resident_id', $this->user()->id);
-                           }
-                        })
-                    ];
-                }
+                // payment_method_id validation specific to residents is removed as payment_methods are removed
             }
-
+    
             // If admin, allow specifying more fields
             if ($isAdmin) {
                 $specificRules['status'] = ['nullable', Rule::in(['pending', 'processing', 'completed', 'failed', 'refunded'])];
@@ -94,7 +84,7 @@ class PaymentRequest extends BaseFormRequest
         $parentMessages = parent::messages();
         $specificMessages = [
             'bill_id.exists' => 'The selected bill does not exist or you do not have permission to pay it.',
-            'payment_method_id.exists' => 'The selected payment method does not exist or does not belong to you.',
+            // 'payment_method_id.exists' message removed
             'status.prohibited' => 'You are not authorized to update the payment status.',
         ];
         return array_merge($parentMessages, $specificMessages);

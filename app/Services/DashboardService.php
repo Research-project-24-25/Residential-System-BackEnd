@@ -6,7 +6,6 @@ use App\Models\Admin;
 use App\Models\Bill;
 use App\Models\MeetingRequest;
 use App\Models\Payment;
-use App\Models\PaymentMethod;
 use App\Models\Property;
 use App\Models\Resident;
 use App\Models\User;
@@ -157,8 +156,7 @@ class DashboardService
         // Get total revenue
         $totalRevenue = $this->calculateTotalRevenue($dateRange['start'], $dateRange['end']);
 
-        // Get revenue by payment method
-        $revenueByMethod = $this->getRevenueByPaymentMethod($dateRange['start'], $dateRange['end']);
+        // Get revenue by payment method - REMOVED
 
         // Get revenue by bill type
         $revenueByBillType = $this->getRevenueByBillType($dateRange['start'], $dateRange['end']);
@@ -168,7 +166,7 @@ class DashboardService
 
         return [
             'total' => $totalRevenue,
-            'by_method' => $revenueByMethod,
+            // 'by_method' => $revenueByMethod, // This has been removed
             'by_bill_type' => $revenueByBillType,
             'period' => $formattedPeriod,
         ];
@@ -380,36 +378,7 @@ class DashboardService
         return $revenue - $costs;
     }
 
-    /**
-     * Get revenue by payment method
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return array
-     */
-    private function getRevenueByPaymentMethod(Carbon $startDate, Carbon $endDate): array
-    {
-        $paymentMethodRevenue = Payment::join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-            ->where('payments.status', 'completed')
-            ->whereBetween('payments.created_at', [$startDate, $endDate])
-            ->select('payment_methods.type', DB::raw('sum(payments.amount) as total'))
-            ->groupBy('payment_methods.type')
-            ->get()
-            ->pluck('total', 'type')
-            ->toArray();
-
-        // Add cash payments (where payment_method_id might be null)
-        $cashPayments = Payment::whereNull('payment_method_id')
-            ->where('status', 'completed')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('amount');
-
-        if ($cashPayments > 0) {
-            $paymentMethodRevenue['cash'] = ($paymentMethodRevenue['cash'] ?? 0) + $cashPayments;
-        }
-
-        return $paymentMethodRevenue;
-    }
+    // getRevenueByPaymentMethod method removed
 
     /**
      * Get revenue by bill type

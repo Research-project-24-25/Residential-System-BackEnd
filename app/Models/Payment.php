@@ -58,11 +58,6 @@ class Payment extends Model
         return $this->belongsTo(Resident::class);
     }
 
-    public function paymentMethod(): BelongsTo
-    {
-        return $this->belongsTo(PaymentMethod::class);
-    }
-
     public function processedBy(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'processed_by');

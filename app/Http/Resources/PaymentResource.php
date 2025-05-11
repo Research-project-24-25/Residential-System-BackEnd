@@ -27,14 +27,8 @@ class PaymentResource extends JsonResource
                     'email' => $this->resident->email,
                 ];
             }),
-            'payment_method' => $this->whenLoaded('paymentMethod', function () {
-                return [
-                    'id' => $this->paymentMethod->id,
-                    'type' => $this->paymentMethod->type,
-                    'provider' => $this->paymentMethod->provider,
-                    'last_four' => $this->paymentMethod->last_four,
-                ];
-            }),
+            // payment_method block removed as the relationship is gone.
+            // payment_method_id field below will be null.
             'bill_id' => $this->bill_id,
             'resident_id' => $this->resident_id,
             'payment_method_id' => $this->payment_method_id,

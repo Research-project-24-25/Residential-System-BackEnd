@@ -21,7 +21,7 @@ class PaymentController extends Controller
     {
         try {
             $payments = Payment::query()
-                ->with(['bill', 'resident', 'paymentMethod'])
+                ->with(['bill', 'resident'])
                 ->filter($request)
                 ->sort($request)
                 ->paginate($request->get('per_page', 10));
@@ -35,7 +35,7 @@ class PaymentController extends Controller
     public function show($id): JsonResponse
     {
         try {
-            $payment = Payment::with(['bill', 'resident', 'paymentMethod'])->findOrFail($id);
+            $payment = Payment::with(['bill', 'resident'])->findOrFail($id);
 
             return $this->successResponse(
                 'Payment retrieved successfully',
@@ -104,7 +104,7 @@ class PaymentController extends Controller
             $bill = Bill::findOrFail($billId);
 
             $payments = $bill->payments()
-                ->with(['resident', 'paymentMethod'])
+                ->with(['resident'])
                 ->filter($request)
                 ->sort($request)
                 ->paginate($request->get('per_page', 10));
@@ -121,7 +121,7 @@ class PaymentController extends Controller
             $resident = Resident::findOrFail($residentId);
 
             $payments = $resident->payments()
-                ->with(['bill', 'paymentMethod'])
+                ->with(['bill'])
                 ->filter($request)
                 ->sort($request)
                 ->paginate($request->get('per_page', 10));

@@ -14,7 +14,6 @@ use App\Http\Controllers\{
     MeetingRequestController,
     NotificationController,
     PaymentController,
-    PaymentMethodController,
     PropertyController,
     ResidentAuthController,
     ResidentController,
@@ -143,12 +142,9 @@ Route::prefix('admin')
             ->only(['index', 'store', 'show', 'update']);
         Route::get('bills/{billId}/payments', [PaymentController::class, 'billPayments']);
         Route::get('residents/{residentId}/payments', [PaymentController::class, 'residentPayments']);
-
-        // Payment methods
-        Route::apiResource('payment-methods', PaymentMethodController::class);
-        Route::get('residents/{residentId}/payment-methods', [PaymentMethodController::class, 'residentPaymentMethods']);
-        Route::patch('payment-methods/{payment_method}/set-default', [PaymentMethodController::class, 'setDefault']);
-
+    
+        // Payment methods routes removed
+    
         // Maintenance types
         Route::apiResource('maintenance-types', MaintenanceController::class);
         Route::post('maintenance-types/filter', [MaintenanceController::class, 'filter']);
@@ -192,13 +188,7 @@ Route::prefix('resident')
         Route::apiResource('payments', PaymentController::class)
             ->only(['index', 'store', 'show']);
 
-        // Payment methods
-        Route::get('payment-methods', [PaymentMethodController::class, 'residentPaymentMethods'])
-            ->middleware('substitute_auth_id');
-        Route::apiResource('payment-methods', PaymentMethodController::class)
-            ->except(['index']) // 'index' is custom defined above
-            ->parameters(['payment-methods' => 'payment_method']);
-        Route::patch('payment-methods/{payment_method}/set-default', [PaymentMethodController::class, 'setDefault']);
+        // Payment methods routes removed
 
         // Services
         Route::apiResource('services', ServiceController::class)

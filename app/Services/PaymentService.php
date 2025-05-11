@@ -160,7 +160,7 @@ class PaymentService
     public function generateReceiptData(Payment $payment): array
     {
         // Load related models
-        $payment->load(['bill', 'resident', 'paymentMethod', 'bill.property']);
+        $payment->load(['bill', 'resident', 'bill.property']);
 
         return [
             'payment' => [
@@ -170,11 +170,7 @@ class PaymentService
                 'status' => $payment->status,
                 'transaction_id' => $payment->transaction_id,
                 'payment_date' => $payment->payment_date->format('Y-m-d H:i:s'),
-                'payment_method' => [
-                    'type' => $payment->paymentMethod->type,
-                    'provider' => $payment->paymentMethod->provider,
-                    'last_four' => $payment->paymentMethod->last_four,
-                ]
+                // payment_method block removed
             ],
             'bill' => [
                 'id' => $payment->bill->id,

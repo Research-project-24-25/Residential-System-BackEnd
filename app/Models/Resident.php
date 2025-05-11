@@ -94,16 +94,6 @@ class Resident extends Authenticatable
         return $this->hasMany(Payment::class);
     }
 
-    public function paymentMethods(): HasMany
-    {
-        return $this->hasMany(PaymentMethod::class);
-    }
-
-    public function defaultPaymentMethod()
-    {
-        return $this->paymentMethods()->where('is_default', true)->first();
-    }
-
     public function ownedProperties()
     {
         return $this->properties()->wherePivotIn('relationship_type', ['buyer', 'co_buyer']);
