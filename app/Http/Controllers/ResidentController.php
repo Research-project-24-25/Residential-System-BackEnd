@@ -6,16 +6,16 @@ use App\Http\Requests\ResidentRequest;
 use App\Http\Resources\ResidentResource;
 use App\Models\Resident;
 use App\Models\Property;
+use App\Services\PropertyResidentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
-use App\Services\ResidentPropertyService;
 use Illuminate\Http\UploadedFile;
 use Throwable;
 
 class ResidentController extends Controller
 {
-    public function __construct(private ResidentPropertyService $service) {}
+    public function __construct(private PropertyResidentService $service) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -82,7 +82,7 @@ class ResidentController extends Controller
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
                 'email' => $validated['email'],
-                'password' => $validated['password'],
+                'password' => Hash::make($validated['password']),
                 'phone_number' => $validated['phone_number'],
                 'age' => $validated['age'],
                 'gender' => $validated['gender'],

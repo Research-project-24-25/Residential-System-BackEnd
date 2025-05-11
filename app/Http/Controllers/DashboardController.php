@@ -4,13 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\DashboardResource;
 use App\Services\DashboardService;
+use App\Services\RevenueReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 use Throwable;
 
 class DashboardController extends Controller
 {
-    public function __construct(private DashboardService $dashboardService) {}
+    public function __construct(
+        private DashboardService $dashboardService,
+        private RevenueReportService $revenueReportService
+    ) {}
 
     public function overview(Request $request): JsonResponse
     {
@@ -79,6 +84,33 @@ class DashboardController extends Controller
             return $this->successResponse(
                 'User statistics retrieved successfully',
                 $stats
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function propertiesRevenue(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'year' => 'sometimes|integer|min:1900|max:' . (Carbon::now()->year + 5),
+                'months' => 'sometimes|integer|min:1|max:24'
+            ]);
+
+            $year = $request->input('year', Carbon::now()->year);
+            $months = $request->input('months', 12);
+
+            $revenueData = $this->revenueReportService->getMonthlyRevenueSummary($year, $months);
+
+            return $this->successResponse(
+                'Properties revenue retrieved successfully',
+                [
+                    'year' => $year,
+                    'report_months_count' => $months,
+                    'monthly_sales_revenue' => $revenueData['monthly_sales_revenue'],
+                    'monthly_rental_revenue' => $revenueData['monthly_rental_revenue'],
+                ]
             );
         } catch (Throwable $e) {
             return $this->handleException($e);

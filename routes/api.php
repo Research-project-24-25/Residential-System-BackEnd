@@ -118,6 +118,7 @@ Route::prefix('admin')
                 Route::get('/properties', 'properties');
                 Route::get('/users', 'users');
                 Route::get('/services', 'services');
+                Route::get('/properties-revenue', 'propertiesRevenue');
             });
 
         // Services

@@ -14,9 +14,9 @@ return new class extends Migration
             $table->foreignId('resident_id')->constrained()->cascadeOnDelete();
 
             $table->enum('relationship_type', ['buyer', 'co_buyer', 'renter']);
-            $table->decimal('sale_price', 14, 2)->nullable();          // buyers
-            $table->decimal('ownership_share', 5, 2)->nullable();       // co‑buyers (%
-            $table->decimal('monthly_rent', 12, 2)->nullable();         // renters
+            $table->decimal('sale_price', 14, 2)->nullable(); // buyers
+            $table->decimal('ownership_share', 5, 2)->nullable(); // co‑buyers (%
+            $table->decimal('monthly_rent', 12, 2)->nullable(); // renters
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
 

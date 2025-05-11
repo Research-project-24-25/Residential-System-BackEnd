@@ -9,7 +9,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Throwable;
-use Illuminate\Support\Facades\Log;
 
 class PropertyController extends Controller
 {

@@ -5,28 +5,13 @@ namespace App\Services;
 use App\Models\Property;
 use App\Models\Resident;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Arr;
-use App\Exceptions\PropertyRelationshipException;
 
-class ResidentPropertyService
+class PropertyResidentService
 {
-    /**
-     * Create a resident and attach to property
-     * 
-     * @param array $residentData
-     * @param Property $property
-     * @param array $pivotData
-     * @return Resident
-     */
     public function createAndAttach(array $residentData, Property $property, array $pivotData): Resident
     {
+        // DB transaction to ensure data integrity, and rollback in case of failure
         return DB::transaction(function () use ($residentData, $property, $pivotData) {
-            // Hash password if not already hashed
-            if (isset($residentData['password']) && !str_starts_with($residentData['password'], '$2y$')) {
-                $residentData['password'] = Hash::make($residentData['password']);
-            }
-
             // Create new resident
             $resident = Resident::create($residentData);
 
@@ -40,14 +25,6 @@ class ResidentPropertyService
         });
     }
 
-    /**
-     * Update resident's property relationship
-     * 
-     * @param Resident $resident
-     * @param Property $property
-     * @param array $pivotData
-     * @return Resident
-     */
     public function updatePropertyRelationship(Resident $resident, Property $property, array $pivotData): Resident
     {
         return DB::transaction(function () use ($resident, $property, $pivotData) {
@@ -69,13 +46,6 @@ class ResidentPropertyService
         });
     }
 
-    /**
-     * Remove resident's property relationship
-     * 
-     * @param Resident $resident
-     * @param Property $property
-     * @return bool
-     */
     public function removePropertyRelationship(Resident $resident, Property $property): bool
     {
         return DB::transaction(function () use ($resident, $property) {
@@ -94,13 +64,6 @@ class ResidentPropertyService
         });
     }
 
-    /**
-     * Update property status based on resident relationship type
-     * 
-     * @param Property $property
-     * @param string $relationshipType
-     * @return void
-     */
     protected function updatePropertyStatus(Property $property, string $relationshipType): void
     {
         $status = match ($relationshipType) {
