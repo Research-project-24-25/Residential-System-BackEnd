@@ -343,7 +343,7 @@ class DashboardService
      */
     private function sumPaymentsInDateRange(Carbon $startDate, Carbon $endDate): float
     {
-        return Payment::where('status', 'completed')
+        return Payment::where('status', 'paid') // Changed from 'completed'
             ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('amount');
     }
@@ -390,7 +390,7 @@ class DashboardService
     private function getRevenueByBillType(Carbon $startDate, Carbon $endDate): array
     {
         return Payment::join('bills', 'payments.bill_id', '=', 'bills.id')
-            ->where('payments.status', 'completed')
+            ->where('payments.status', 'paid') // Changed from 'completed'
             ->whereBetween('payments.created_at', [$startDate, $endDate])
             ->select('bills.bill_type', DB::raw('sum(payments.amount) as total'))
             ->groupBy('bills.bill_type')

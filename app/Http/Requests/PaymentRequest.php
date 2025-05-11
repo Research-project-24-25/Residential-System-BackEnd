@@ -34,21 +34,22 @@ class PaymentRequest extends BaseFormRequest
                     'required',
                     Rule::exists('bills', 'id')->where(function ($query) {
                         if ($this->user()) {
-                           $query->where('resident_id', $this->user()->id);
+                            $query->where('resident_id', $this->user()->id);
                         }
                     })
                 ];
             }
-    
+
             // If admin, allow specifying more fields
             if ($isAdmin) {
-                $specificRules['status'] = ['nullable', Rule::in(['pending', 'processing', 'completed', 'failed', 'refunded'])];
+                // Status for new payments is handled by the service (defaults to 'paid').
+                // If admin explicitly provides status on creation, it should only be 'paid'.
+                $specificRules['status'] = ['nullable', Rule::in(['paid'])];
                 $specificRules['transaction_id'] = ['nullable', 'string', 'max:255'];
-                $specificRules['receipt_url'] = ['nullable', 'url', 'max:255'];
+                // receipt_url removed
                 $specificRules['payment_date'] = ['nullable', 'date'];
                 $specificRules['resident_id'] = ['nullable', 'exists:residents,id']; // Admin can specify resident
             }
-
         } else {
             // Updating existing payment - only admins can update payments
             if (!$isAdmin) {
@@ -59,16 +60,18 @@ class PaymentRequest extends BaseFormRequest
                 return [
                     'status' => ['prohibited'],
                     'transaction_id' => ['prohibited'],
-                    'receipt_url' => ['prohibited'],
+                    // receipt_url is no longer a fillable field, so direct prohibition isn't strictly necessary
+                    // but leaving it doesn't harm. For cleanliness, we can remove it.
+                    // 'receipt_url' => ['prohibited'],
                     'notes' => ['prohibited'],
                     'metadata' => ['prohibited'],
                 ];
             }
 
             $specificRules = [
-                'status' => ['required', Rule::in(['pending', 'processing', 'completed', 'failed', 'refunded'])],
+                'status' => ['required', Rule::in(['paid', 'refunded'])],
                 'transaction_id' => ['nullable', 'string', 'max:255'],
-                'receipt_url' => ['nullable', 'url', 'max:255'],
+                // receipt_url removed
                 'notes' => ['nullable', 'string', 'max:500'],
                 'metadata' => ['nullable', 'array'],
             ];

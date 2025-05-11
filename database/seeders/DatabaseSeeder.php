@@ -10,7 +10,6 @@ use App\Models\PropertyResident;
 use App\Models\User;
 use App\Models\Service;
 use App\Models\ServiceRequest;
-use App\Models\PaymentMethod;
 use App\Models\Bill;
 use App\Models\Payment;
 use App\Models\MeetingRequest;
@@ -79,13 +78,6 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Create payment methods
-        foreach ($residents as $resident) {
-            PaymentMethod::factory()
-                ->count(rand(1, 3))
-                ->create(['resident_id' => $resident->id]);
-        }
-
         // Create services
         Service::factory(15)->create();
 
@@ -106,8 +98,7 @@ class DatabaseSeeder extends Seeder
             if (rand(0, 1)) { // 50% chance of having a payment
                 Payment::factory()->create([
                     'bill_id' => $bill['id'],
-                    'resident_id' => $bill['resident_id'],
-                    'payment_method_id' => PaymentMethod::where('resident_id', $bill['resident_id'])->inRandomOrder()->first()->id,
+                    'resident_id' => $bill['resident_id']
                 ]);
             }
         }

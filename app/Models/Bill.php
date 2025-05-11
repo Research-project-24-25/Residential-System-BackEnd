@@ -74,8 +74,13 @@ class Bill extends Model
      */
     public function getPaidAmountAttribute(): float
     {
+        // Sum of positive payments that are currently marked as 'paid'.
+        // Refunded payments will have their status changed to 'refunded'.
+        // Refund transactions themselves are separate records with negative amounts and 'paid' status,
+        // but are not summed here for 'paid_amount' of the bill.
         return $this->payments()
-            ->where('status', 'completed')
+            ->where('status', 'paid') // Changed from 'completed'
+            ->where('amount', '>', 0)   // Only sum positive payments
             ->sum('amount');
     }
 

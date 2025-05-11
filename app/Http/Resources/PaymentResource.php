@@ -27,16 +27,14 @@ class PaymentResource extends JsonResource
                     'email' => $this->resident->email,
                 ];
             }),
-            // payment_method block removed as the relationship is gone.
-            // payment_method_id field below will be null.
             'bill_id' => $this->bill_id,
             'resident_id' => $this->resident_id,
-            'payment_method_id' => $this->payment_method_id,
+            // payment_method_id removed
             'amount' => $this->amount,
             'currency' => $this->currency,
-            'status' => $this->status,
+            'status' => $this->status, // Will now be 'paid' or 'refunded'
             'transaction_id' => $this->transaction_id,
-            'receipt_url' => $this->receipt_url,
+            // receipt_url removed
             'payment_date' => $this->payment_date ? $this->payment_date->format('Y-m-d H:i:s') : null,
             'notes' => $this->notes,
             'processed_by' => $this->processed_by,

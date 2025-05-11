@@ -24,11 +24,11 @@ class PaymentService
             // Create payment record
             $payment = Payment::create(array_merge($data, [
                 'payment_date' => $data['payment_date'] ?? now(),
-                'status' => $data['status'] ?? 'pending',
+                'status' => 'paid', // Payments are created as 'paid'
             ]));
 
-            // If payment is marked as completed, update the bill
-            if ($payment->status === 'completed') {
+            // If payment is marked as paid, update the bill
+            if ($payment->status === 'paid') { // Standardize to 'paid'
                 $this->updateBillStatus($payment);
             }
 
@@ -57,11 +57,11 @@ class PaymentService
 
             $payment->save();
 
-            // If status is completed, update the related bill
-            if ($status === 'completed') {
+            // If status is paid, update the related bill
+            if ($status === 'paid') { // Standardize to 'paid'
                 $this->updateBillStatus($payment);
-            } elseif ($payment->getOriginal('status') === 'completed' && $status !== 'completed') {
-                // If payment was completed but is no longer completed, reverse the bill update
+            } elseif ($payment->getOriginal('status') === 'paid' && $status !== 'paid') { // Standardize to 'paid'
+                // If payment was paid but is no longer paid (e.g., changed to refunded), reverse the bill update
                 $this->reversePayment($payment);
             }
 
@@ -115,15 +115,19 @@ class PaymentService
     public function refundPayment(Payment $payment, float $amount, string $reason, int $processedBy): Payment
     {
         return DB::transaction(function () use ($payment, $amount, $reason, $processedBy) {
-            // Create a refund record
+            // Step 1: Update the original payment's status to 'refunded'
+            // This will also trigger reversePayment via updatePaymentStatus, adjusting bill for original amount.
+            $this->updatePaymentStatus($payment, 'refunded', $processedBy);
+
+            // Step 2: Create a new payment record for the refund transaction itself
             $refund = Payment::create([
                 'bill_id' => $payment->bill_id,
                 'resident_id' => $payment->resident_id,
-                'payment_method_id' => $payment->payment_method_id,
+                // 'payment_method_id' was removed from Payment model
                 'amount' => -$amount, // Negative amount represents a refund
                 'currency' => $payment->currency,
-                'status' => 'completed',
-                'transaction_id' => 'refund_' . $payment->transaction_id,
+                'status' => 'paid', // The refund transaction itself is 'paid'
+                'transaction_id' => 'refund_' . $payment->transaction_id, // Consider if a new unique ID is better
                 'payment_date' => now(),
                 'notes' => "Refund for payment #{$payment->id}. Reason: {$reason}",
                 'processed_by' => $processedBy,
@@ -134,18 +138,21 @@ class PaymentService
                 ]
             ]);
 
-            // Update original payment metadata to reference the refund
-            $metadata = $payment->metadata ?? [];
-            $metadata['refunded'] = true;
-            $metadata['refund_id'] = $refund->id;
-            $metadata['refund_reason'] = $reason;
-            $metadata['refund_date'] = now()->format('Y-m-d H:i:s');
+            // Step 3: Update original payment's metadata with specific refund details
+            $originalPaymentMetadata = $payment->metadata ?? []; // $payment object was updated by updatePaymentStatus
+            $originalPaymentMetadata['refunded'] = true; // Explicit flag, good for quick checks
+            $originalPaymentMetadata['refund_id'] = $refund->id;
+            $originalPaymentMetadata['refund_reason'] = $reason;
+            $originalPaymentMetadata['refunded_amount'] = $amount; // Store the actual amount refunded
+            $originalPaymentMetadata['refund_date'] = now()->format('Y-m-d H:i:s');
+            $payment->metadata = $originalPaymentMetadata;
+            $payment->save(); // Save original payment again with detailed refund metadata
 
-            $payment->metadata = $metadata;
-            $payment->save();
-
-            // Update bill status
-            $this->updateBillStatus($payment);
+            // Step 4: Update bill status to account for the new negative refund payment
+            // The bill was already adjusted for the original payment being "reversed".
+            // Now, apply the impact of the new refund payment.
+            // The updateBillStatus method expects a Payment object.
+            $this->updateBillStatus($refund);
 
             return $refund;
         });

@@ -14,12 +14,10 @@ class Payment extends Model
     protected $fillable = [
         'bill_id',
         'resident_id',
-        'payment_method_id',
         'amount',
         'currency',
         'status',
         'transaction_id',
-        'receipt_url',
         'payment_date',
         'notes',
         'metadata',
@@ -35,7 +33,6 @@ class Payment extends Model
     protected array $filterableFields = [
         'bill_id',
         'resident_id',
-        'payment_method_id',
         'status',
         'payment_date',
         'amount',
@@ -68,9 +65,9 @@ class Payment extends Model
         return $query->where('status', $status);
     }
 
-    public function scopeCompleted($query)
+    public function scopePaid($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', 'paid');
     }
 
     public function scopeForResident($query, $residentId)
