@@ -42,27 +42,17 @@ class PaymentRequest extends BaseFormRequest
 
             // If admin, allow specifying more fields
             if ($isAdmin) {
-                // Status for new payments is handled by the service (defaults to 'paid').
-                // If admin explicitly provides status on creation, it should only be 'paid'.
                 $specificRules['status'] = ['nullable', Rule::in(['paid'])];
                 $specificRules['transaction_id'] = ['nullable', 'string', 'max:255'];
-                // receipt_url removed
                 $specificRules['payment_date'] = ['nullable', 'date'];
                 $specificRules['resident_id'] = ['nullable', 'exists:residents,id']; // Admin can specify resident
             }
         } else {
             // Updating existing payment - only admins can update payments
             if (!$isAdmin) {
-                // Non-admins cannot update payments. Return empty or perhaps specific prohibitions.
-                // For now, returning empty means no validation rules apply from this block for non-admins.
-                // Consider if this should be an authorization failure instead.
-                // For safety, let's prohibit fields if a non-admin attempts an update.
                 return [
                     'status' => ['prohibited'],
                     'transaction_id' => ['prohibited'],
-                    // receipt_url is no longer a fillable field, so direct prohibition isn't strictly necessary
-                    // but leaving it doesn't harm. For cleanliness, we can remove it.
-                    // 'receipt_url' => ['prohibited'],
                     'notes' => ['prohibited'],
                     'metadata' => ['prohibited'],
                 ];
@@ -71,7 +61,6 @@ class PaymentRequest extends BaseFormRequest
             $specificRules = [
                 'status' => ['required', Rule::in(['paid', 'refunded'])],
                 'transaction_id' => ['nullable', 'string', 'max:255'],
-                // receipt_url removed
                 'notes' => ['nullable', 'string', 'max:500'],
                 'metadata' => ['nullable', 'array'],
             ];
