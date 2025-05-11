@@ -187,7 +187,7 @@ Route::prefix('resident')
 
         // Payments
         Route::apiResource('payments', PaymentController::class)
-            ->only(['index', 'store', 'show']);
+            ->only(['index', 'show']);
         Route::post('payments/filter', [PaymentController::class, 'filter']);
 
         // Services

@@ -9,55 +9,29 @@ class PaymentRequest extends BaseFormRequest
 {
     public function authorize(): bool
     {
+        if ($this->isMethod('POST') || $this->isMethod('PUT') || $this->isMethod('PATCH')) {
+            return $this->isAdmin();
+        }
         return $this->isAuthenticated();
     }
 
     public function rules(): array
     {
         $specificRules = [];
-        $isAdmin = $this->isAdmin();
-        $isResident = $this->isResident();
 
         if ($this->isMethod('POST')) {
-            // Creating new payment
             $specificRules = [
                 'bill_id' => ['required', 'exists:bills,id'],
                 'amount' => ['required', 'numeric', 'min:0.01'],
                 'currency' => ['nullable', 'string', 'size:3'],
                 'notes' => ['nullable', 'string', 'max:500'],
                 'metadata' => ['nullable', 'array'],
+                'status' => ['nullable', Rule::in(['paid'])],
+                'transaction_id' => ['nullable', 'string', 'max:255'],
+                'payment_date' => ['nullable', 'date'],
+                'resident_id' => ['required', 'exists:residents,id'],
             ];
-
-            // If it's a resident, they can only pay their own bills
-            if ($isResident) {
-                $specificRules['bill_id'] = [
-                    'required',
-                    Rule::exists('bills', 'id')->where(function ($query) {
-                        if ($this->user()) {
-                            $query->where('resident_id', $this->user()->id);
-                        }
-                    })
-                ];
-            }
-
-            // If admin, allow specifying more fields
-            if ($isAdmin) {
-                $specificRules['status'] = ['nullable', Rule::in(['paid'])];
-                $specificRules['transaction_id'] = ['nullable', 'string', 'max:255'];
-                $specificRules['payment_date'] = ['nullable', 'date'];
-                $specificRules['resident_id'] = ['nullable', 'exists:residents,id']; // Admin can specify resident
-            }
-        } else {
-            // Updating existing payment - only admins can update payments
-            if (!$isAdmin) {
-                return [
-                    'status' => ['prohibited'],
-                    'transaction_id' => ['prohibited'],
-                    'notes' => ['prohibited'],
-                    'metadata' => ['prohibited'],
-                ];
-            }
-
+        } elseif ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
             $specificRules = [
                 'status' => ['required', Rule::in(['paid', 'refunded'])],
                 'transaction_id' => ['nullable', 'string', 'max:255'],

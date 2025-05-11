@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Throwable;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
@@ -79,15 +80,23 @@ class PaymentController extends Controller
     public function store(PaymentRequest $request): JsonResponse
     {
         try {
+            // Only admins can create payments
+            if ($request->user()->getTable() !== 'admins') {
+                return $this->errorResponse('Unauthorized to create payments. Payments are cash only and processed by admin.', 403);
+            }
+
             $validated = $request->validated();
 
             // Verify the bill exists
             $bill = Bill::findOrFail($validated['bill_id']);
 
-            // If this is an admin processing a payment
-            if ($request->user()->getTable() === 'admins') {
-                $validated['processed_by'] = $request->user()->id;
+            $resident = Resident::findOrFail($validated['resident_id']);
+
+            if ($bill->resident_id !== $resident->id) {
+                return $this->errorResponse('The specified bill does not belong to this resident');
             }
+
+            $validated['processed_by'] = $request->user()->id;
 
             // Process the payment
             $payment = $this->paymentService->processPayment($validated);

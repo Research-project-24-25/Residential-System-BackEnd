@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('currency', 3)->default('USD');
             $table->date('due_date');
             $table->text('description')->nullable();
-            $table->enum('status', ['pending', 'partial', 'paid', 'overdue', 'cancelled'])->default('pending');
+            $table->enum('status', ['pending', 'partially_paid', 'paid', 'overdue', 'cancelled'])->default('pending');
             $table->string('recurrence')->nullable(); // monthly, quarterly, yearly, one-time, etc.
             $table->date('next_billing_date')->nullable(); // For recurring bills
             $table->json('metadata')->nullable();
