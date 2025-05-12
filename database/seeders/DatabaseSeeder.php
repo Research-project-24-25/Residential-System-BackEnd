@@ -9,7 +9,6 @@ use App\Models\Property;
 use App\Models\PropertyResident;
 use App\Models\User;
 use App\Models\Service;
-use App\Models\ServiceRequest;
 use App\Models\Bill;
 use App\Models\Payment;
 use App\Models\MeetingRequest;
@@ -105,9 +104,6 @@ class DatabaseSeeder extends Seeder
 
         // Create meeting requests
         MeetingRequest::factory(20)->create();
-
-        // Create service requests
-        ServiceRequest::factory(30)->create();
 
         // Create notifications
         Notification::factory(100)->create([
