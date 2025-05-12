@@ -18,7 +18,6 @@ use App\Http\Controllers\{
     ResidentAuthController,
     ResidentController,
     ServiceController,
-    ServiceRequestController
 };
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -125,12 +124,6 @@ Route::prefix('admin')
         Route::post('services/filter', [ServiceController::class, 'filter']);
         Route::patch('services/{service}/toggle-active', [ServiceController::class, 'toggleActive']);
 
-        // Service Requests
-        Route::apiResource('service-requests', ServiceRequestController::class);
-        Route::post('service-requests/filter', [ServiceRequestController::class, 'filter']);
-        Route::get('service-requests/properties/{propertyId}', [ServiceRequestController::class, 'propertyServiceRequests']);
-        Route::get('service-requests/residents/{residentId}', [ServiceRequestController::class, 'residentServiceRequests']);
-
         // Bills
         Route::apiResource('bills', BillController::class);
         Route::post('bills/generate-recurring', [BillController::class, 'generateRecurringBills']);
@@ -195,14 +188,6 @@ Route::prefix('resident')
             ->only(['index', 'show'])
             ->parameters(['services' => 'service']);
         Route::post('services/filter', [ServiceController::class, 'filter']);
-
-        // Service Requests
-        Route::apiResource('service-requests', ServiceRequestController::class)
-            ->except(['destroy'])
-            ->parameters(['service-requests' => 'service_request']);
-        Route::post('service-requests/filter', [ServiceRequestController::class, 'filter']);
-        Route::patch('service-requests/{service_request}/cancel', [ServiceRequestController::class, 'cancel']);
-        Route::get('service-requests/properties/{propertyId}', [ServiceRequestController::class, 'propertyServiceRequests']);
 
         // Maintenance types
         Route::apiResource('maintenance-types', MaintenanceController::class)
