@@ -99,6 +99,23 @@ class Property extends Model
     {
         return $this->hasMany(Bill::class);
     }
+/**
+     * The services associated with the property.
+     */
+    public function services()
+    {
+        return $this->belongsToMany(Service::class, 'property_service')
+            ->withPivot([
+                'billing_type',
+                'price',
+                'status',
+                'details',
+                'activated_at',
+                'expires_at',
+                'last_billed_at',
+            ])
+            ->withTimestamps();
+    }
 
     public function recurringBills()
     {

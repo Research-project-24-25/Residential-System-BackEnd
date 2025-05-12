@@ -58,4 +58,21 @@ class Service extends Model
     {
         return $query->where('type', $type);
     }
+/**
+     * The properties associated with the service.
+     */
+    public function properties()
+    {
+        return $this->belongsToMany(Property::class, 'property_service')
+            ->withPivot([
+                'billing_type',
+                'price',
+                'status',
+                'details',
+                'activated_at',
+                'expires_at',
+                'last_billed_at',
+            ])
+            ->withTimestamps();
+    }
 }
