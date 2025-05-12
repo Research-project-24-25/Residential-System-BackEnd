@@ -20,10 +20,6 @@ class ServiceResource extends JsonResource
             'is_recurring' => $this->is_recurring,
             'recurrence' => $this->recurrence,
             'is_active' => $this->is_active,
-            'active_requests_count' => $this->when(
-                isset($this->active_requests_count),
-                $this->active_requests_count
-            ),
             'metadata' => $this->metadata,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

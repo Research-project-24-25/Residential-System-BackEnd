@@ -8,7 +8,7 @@ class ServiceRequest extends BaseFormRequest
 {
     public function rules(): array
     {
-        $parentRules = parent::rules(); // Gets common filter rules if isFilterAction() is true
+        $parentRules = parent::rules();
 
         if ($this->isFilterAction()) {
             return array_merge($parentRules, $this->getSpecificFilterRules());
@@ -18,7 +18,7 @@ class ServiceRequest extends BaseFormRequest
         $specificRules = [
             'name' => ['required', 'string', 'max:255', Rule::unique('services', 'name')->ignore($this->route('service'))],
             'description' => ['nullable', 'string', 'max:1000'],
-            'type' => ['required', 'string', Rule::in(['utility', 'security', 'cleaning', 'other'])],
+            'type' => ['required', 'string', Rule::in(['electricity', 'gas', 'water', 'security', 'cleaning', 'other'])],
             'base_price' => ['required', 'numeric', 'min:0'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'unit_of_measure' => ['nullable', 'string', 'max:50'],
@@ -30,7 +30,7 @@ class ServiceRequest extends BaseFormRequest
 
         if ($this->isUpdateRequest()) {
             $specificRules['name'] = ['sometimes', 'string', 'max:255', Rule::unique('services', 'name')->ignore($this->route('service'))];
-            $specificRules['type'] = ['sometimes', 'string', Rule::in(['utility', 'security', 'cleaning', 'other'])];
+            $specificRules['type'] = ['sometimes', 'string', Rule::in(['electricity', 'gas', 'water', 'security', 'cleaning', 'other'])];
             $specificRules['base_price'] = ['sometimes', 'numeric', 'min:0'];
         } else {
             // For create, ensure name is unique without ignore
@@ -46,7 +46,7 @@ class ServiceRequest extends BaseFormRequest
         return [
             // Support for single value or array of values
             'filters.type' => ['sometimes', 'nullable'],
-            'filters.type.*' => ['string', Rule::in(['utility', 'security', 'cleaning', 'other'])],
+            'filters.type.*' => ['string', Rule::in(['electricity', 'gas', 'water', 'security', 'cleaning', 'other'])],
 
             // Boolean filters
             'filters.is_recurring' => ['sometimes', 'boolean'],

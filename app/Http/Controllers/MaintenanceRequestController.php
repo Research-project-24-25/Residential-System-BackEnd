@@ -180,10 +180,48 @@ class MaintenanceRequestController extends Controller
                     $validated['admin_id'] = $request->user()->id;
                 }
 
-                // If transitioning to completed, ensure completion_date is set
-                if (isset($validated['status']) && $validated['status'] === 'completed' && !isset($validated['completion_date'])) {
-                    $validated['completion_date'] = now();
+                // Validate status transition if status is being changed
+                if (isset($validated['status']) && $validated['status'] !== $maintenanceRequest->status) {
+                    $currentStatus = $maintenanceRequest->status;
+                    $newStatus = $validated['status'];
+                    $allowedTransitions = [
+                        'pending' => ['approved', 'cancelled'],
+                        'approved' => ['scheduled', 'cancelled'],
+                        'scheduled' => ['in_progress', 'cancelled'],
+                        'in_progress' => ['completed'],
+                    ];
+
+                    $isValidTransition = false;
+
+                    // Check standard transitions
+                    if (isset($allowedTransitions[$currentStatus]) && in_array($newStatus, $allowedTransitions[$currentStatus])) {
+                        if ($newStatus === 'cancelled') {
+                            if (in_array($currentStatus, ['pending', 'approved', 'scheduled'])) {
+                                $isValidTransition = true;
+                            }
+                        } else {
+                            $isValidTransition = true;
+                        }
+                    }
+
+                    if (!$isValidTransition) {
+                        return $this->errorResponse(
+                            "Invalid status transition from '{$currentStatus}' to '{$newStatus}' for this request.",
+                            422
+                        );
+                    }
+
+                    $validated['admin_id'] = $request->user()->id;
+
+                    if ($newStatus === 'completed' && !isset($validated['completion_date'])) {
+                        $validated['completion_date'] = now();
+                    }
                 }
+
+                else if (!isset($maintenanceRequest->admin_id)) {
+                     $validated['admin_id'] = $request->user()->id;
+                }
+
 
                 // If admin is setting a final cost, create a bill if needed
                 if (

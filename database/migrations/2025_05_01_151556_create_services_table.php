@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->enum('type', ['utility', 'security', 'cleaning', 'other']);
+            $table->enum('type', ['electricity', 'gas', 'water', 'security', 'cleaning', 'other']);
             $table->decimal('base_price', 10, 2);
             $table->string('currency', 3)->default('USD');
             $table->string('unit_of_measure')->nullable(); // e.g., 'hour', 'visit', 'month'
@@ -30,31 +30,6 @@ return new class extends Migration
             $table->index('is_recurring');
             $table->index('is_active');
         });
-
-        Schema::create('service_requests', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('service_id')->constrained()->onDelete('restrict');
-            $table->foreignId('property_id')->constrained()->onDelete('cascade');
-            $table->foreignId('resident_id')->constrained()->onDelete('cascade');
-            $table->text('description');
-            $table->date('requested_date');
-            $table->date('scheduled_date')->nullable();
-            $table->date('completion_date')->nullable();
-            $table->enum('status', ['pending', 'approved', 'scheduled', 'in_progress', 'completed', 'cancelled'])->default('pending');
-            $table->text('notes')->nullable();
-            $table->foreignId('admin_id')->nullable()->constrained()->onDelete('set null'); // Admin who handled the request
-            $table->decimal('estimated_cost', 10, 2)->nullable();
-            $table->decimal('final_cost', 10, 2)->nullable();
-            $table->foreignId('bill_id')->nullable()->constrained()->onDelete('set null'); // Reference to the billing entry
-            $table->timestamps();
-
-            // Index for performance
-            $table->index(['property_id', 'resident_id']);
-            $table->index('service_id');
-            $table->index('status');
-            $table->index('requested_date');
-            $table->index('scheduled_date');
-        });
     }
 
     /**
@@ -62,7 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('service_requests');
         Schema::dropIfExists('services');
     }
 };

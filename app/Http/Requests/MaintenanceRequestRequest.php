@@ -8,7 +8,7 @@ class MaintenanceRequestRequest extends BaseFormRequest
 {
     public function rules(): array
     {
-        $parentRules = parent::rules(); // Gets common filter rules if isFilterAction() is true
+        $parentRules = parent::rules();
 
         if ($this->isFilterAction()) {
             return array_merge($parentRules, $this->getSpecificFilterRules());
@@ -54,7 +54,6 @@ class MaintenanceRequestRequest extends BaseFormRequest
         // Admin-specific rules for creating or updating maintenance requests
         if ($isAdmin) {
             $additionalRules = [
-                'resident_id' => ['required', 'exists:residents,id'],
                 'scheduled_date' => ['nullable', 'date'],
                 'completion_date' => ['nullable', 'date'],
                 'status' => ['sometimes', Rule::in(['pending', 'approved', 'scheduled', 'in_progress', 'completed', 'cancelled'])],
