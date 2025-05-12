@@ -17,6 +17,8 @@ class PaymentResource extends JsonResource
                     'bill_type' => $this->bill->bill_type,
                     'amount' => $this->bill->amount,
                     'due_date' => $this->bill->due_date->format('Y-m-d'),
+                    'paid_amount' => $this->bill->paid_amount,
+                    'remaining_balance' => $this->bill->remaining_balance,
                     'status' => $this->bill->status,
                 ];
             }),
