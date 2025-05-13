@@ -112,7 +112,7 @@ Route::prefix('admin')
                 Route::get('/properties', 'properties');
                 Route::get('/users', 'users');
                 Route::get('/services', 'services');
-                Route::get('/properties-revenue', 'propertiesRevenue');
+                Route::get('/revenues', 'revenues');
                 Route::get('/expenditures', 'expenditures');
                 Route::get('/profits', 'profits');
                 Route::get('/financial-summary', 'financialSummary');

@@ -8,7 +8,6 @@ use App\Models\MaintenanceRequest;
 use App\Models\Payment;
 use App\Models\Property;
 use App\Models\PropertyResident;
-use App\Models\PropertyService;
 use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,16 +15,19 @@ use Illuminate\Support\Facades\DB;
 class RevenueReportService
 {
     /**
-     * Get a summary of monthly sales and rental revenue for a given year.
+     * Get a summary of monthly revenue for a given year.
      *
      * @param int $year The year to report on.
      * @param int $reportMonths The number of months to include in the report (default is 12).
-     * @return array{monthly_sales_revenue: array<float>, monthly_rental_revenue: array<float>}
+     * @return array Monthly breakdown of different revenue categories
      */
     public function getMonthlyRevenueSummary(int $year, int $reportMonths = 12): array
     {
         $monthlySalesRevenue = array_fill(0, $reportMonths, 0.0);
         $monthlyRentalRevenue = array_fill(0, $reportMonths, 0.0);
+        $monthlyServiceRevenue = array_fill(0, $reportMonths, 0.0);
+        $monthlyMaintenanceRevenue = array_fill(0, $reportMonths, 0.0);
+        $monthlyOtherRevenue = array_fill(0, $reportMonths, 0.0);
 
         // Calculate sales revenue
         $salesData = PropertyResident::query()
@@ -84,11 +86,38 @@ class RevenueReportService
                 }
             }
             $monthlyRentalRevenue[$month - 1] = round((float) $totalRentForMonth, 2);
+
+            // Calculate service revenue (utilities, etc.)
+            $serviceRevenue = Bill::query()
+                ->whereIn('bill_type', ['electricity', 'gas', 'water', 'security', 'cleaning', 'internet'])
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->sum('amount');
+            $monthlyServiceRevenue[$month - 1] = round((float) $serviceRevenue, 2);
+
+            // Calculate maintenance revenue
+            $maintenanceRevenue = Bill::query()
+                ->where('bill_type', 'maintenance')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->sum('amount');
+            $monthlyMaintenanceRevenue[$month - 1] = round((float) $maintenanceRevenue, 2);
+
+            // Calculate other revenue
+            $otherRevenue = Bill::query()
+                ->whereNotIn('bill_type', ['electricity', 'gas', 'water', 'security', 'cleaning', 'internet', 'maintenance', 'rent'])
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->sum('amount');
+            $monthlyOtherRevenue[$month - 1] = round((float) $otherRevenue, 2);
         }
 
         return [
             'monthly_sales_revenue' => $monthlySalesRevenue,
             'monthly_rental_revenue' => $monthlyRentalRevenue,
+            'monthly_service_revenue' => $monthlyServiceRevenue,
+            'monthly_maintenance_revenue' => $monthlyMaintenanceRevenue,
+            'monthly_other_revenue' => $monthlyOtherRevenue,
         ];
     }
 
@@ -104,6 +133,8 @@ class RevenueReportService
         $monthlySalaries = array_fill(0, $reportMonths, 0.0);
         $monthlyMaintenance = array_fill(0, $reportMonths, 0.0);
         $monthlyServices = array_fill(0, $reportMonths, 0.0);
+        $monthlyAcquisition = array_fill(0, $reportMonths, 0.0);
+        $monthlyOtherExpenses = array_fill(0, $reportMonths, 0.0);
 
         // Calculate monthly salaries
         $totalMonthlySalary = Admin::sum('salary');
@@ -129,11 +160,9 @@ class RevenueReportService
         }
 
         // Calculate service provider costs
-        // This is a simplified approach - in a real application, we would need to
-        // consider service activations, deactivations, etc. across the year
         $services = Service::whereNotNull('provider_cost')->get();
 
-        for ($month = 0; $month < $reportMonths; $month++) {
+        for ($month = 1; $month <= $reportMonths; $month++) {
             $monthlyServiceCost = 0;
 
             foreach ($services as $service) {
@@ -144,36 +173,47 @@ class RevenueReportService
                             $monthlyServiceCost += $service->provider_cost;
                             break;
                         case 'quarterly':
-                            if ($month % 3 === 0) {
+                            if (($month - 1) % 3 === 0) {
                                 $monthlyServiceCost += $service->provider_cost;
                             }
                             break;
                         case 'yearly':
-                            if ($month === 0) {
+                            if ($month === 1) {
                                 $monthlyServiceCost += $service->provider_cost;
                             }
                             break;
                     }
                 }
-                // For non-recurring services, we'll add a portion of their cost each month
+                // For non-recurring services, add based on activation dates
                 else {
-                    $serviceProperties = PropertyService::where('service_id', $service->id)
+                    $activeServiceCount = DB::table('property_service')
+                        ->where('service_id', $service->id)
                         ->where('status', 'active')
                         ->whereYear('activated_at', $year)
-                        ->whereMonth('activated_at', $month + 1)
+                        ->whereMonth('activated_at', $month)
                         ->count();
 
-                    $monthlyServiceCost += $service->provider_cost * $serviceProperties;
+                    $monthlyServiceCost += $service->provider_cost * $activeServiceCount;
                 }
             }
 
-            $monthlyServices[$month] = round($monthlyServiceCost, 2);
+            $monthlyServices[$month - 1] = round($monthlyServiceCost, 2);
+
+            // Calculate property acquisition costs
+            $acquisitionCost = Property::whereNotNull('acquisition_cost')
+                ->whereYear('acquisition_date', $year)
+                ->whereMonth('acquisition_date', $month)
+                ->sum('acquisition_cost');
+
+            $monthlyAcquisition[$month - 1] = round((float) $acquisitionCost, 2);
         }
 
         return [
             'monthly_salaries' => $monthlySalaries,
             'monthly_maintenance' => $monthlyMaintenance,
             'monthly_services' => $monthlyServices,
+            'monthly_acquisition' => $monthlyAcquisition,
+            'monthly_other_expenses' => $monthlyOtherExpenses,
         ];
     }
 
@@ -191,22 +231,34 @@ class RevenueReportService
         $expenditure = $this->getMonthlyExpenditureSummary($year, $reportMonths);
 
         $monthlyProfit = array_fill(0, $reportMonths, 0.0);
+        $monthlyRevenue = array_fill(0, $reportMonths, 0.0);
+        $monthlyExpenditure = array_fill(0, $reportMonths, 0.0);
 
         for ($month = 0; $month < $reportMonths; $month++) {
-            // Total revenue = sales + rental
-            $totalMonthlyRevenue = $revenue['monthly_sales_revenue'][$month] + $revenue['monthly_rental_revenue'][$month];
+            // Total revenue = sales + rental + service + maintenance + other
+            $totalMonthlyRevenue = $revenue['monthly_sales_revenue'][$month] +
+                $revenue['monthly_rental_revenue'][$month] +
+                $revenue['monthly_service_revenue'][$month] +
+                $revenue['monthly_maintenance_revenue'][$month] +
+                $revenue['monthly_other_revenue'][$month];
 
-            // Total expenditure = salaries + maintenance + services
+            // Total expenditure = salaries + maintenance + services + acquisition + other
             $totalMonthlyExpenditure = $expenditure['monthly_salaries'][$month] +
                 $expenditure['monthly_maintenance'][$month] +
-                $expenditure['monthly_services'][$month];
+                $expenditure['monthly_services'][$month] +
+                $expenditure['monthly_acquisition'][$month] +
+                $expenditure['monthly_other_expenses'][$month];
 
             // Profit = revenue - expenditure
             $monthlyProfit[$month] = round($totalMonthlyRevenue - $totalMonthlyExpenditure, 2);
+            $monthlyRevenue[$month] = round($totalMonthlyRevenue, 2);
+            $monthlyExpenditure[$month] = round($totalMonthlyExpenditure, 2);
         }
 
         return [
             'monthly_profit' => $monthlyProfit,
+            'monthly_revenue' => $monthlyRevenue,
+            'monthly_expenditure' => $monthlyExpenditure,
         ];
     }
 
@@ -269,25 +321,31 @@ class RevenueReportService
             ->whereBetween('completion_date', [$startDate, $endDate])
             ->sum('final_cost');
 
-        // Service provider costs
+        // Service provider costs - FIX THE QUERY TO NOT USE orWherePivot
         $serviceProviderCost = Service::query()
             ->whereNotNull('provider_cost')
             ->whereHas('properties', function ($query) use ($startDate, $endDate) {
-                $query->wherePivot('status', 'active')
+                $query->where('property_service.status', 'active')
                     ->where(function ($q) use ($startDate, $endDate) {
-                        $q->wherePivotBetween('activated_at', [$startDate, $endDate])
+                        $q->whereBetween('property_service.activated_at', [$startDate, $endDate])
                             ->orWhere(function ($innerQ) use ($startDate) {
-                                $innerQ->wherePivot('activated_at', '<', $startDate)
+                                $innerQ->where('property_service.activated_at', '<', $startDate)
                                     ->where(function ($deepQ) use ($startDate) {
-                                        $deepQ->wherePivotNull('expires_at')
-                                            ->orWherePivot('expires_at', '>=', $startDate);
+                                        $deepQ->whereNull('property_service.expires_at')
+                                            ->orWhere('property_service.expires_at', '>=', $startDate);
                                     });
                             });
                     });
             })
             ->sum('provider_cost');
 
-        return (float) ($salaryCost + $maintenanceCost + $serviceProviderCost);
+        // Property acquisition costs
+        $acquisitionCost = Property::query()
+            ->whereNotNull('acquisition_cost')
+            ->whereBetween('acquisition_date', [$startDate, $endDate])
+            ->sum('acquisition_cost');
+
+        return (float) ($salaryCost + $maintenanceCost + $serviceProviderCost + $acquisitionCost);
     }
 
     /**
@@ -465,7 +523,6 @@ class RevenueReportService
 
             // Calculate active days in period
             $activeDaysInPeriod = $effectiveStartDate->diffInDays($effectiveEndDate) + 1;
-            $totalDaysInPeriod = $startDate->diffInDays($endDate) + 1;
 
             // Calculate pro-rated revenue
             $proRatedRevenue = $rental->monthly_rent * ($activeDaysInPeriod / 30); // Assuming 30 days per month on average
@@ -579,26 +636,28 @@ class RevenueReportService
             return 0;
         }
 
-        // Get all active property-service relationships in the period
-        $activeServices = PropertyService::query()
+        // Get all active services in the period - Fixed the orWherePivot issue
+        $activeServices = DB::table('property_service')
             ->join('services', 'services.id', '=', 'property_service.service_id')
             ->where('property_service.status', 'active')
-            ->whereBetween('property_service.activated_at', [$startDate, $endDate])
-            ->orWhere(function ($query) use ($startDate, $endDate) {
-                $query->where('property_service.activated_at', '<', $startDate)
-                    ->where(function ($q) use ($startDate) {
-                        $q->whereNull('property_service.expires_at')
-                            ->orWhere('property_service.expires_at', '>=', $startDate);
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('property_service.activated_at', [$startDate, $endDate])
+                    ->orWhere(function ($q) use ($startDate) {
+                        $q->where('property_service.activated_at', '<', $startDate)
+                            ->where(function ($innerQ) use ($startDate) {
+                                $innerQ->whereNull('property_service.expires_at')
+                                    ->orWhere('property_service.expires_at', '>=', $startDate);
+                            });
                     });
             })
-            ->select(['services.provider_cost', 'services.recurrence', 'property_service.*'])
+            ->select('services.provider_cost', 'services.recurrence', 'property_service.*')
             ->get();
 
         $totalProviderCost = 0;
 
         foreach ($activeServices as $service) {
             // Skip if no provider cost
-            if (!$service->provider_cost) {
+            if (empty($service->provider_cost)) {
                 continue;
             }
 

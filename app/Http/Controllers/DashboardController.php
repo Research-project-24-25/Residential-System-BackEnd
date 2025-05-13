@@ -90,7 +90,21 @@ class DashboardController extends Controller
         }
     }
 
-    public function propertiesRevenue(Request $request): JsonResponse
+    public function services(): JsonResponse
+    {
+        try {
+            $stats = $this->dashboardService->getServiceStats();
+
+            return $this->successResponse(
+                'Service statistics retrieved successfully',
+                $stats
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function revenues(Request $request): JsonResponse
     {
         try {
             $request->validate([
@@ -104,27 +118,16 @@ class DashboardController extends Controller
             $revenueData = $this->revenueReportService->getMonthlyRevenueSummary($year, $months);
 
             return $this->successResponse(
-                'Properties revenue retrieved successfully',
+                'Reveneue data retrieved successfully',
                 [
                     'year' => $year,
                     'report_months_count' => $months,
                     'monthly_sales_revenue' => $revenueData['monthly_sales_revenue'],
                     'monthly_rental_revenue' => $revenueData['monthly_rental_revenue'],
+                    'monthly_service_revenue' => $revenueData['monthly_service_revenue'],
+                    'monthly_maintenance_revenue' => $revenueData['monthly_maintenance_revenue'],
+                    'monthly_other_revenue' => $revenueData['monthly_other_revenue'],
                 ]
-            );
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
-    public function services(): JsonResponse
-    {
-        try {
-            $stats = $this->dashboardService->getServiceStats();
-
-            return $this->successResponse(
-                'Service statistics retrieved successfully',
-                $stats
             );
         } catch (Throwable $e) {
             return $this->handleException($e);
@@ -228,4 +231,3 @@ class DashboardController extends Controller
         }
     }
 }
-
