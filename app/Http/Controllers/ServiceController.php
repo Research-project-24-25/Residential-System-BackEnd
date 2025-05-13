@@ -151,6 +151,25 @@ class ServiceController extends Controller
         }
     }
 
+    public function restore(int $id): JsonResponse
+    {
+        return $this->restoreModel(Service::class, $id);
+    }
+
+    public function trashed(Request $request): JsonResponse
+    {
+        return $this->getTrashedModels(Service::class, function ($query) use ($request) {
+            if ($request->has('sort')) {
+                $query->sort($request);
+            }
+        });
+    }
+
+    public function forceDelete(int $id): JsonResponse
+    {
+        return $this->forceDeleteModel(Service::class, $id);
+    }
+
     public function toggleActive(int $id, Request $request): JsonResponse
     {
         try {

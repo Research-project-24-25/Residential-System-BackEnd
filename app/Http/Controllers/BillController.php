@@ -152,6 +152,25 @@ class BillController extends Controller
         }
     }
 
+    public function restore(int $id): JsonResponse
+    {
+        return $this->restoreModel(Bill::class, $id);
+    }
+
+    public function trashed(Request $request): JsonResponse
+    {
+        return $this->getTrashedModels(Bill::class, function ($query) use ($request) {
+            if ($request->has('sort')) {
+                $query->sort($request);
+            }
+        });
+    }
+
+    public function forceDelete(int $id): JsonResponse
+    {
+        return $this->forceDeleteModel(Bill::class, $id);
+    }
+
     public function propertyBills($propertyId, Request $request): ResourceCollection|JsonResponse
     {
         try {

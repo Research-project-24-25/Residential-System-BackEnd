@@ -142,6 +142,25 @@ class MaintenanceFeedbackController extends Controller
         }
     }
 
+    public function restore(int $id): JsonResponse
+    {
+        return $this->restoreModel(MaintenanceFeedback::class, $id);
+    }
+
+    public function trashed(Request $request): JsonResponse
+    {
+        return $this->getTrashedModels(MaintenanceFeedback::class, function ($query) use ($request) {
+            if ($request->has('sort')) {
+                $query->sort($request);
+            }
+        });
+    }
+
+    public function forceDelete(int $id): JsonResponse
+    {
+        return $this->forceDeleteModel(MaintenanceFeedback::class, $id);
+    }
+
     public function index(Request $request): JsonResponse
     {
         try {

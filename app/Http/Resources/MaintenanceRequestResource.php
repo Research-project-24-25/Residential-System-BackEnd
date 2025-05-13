@@ -2,53 +2,66 @@
 
 namespace App\Http\Resources;
 
+use App\Traits\ResourceHelpers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class MaintenanceRequestResource extends JsonResource
 {
+    use ResourceHelpers;
+
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'maintenance' => $this->whenLoaded('maintenance', function () {
-                return [
-                    'id' => $this->maintenance->id,
-                    'name' => $this->maintenance->name,
-                    'category' => $this->maintenance->category,
-                ];
+                return $this->handleRelation($this->maintenance, function ($maintenance) {
+                    return [
+                        'id' => $maintenance->id,
+                        'name' => $maintenance->name,
+                        'category' => $maintenance->category,
+                    ];
+                });
             }),
             'property' => $this->whenLoaded('property', function () {
-                return [
-                    'id' => $this->property->id,
-                    'label' => $this->property->label,
-                    'type' => $this->property->type,
-                ];
+                return $this->handleRelation($this->property, function ($property) {
+                    return [
+                        'id' => $property->id,
+                        'label' => $property->label,
+                        'type' => $property->type,
+                    ];
+                });
             }),
             'resident' => $this->whenLoaded('resident', function () {
-                return [
-                    'id' => $this->resident->id,
-                    'name' => $this->resident->name,
-                    'email' => $this->resident->email,
-                ];
+                return $this->handleRelation($this->resident, function ($resident) {
+                    return [
+                        'id' => $resident->id,
+                        'name' => $resident->name,
+                        'email' => $resident->email,
+                    ];
+                });
             }),
             'admin' => $this->whenLoaded('admin', function () {
-                return [
-                    'id' => $this->admin->id,
-                    'name' => $this->admin->name ?? $this->admin->username,
-                    'email' => $this->admin->email,
-                ];
+                return $this->handleRelation($this->admin, function ($admin) {
+                    return [
+                        'id' => $admin->id,
+                        'name' => $admin->name ?? $admin->username,
+                        'email' => $admin->email,
+                    ];
+                });
             }),
             'bill' => $this->whenLoaded('bill', function () {
-                return [
-                    'id' => $this->bill->id,
-                    'amount' => $this->bill->amount,
-                    'status' => $this->bill->status,
-                    'due_date' => $this->bill->due_date->format('Y-m-d'),
-                ];
+                return $this->handleRelation($this->bill, function ($bill) {
+                    return [
+                        'id' => $bill->id,
+                        'amount' => $bill->amount,
+                        'status' => $bill->status,
+                        'due_date' => $bill->due_date->format('Y-m-d'),
+                    ];
+                });
             }),
             'feedback' => $this->whenLoaded('feedback', function () {
-                return new MaintenanceFeedbackResource($this->feedback);
+                return $this->handleRelation($this->feedback, fn($feedback) => new MaintenanceFeedbackResource($feedback));
             }),
             'maintenance_id' => $this->maintenance_id,
             'property_id' => $this->property_id,
@@ -69,6 +82,7 @@ class MaintenanceRequestResource extends JsonResource
             'has_feedback' => $this->has_feedback,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+            'deleted_at' => $this->when($this->deleted_at, $this->deleted_at?->format('Y-m-d H:i:s')),
         ];
     }
 }

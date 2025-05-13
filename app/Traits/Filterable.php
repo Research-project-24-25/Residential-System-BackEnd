@@ -29,6 +29,11 @@ trait Filterable
             $this->applySearch($query, $filters['search']);
         }
 
+        // Apply trashed filter if it exists
+        if (isset($filters['trashed'])) {
+            $this->applyTrashedFilter($query, $filters['trashed']);
+        }
+
         return $query;
     }
 
@@ -73,7 +78,8 @@ trait Filterable
         $allowedFields = $this->filterableFields ?? [];
 
         foreach ($filters as $field => $value) {
-            if ($field === 'search' || !in_array($field, $allowedFields)) {
+            // Skip special filters that are handled separately
+            if ($field === 'search' || $field === 'trashed' || !in_array($field, $allowedFields)) {
                 continue;
             }
 
@@ -122,5 +128,30 @@ trait Filterable
         }
 
         return $query;
+    }
+
+    /**
+     * Apply trashed filter to the query
+     *
+     * @param Builder $query
+     * @param string|bool|null $trashed
+     * @return void
+     */
+    protected function applyTrashedFilter(Builder $query, $trashed): void
+    {
+        // Make sure model uses soft deletes
+        if (!method_exists($this, 'getDeletedAtColumn')) {
+            return;
+        }
+
+        // Filter based on trashed value
+        if ($trashed === 'only') {
+            $query->onlyTrashed();
+        } elseif ($trashed === 'with') {
+            $query->withTrashed();
+        } elseif ($trashed === true || $trashed === 'true' || $trashed === '1') {
+            $query->onlyTrashed();
+        }
+        // Otherwise, default Laravel behavior will filter out trashed records
     }
 }

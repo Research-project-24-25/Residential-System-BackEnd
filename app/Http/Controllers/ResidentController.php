@@ -200,6 +200,25 @@ class ResidentController extends Controller
         }
     }
 
+    public function restore(int $id): JsonResponse
+    {
+        return $this->restoreModel(Resident::class, $id);
+    }
+
+    public function trashed(Request $request): JsonResponse
+    {
+        return $this->getTrashedModels(Resident::class, function($query) use ($request) {
+            if ($request->has('sort')) {
+                $query->sort($request);
+            }
+        });
+    }
+
+    public function forceDelete(int $id): JsonResponse
+    {
+        return $this->forceDeleteModel(Resident::class, $id);
+    }
+
     private function handleProfileImage(UploadedFile $image): string
     {
         $filename = time() . '_' . $image->getClientOriginalName();

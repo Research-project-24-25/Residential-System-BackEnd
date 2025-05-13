@@ -216,10 +216,8 @@ class MaintenanceRequestController extends Controller
                     if ($newStatus === 'completed' && !isset($validated['completion_date'])) {
                         $validated['completion_date'] = now();
                     }
-                }
-
-                else if (!isset($maintenanceRequest->admin_id)) {
-                     $validated['admin_id'] = $request->user()->id;
+                } else if (!isset($maintenanceRequest->admin_id)) {
+                    $validated['admin_id'] = $request->user()->id;
                 }
 
 
@@ -332,6 +330,25 @@ class MaintenanceRequestController extends Controller
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
+    }
+
+    public function restore(int $id): JsonResponse
+    {
+        return $this->restoreModel(MaintenanceRequest::class, $id);
+    }
+
+    public function trashed(Request $request): JsonResponse
+    {
+        return $this->getTrashedModels(MaintenanceRequest::class, function ($query) use ($request) {
+            if ($request->has('sort')) {
+                $query->sort($request);
+            }
+        });
+    }
+
+    public function forceDelete(int $id): JsonResponse
+    {
+        return $this->forceDeleteModel(MaintenanceRequest::class, $id);
     }
 
     public function propertyMaintenanceRequests(int $propertyId, Request $request): ResourceCollection|JsonResponse

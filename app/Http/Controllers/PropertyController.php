@@ -146,6 +146,25 @@ class PropertyController extends Controller
     }
   }
 
+  public function restore(int $id): JsonResponse
+  {
+    return $this->restoreModel(Property::class, $id);
+  }
+
+  public function trashed(Request $request): JsonResponse
+  {
+    return $this->getTrashedModels(Property::class, function ($query) use ($request) {
+      if ($request->has('sort')) {
+        $query->sort($request);
+      }
+    });
+  }
+
+  public function forceDelete(int $id): JsonResponse
+  {
+    return $this->forceDeleteModel(Property::class, $id);
+  }
+
   private function handleImageUploads($images): array
   {
     $uploadedImages = [];

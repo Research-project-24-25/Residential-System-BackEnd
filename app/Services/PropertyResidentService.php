@@ -49,8 +49,14 @@ class PropertyResidentService
     public function removePropertyRelationship(Resident $resident, Property $property): bool
     {
         return DB::transaction(function () use ($resident, $property) {
-            // Detach the property
-            $detached = $resident->properties()->detach($property->id);
+            // Instead of detaching, update the pivot with deleted_at
+            $pivotRecord = $resident->properties()->where('property_id', $property->id)->first()->pivot;
+            if ($pivotRecord) {
+                $pivotRecord->delete();
+                $detached = 1; // To indicate operation was successful
+            } else {
+                $detached = 0;
+            }
 
             // Check if property has any more residents
             $hasResidents = $property->residents()->exists();

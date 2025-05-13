@@ -85,6 +85,7 @@ abstract class BaseFormRequest extends FormRequest
             'filters.updated_at' => ['sometimes', 'array'],
             'filters.updated_at.from' => ['sometimes', 'nullable', 'date'],
             'filters.updated_at.to' => ['sometimes', 'nullable', 'date', 'after_or_equal:filters.updated_at.from'],
+            'filters.trashed' => ['sometimes', 'nullable', Rule::in(['only', 'with', 'true', 'false', '1', '0'])],
             'sort' => ['sometimes', 'array'],
             'sort.field' => ['sometimes', 'string'],
             'sort.direction' => ['sometimes', 'string', Rule::in(['asc', 'desc'])],
@@ -120,6 +121,7 @@ abstract class BaseFormRequest extends FormRequest
                 'per_page.max' => 'The items per page may not be greater than 100.',
                 'filters.created_at.to.after_or_equal' => 'The "created to" date must be after or equal to the "created from" date.',
                 'filters.updated_at.to.after_or_equal' => 'The "updated to" date must be after or equal to the "updated from" date.',
+                'filters.trashed.in' => 'The trashed filter must be one of: only, with, true, false, 1, 0.',
             ];
         }
         return $messages;

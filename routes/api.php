@@ -123,13 +123,28 @@ Route::prefix('admin')
             ->group(function () {
                 Route::apiResource('properties', PropertyController::class);
                 Route::post('properties/filter', 'filter');
+                Route::get('properties/trashed', 'trashed');
+                Route::patch('properties/{id}/restore', 'restore');
+                Route::delete('properties/{id}/force', 'forceDelete');
             });
+
+        // Residents
+        Route::controller(ResidentController::class)->group(function () {
+            Route::apiResource('residents', ResidentController::class);
+            Route::post('residents/filter', 'filter');
+            Route::get('residents/trashed', 'trashed');
+            Route::patch('residents/{id}/restore', 'restore');
+            Route::delete('residents/{id}/force', 'forceDelete');
+        });
 
         // Services
         Route::controller(ServiceController::class)
             ->group(function () {
                 Route::apiResource('services', ServiceController::class);
                 Route::post('services/filter', 'filter');
+                Route::get('services/trashed', 'trashed');
+                Route::patch('services/{id}/restore', 'restore');
+                Route::delete('services/{id}/force', 'forceDelete');
                 Route::patch('services/{service}/toggle-active', 'toggleActive');
             });
 
@@ -151,6 +166,9 @@ Route::prefix('admin')
         Route::controller(BillController::class)
             ->group(function () {
                 Route::apiResource('bills', BillController::class);
+                Route::get('bills/trashed', 'trashed');
+                Route::patch('bills/{id}/restore', 'restore');
+                Route::delete('bills/{id}/force', 'forceDelete');
                 Route::post('bills/generate-recurring', 'generateRecurringBills');
                 Route::get('properties/{propertyId}/bills', 'propertyBills');
                 Route::get('residents/{residentId}/bills', 'residentBills');
@@ -168,18 +186,29 @@ Route::prefix('admin')
             ->group(function () {
                 Route::apiResource('maintenance-types', MaintenanceController::class);
                 Route::post('maintenance-types/filter', 'filter');
+                Route::get('maintenance-types/trashed', 'trashed');
+                Route::patch('maintenance-types/{id}/restore', 'restore');
+                Route::delete('maintenance-types/{id}/force', 'forceDelete');
             });
 
         Route::controller(MaintenanceRequestController::class)
             ->group(function () {
                 Route::apiResource('maintenance-requests', MaintenanceRequestController::class);
                 Route::post('maintenance-requests/filter', 'filter');
+                Route::get('maintenance-requests/trashed', 'trashed');
+                Route::patch('maintenance-requests/{id}/restore', 'restore');
+                Route::delete('maintenance-requests/{id}/force', 'forceDelete');
                 Route::get('maintenance-requests/properties/{propertyId}', 'propertyMaintenanceRequests');
                 Route::get('maintenance-requests/residents/{residentId}', 'residentMaintenanceRequests');
             });
 
-        Route::apiResource('maintenance-feedback', MaintenanceFeedbackController::class)
-            ->only(['index', 'store', 'show', 'destroy']);
+        Route::controller(MaintenanceFeedbackController::class)->group(function () {
+            Route::apiResource('maintenance-feedback', MaintenanceFeedbackController::class)
+                ->only(['index', 'store', 'show', 'destroy']);
+            Route::get('maintenance-feedback/trashed', 'trashed');
+            Route::patch('maintenance-feedback/{id}/restore', 'restore');
+            Route::delete('maintenance-feedback/{id}/force', 'forceDelete');
+        });
     });
 
 /*

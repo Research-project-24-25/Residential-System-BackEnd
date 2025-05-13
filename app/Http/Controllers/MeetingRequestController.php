@@ -245,6 +245,25 @@ class MeetingRequestController extends Controller
         }
     }
 
+    public function restore(int $id): JsonResponse
+    {
+        return $this->restoreModel(MeetingRequest::class, $id);
+    }
+
+    public function trashed(Request $request): JsonResponse
+    {
+        return $this->getTrashedModels(MeetingRequest::class, function ($query) use ($request) {
+            if ($request->has('sort')) {
+                $query->sort($request);
+            }
+        });
+    }
+
+    public function forceDelete(int $id): JsonResponse
+    {
+        return $this->forceDeleteModel(MeetingRequest::class, $id);
+    }
+
     private function notifyAdmins(MeetingRequest $meetingRequest): void
     {
         // Get all admins

@@ -2,28 +2,35 @@
 
 namespace App\Http\Resources;
 
+use App\Traits\ResourceHelpers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class BillResource extends JsonResource
 {
+    use ResourceHelpers;
+
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'property' => $this->whenLoaded('property', function () {
-                return [
-                    'id' => $this->property->id,
-                    'label' => $this->property->label,
-                    'type' => $this->property->type,
-                ];
+                return $this->handleRelation($this->property, function ($property) {
+                    return [
+                        'id' => $property->id,
+                        'label' => $property->label,
+                        'type' => $property->type,
+                    ];
+                });
             }),
             'resident' => $this->whenLoaded('resident', function () {
-                return [
-                    'id' => $this->resident->id,
-                    'name' => $this->resident->name,
-                    'email' => $this->resident->email,
-                ];
+                return $this->handleRelation($this->resident, function ($resident) {
+                    return [
+                        'id' => $resident->id,
+                        'name' => $resident->name,
+                        'email' => $resident->email,
+                    ];
+                });
             }),
             'property_id' => $this->property_id,
             'resident_id' => $this->resident_id,
@@ -46,6 +53,7 @@ class BillResource extends JsonResource
             'created_by' => $this->created_by,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+            'deleted_at' => $this->when($this->deleted_at, $this->deleted_at?->format('Y-m-d H:i:s')),
         ];
     }
 }
