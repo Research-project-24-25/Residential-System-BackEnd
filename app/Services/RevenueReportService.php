@@ -93,6 +93,204 @@ class RevenueReportService
     }
 
     /**
+     * Get a summary of monthly expenditures for a given year.
+     *
+     * @param int $year The year to report on.
+     * @param int $reportMonths The number of months to include in the report (default is 12).
+     * @return array Monthly breakdowns of different expenditure categories
+     */
+    public function getMonthlyExpenditureSummary(int $year, int $reportMonths = 12): array
+    {
+        $monthlySalaries = array_fill(0, $reportMonths, 0.0);
+        $monthlyMaintenance = array_fill(0, $reportMonths, 0.0);
+        $monthlyServices = array_fill(0, $reportMonths, 0.0);
+
+        // Calculate monthly salaries
+        $totalMonthlySalary = Admin::sum('salary');
+        for ($month = 0; $month < $reportMonths; $month++) {
+            $monthlySalaries[$month] = $totalMonthlySalary;
+        }
+
+        // Calculate maintenance costs
+        $maintenanceData = MaintenanceRequest::query()
+            ->whereNotNull('final_cost')
+            ->whereYear('completion_date', $year)
+            ->select(
+                DB::raw('MONTH(completion_date) as month'),
+                DB::raw('SUM(final_cost) as total_cost')
+            )
+            ->groupBy('month')
+            ->get();
+
+        foreach ($maintenanceData as $maintenance) {
+            if ($maintenance->month >= 1 && $maintenance->month <= $reportMonths) {
+                $monthlyMaintenance[$maintenance->month - 1] = (float) $maintenance->total_cost;
+            }
+        }
+
+        // Calculate service provider costs
+        // This is a simplified approach - in a real application, we would need to
+        // consider service activations, deactivations, etc. across the year
+        $services = Service::whereNotNull('provider_cost')->get();
+
+        for ($month = 0; $month < $reportMonths; $month++) {
+            $monthlyServiceCost = 0;
+
+            foreach ($services as $service) {
+                // If recurring, add the provider cost according to recurrence pattern
+                if ($service->is_recurring) {
+                    switch ($service->recurrence) {
+                        case 'monthly':
+                            $monthlyServiceCost += $service->provider_cost;
+                            break;
+                        case 'quarterly':
+                            if ($month % 3 === 0) {
+                                $monthlyServiceCost += $service->provider_cost;
+                            }
+                            break;
+                        case 'yearly':
+                            if ($month === 0) {
+                                $monthlyServiceCost += $service->provider_cost;
+                            }
+                            break;
+                    }
+                }
+                // For non-recurring services, we'll add a portion of their cost each month
+                else {
+                    $serviceProperties = PropertyService::where('service_id', $service->id)
+                        ->where('status', 'active')
+                        ->whereYear('activated_at', $year)
+                        ->whereMonth('activated_at', $month + 1)
+                        ->count();
+
+                    $monthlyServiceCost += $service->provider_cost * $serviceProperties;
+                }
+            }
+
+            $monthlyServices[$month] = round($monthlyServiceCost, 2);
+        }
+
+        return [
+            'monthly_salaries' => $monthlySalaries,
+            'monthly_maintenance' => $monthlyMaintenance,
+            'monthly_services' => $monthlyServices,
+        ];
+    }
+
+    /**
+     * Get a summary of monthly profits for a given year.
+     *
+     * @param int $year The year to report on.
+     * @param int $reportMonths The number of months to include in the report (default is 12).
+     * @return array Monthly profit breakdown
+     */
+    public function getMonthlyProfitSummary(int $year, int $reportMonths = 12): array
+    {
+        // Get revenue and expenditure data
+        $revenue = $this->getMonthlyRevenueSummary($year, $reportMonths);
+        $expenditure = $this->getMonthlyExpenditureSummary($year, $reportMonths);
+
+        $monthlyProfit = array_fill(0, $reportMonths, 0.0);
+
+        for ($month = 0; $month < $reportMonths; $month++) {
+            // Total revenue = sales + rental
+            $totalMonthlyRevenue = $revenue['monthly_sales_revenue'][$month] + $revenue['monthly_rental_revenue'][$month];
+
+            // Total expenditure = salaries + maintenance + services
+            $totalMonthlyExpenditure = $expenditure['monthly_salaries'][$month] +
+                $expenditure['monthly_maintenance'][$month] +
+                $expenditure['monthly_services'][$month];
+
+            // Profit = revenue - expenditure
+            $monthlyProfit[$month] = round($totalMonthlyRevenue - $totalMonthlyExpenditure, 2);
+        }
+
+        return [
+            'monthly_profit' => $monthlyProfit,
+        ];
+    }
+
+    /**
+     * Calculate total revenue for a period.
+     *
+     * @param Carbon $startDate
+     * @param Carbon $endDate
+     * @return float
+     */
+    public function calculateRevenue(Carbon $startDate, Carbon $endDate): float
+    {
+        // Property sales revenue
+        $salesRevenue = PropertyResident::query()
+            ->whereIn('relationship_type', ['buyer', 'co_buyer'])
+            ->whereNotNull('sale_price')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('sale_price');
+
+        // Rental revenue from bills
+        $rentalRevenue = Bill::query()
+            ->where('bill_type', 'rent')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+
+        // Service revenue
+        $serviceRevenue = Bill::query()
+            ->whereIn('bill_type', ['electricity', 'gas', 'water', 'security', 'cleaning', 'internet'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+
+        // Other revenue
+        $otherRevenue = Bill::query()
+            ->whereNotIn('bill_type', ['rent', 'electricity', 'gas', 'water', 'security', 'cleaning', 'internet'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+
+        return (float) ($salesRevenue + $rentalRevenue + $serviceRevenue + $otherRevenue);
+    }
+
+    /**
+     * Calculate total expenditure for a period.
+     *
+     * @param Carbon $startDate
+     * @param Carbon $endDate
+     * @return float
+     */
+    public function calculateExpenditure(Carbon $startDate, Carbon $endDate): float
+    {
+        // Get the total monthly salary costs
+        $totalMonthlySalary = Admin::sum('salary');
+
+        // Calculate how many months in the period
+        $monthsInPeriod = $startDate->diffInMonths($endDate) + 1;
+        $salaryCost = $totalMonthlySalary * $monthsInPeriod;
+
+        // Maintenance costs
+        $maintenanceCost = MaintenanceRequest::query()
+            ->whereNotNull('final_cost')
+            ->whereBetween('completion_date', [$startDate, $endDate])
+            ->sum('final_cost');
+
+        // Service provider costs
+        $serviceProviderCost = Service::query()
+            ->whereNotNull('provider_cost')
+            ->whereHas('properties', function ($query) use ($startDate, $endDate) {
+                $query->wherePivot('status', 'active')
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->wherePivotBetween('activated_at', [$startDate, $endDate])
+                            ->orWhere(function ($innerQ) use ($startDate) {
+                                $innerQ->wherePivot('activated_at', '<', $startDate)
+                                    ->where(function ($deepQ) use ($startDate) {
+                                        $deepQ->wherePivotNull('expires_at')
+                                            ->orWherePivot('expires_at', '>=', $startDate);
+                                    });
+                            });
+                    });
+            })
+            ->sum('provider_cost');
+
+        return (float) ($salaryCost + $maintenanceCost + $serviceProviderCost);
+    }
+
+    /**
      * Get revenue and expenditure breakdown for a specific period.
      *
      * @param Carbon $startDate
@@ -127,10 +325,10 @@ class RevenueReportService
      */
     public function calculateProfit(Carbon $startDate, Carbon $endDate): float
     {
-        $revenue = $this->calculateTotalRevenue($startDate, $endDate);
-        $expenses = $this->calculateTotalExpenses($startDate, $endDate);
+        $revenue = $this->calculateRevenue($startDate, $endDate);
+        $expenditure = $this->calculateExpenditure($startDate, $endDate);
 
-        return $revenue['total'] - $expenses['total'];
+        return $revenue - $expenditure;
     }
 
     /**
