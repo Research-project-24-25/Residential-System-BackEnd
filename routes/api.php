@@ -18,9 +18,11 @@ use App\Http\Controllers\{
     ResidentAuthController,
     ResidentController,
     ServiceController,
+    PropertyServiceController,
 };
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -33,57 +35,63 @@ Route::controller(AuthController::class)->group(function () {
     Route::middleware('auth:sanctum')->post('auth/logout', 'logout');
 });
 
+Route::post('auth/register', [UserAuthController::class, 'register']);
+
 /*
 |--------------------------------------------------------------------------
 | Email verification
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('email')->group(function () {
-    // Verify e-mail
-    Route::get('/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-        ->middleware('signed');
-
-    // Resend link
-    Route::middleware('auth:sanctum')
-        ->post('/resend', [EmailVerificationController::class, 'resend']);
-});
+Route::controller(EmailVerificationController::class)
+    ->prefix('email')
+    ->group(function () {
+        Route::get('/verify/{id}/{hash}', 'verify')->middleware('signed');
+        Route::middleware('auth:sanctum')->post('/resend', 'resend');
+    });
 
 /*
 |--------------------------------------------------------------------------
-| Public resources & user auth
+| Public Properties
 |--------------------------------------------------------------------------
 */
+
 Route::controller(PropertyController::class)
     ->prefix('properties')
     ->group(function () {
-        Route::get('/', 'index'); // Simple listing
-        Route::post('/filter', 'filter'); // Listing with filters
+        Route::get('/', 'index');
+        Route::post('/filter', 'filter');
         Route::get('/{id}', 'show');
     });
 
-Route::post('auth/register', [UserAuthController::class, 'register']);
-
 /*
 |--------------------------------------------------------------------------
-| Authenticated user routes
+| Authenticated User Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-    Route::apiResource('meeting-requests', MeetingRequestController::class)
-        ->except(['destroy']);
-    Route::post('meeting-requests/filter', [MeetingRequestController::class, 'filter']);
-    Route::patch('meeting-requests/{meeting_request}/cancel', [MeetingRequestController::class, 'cancel']);
 
-    Route::apiResource('notifications', NotificationController::class)
-        ->only(['index', 'destroy']);
-    Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
-    Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
-});
+Route::middleware(['auth:sanctum', 'verified'])
+    ->group(function () {
+        // Meeting Requests
+        Route::controller(MeetingRequestController::class)
+            ->group(function () {
+                Route::apiResource('meeting-requests', MeetingRequestController::class)->except(['destroy']);
+                Route::post('meeting-requests/filter', 'filter');
+                Route::patch('meeting-requests/{meeting_request}/cancel', 'cancel');
+            });
+
+        // Notifications
+        Route::controller(NotificationController::class)
+            ->group(function () {
+                Route::apiResource('notifications', NotificationController::class)->only(['index', 'destroy']);
+                Route::patch('notifications/{notification}/read', 'markAsRead');
+                Route::patch('notifications/read-all', 'markAllAsRead');
+            });
+    });
 
 /*
 |--------------------------------------------------------------------------
-| Admin routes
+| Admin Routes
 |--------------------------------------------------------------------------
 */
 
@@ -93,18 +101,6 @@ Route::prefix('admin')
 
         // Profile
         Route::get('profile', [AdminAuthController::class, 'profile']);
-
-        // Properties
-        Route::apiResource('properties', PropertyController::class);
-        Route::post('properties/filter', [PropertyController::class, 'filter']);
-
-        // Residents
-        Route::apiResource('residents', ResidentController::class);
-        Route::post('residents/filter', [ResidentController::class, 'filter']);
-
-        // Meeting requests
-        Route::apiResource('meeting-requests', MeetingRequestController::class);
-        Route::post('meeting-requests/filter', [MeetingRequestController::class, 'filter']);
 
         // Dashboard
         Route::controller(DashboardController::class)
@@ -119,53 +115,85 @@ Route::prefix('admin')
                 Route::get('/properties-revenue', 'propertiesRevenue');
             });
 
+        // Properties
+        Route::controller(PropertyController::class)
+            ->group(function () {
+                Route::apiResource('properties', PropertyController::class);
+                Route::post('properties/filter', 'filter');
+            });
+
         // Services
-        Route::apiResource('services', ServiceController::class);
-        Route::post('services/filter', [ServiceController::class, 'filter']);
-        Route::patch('services/{service}/toggle-active', [ServiceController::class, 'toggleActive']);
+        Route::controller(ServiceController::class)
+            ->group(function () {
+                Route::apiResource('services', ServiceController::class);
+                Route::post('services/filter', 'filter');
+                Route::patch('services/{service}/toggle-active', 'toggleActive');
+            });
 
-        // Bills
-        Route::apiResource('bills', BillController::class);
-        Route::post('bills/generate-recurring', [BillController::class, 'generateRecurringBills']);
-        Route::get('properties/{propertyId}/bills', [BillController::class, 'propertyBills']);
-        Route::get('residents/{residentId}/bills',  [BillController::class, 'residentBills']);
+        // Property-Service Management
+        Route::controller(PropertyServiceController::class)
+            ->group(function () {
+                Route::post('properties/services', 'attach');
+                Route::get('properties/{propertyId}/services', 'propertyServices');
+                Route::get('services/{serviceId}/properties', 'serviceProperties');
+                Route::get('properties/{propertyId}/services/{serviceId}', 'show');
+                Route::put('properties/{propertyId}/services/{serviceId}', 'update');
+                Route::delete('properties/{propertyId}/services/{serviceId}', 'detach');
+                Route::patch('properties/{propertyId}/services/{serviceId}/activate', 'activate');
+                Route::patch('properties/{propertyId}/services/{serviceId}/deactivate', 'deactivate');
+                Route::post('properties/{propertyId}/services/generate-bills', 'generateBills');
+            });
 
-        // Payments
-        Route::apiResource('payments', PaymentController::class)
-            ->only(['index', 'store', 'show', 'update']);
-        Route::get('bills/{billId}/payments', [PaymentController::class, 'billPayments']);
-        Route::get('residents/{residentId}/payments', [PaymentController::class, 'residentPayments']);
+        // Bills and Payments
+        Route::controller(BillController::class)
+            ->group(function () {
+                Route::apiResource('bills', BillController::class);
+                Route::post('bills/generate-recurring', 'generateRecurringBills');
+                Route::get('properties/{propertyId}/bills', 'propertyBills');
+                Route::get('residents/{residentId}/bills', 'residentBills');
+            });
 
-        // Payment methods routes removed
+        Route::controller(PaymentController::class)
+            ->group(function () {
+                Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'show', 'update']);
+                Route::get('bills/{billId}/payments', 'billPayments');
+                Route::get('residents/{residentId}/payments', 'residentPayments');
+            });
 
-        // Maintenance types
-        Route::apiResource('maintenance-types', MaintenanceController::class);
-        Route::post('maintenance-types/filter', [MaintenanceController::class, 'filter']);
+        // Maintenance
+        Route::controller(MaintenanceController::class)
+            ->group(function () {
+                Route::apiResource('maintenance-types', MaintenanceController::class);
+                Route::post('maintenance-types/filter', 'filter');
+            });
 
-        // Maintenance requests
-        Route::apiResource('maintenance-requests', MaintenanceRequestController::class);
-        Route::post('maintenance-requests/filter', [MaintenanceRequestController::class, 'filter']);
-        Route::get('maintenance-requests/properties/{propertyId}', [MaintenanceRequestController::class, 'propertyMaintenanceRequests']);
-        Route::get('maintenance-requests/residents/{residentId}',  [MaintenanceRequestController::class, 'residentMaintenanceRequests']);
+        Route::controller(MaintenanceRequestController::class)
+            ->group(function () {
+                Route::apiResource('maintenance-requests', MaintenanceRequestController::class);
+                Route::post('maintenance-requests/filter', 'filter');
+                Route::get('maintenance-requests/properties/{propertyId}', 'propertyMaintenanceRequests');
+                Route::get('maintenance-requests/residents/{residentId}', 'residentMaintenanceRequests');
+            });
 
-        // Maintenance feedback
         Route::apiResource('maintenance-feedback', MaintenanceFeedbackController::class)
             ->only(['index', 'store', 'show', 'destroy']);
     });
 
 /*
 |--------------------------------------------------------------------------
-| Super-admin only
+| Super-admin Routes
 |--------------------------------------------------------------------------
 */
+
 Route::middleware(['auth:sanctum', 'admin:super_admin'])
     ->post('admin/register', [AdminAuthController::class, 'register']);
 
 /*
 |--------------------------------------------------------------------------
-| Resident routes
+| Resident Routes
 |--------------------------------------------------------------------------
 */
+
 Route::prefix('resident')
     ->middleware(['auth:sanctum', 'resident'])
     ->group(function () {
@@ -173,40 +201,51 @@ Route::prefix('resident')
         // Profile
         Route::get('profile', [ResidentAuthController::class, 'profile']);
 
-        // Bills
-        Route::apiResource('bills', BillController::class)
-            ->only(['index', 'show']);
-        Route::post('bills/filter', [BillController::class, 'filter']);
+        // Bills and Payments
+        Route::controller(BillController::class)
+            ->group(function () {
+                Route::apiResource('bills', BillController::class)->only(['index', 'show']);
+                Route::post('bills/filter', 'filter');
+            });
 
-        // Payments
-        Route::apiResource('payments', PaymentController::class)
-            ->only(['index', 'show']);
-        Route::post('payments/filter', [PaymentController::class, 'filter']);
+        Route::controller(PaymentController::class)
+            ->group(function () {
+                Route::apiResource('payments', PaymentController::class)->only(['index', 'show']);
+                Route::post('payments/filter', 'filter');
+            });
 
-        // Services
-        Route::apiResource('services', ServiceController::class)
-            ->only(['index', 'show'])
-            ->parameters(['services' => 'service']);
-        Route::post('services/filter', [ServiceController::class, 'filter']);
+        // Maintenance
+        Route::controller(MaintenanceController::class)
+            ->prefix('maintenance-types')
+            ->group(function () {
+                Route::get('/', 'index');
+                Route::get('/{maintenance_type}', 'show');
+                Route::post('/filter', 'filter');
+                Route::get('/categories/list', 'categories');
+            });
 
-        // Maintenance types
-        Route::apiResource('maintenance-types', MaintenanceController::class)
-            ->only(['index', 'show'])
-            ->parameters(['maintenance-types' => 'maintenance_type']);
-        Route::post('maintenance-types/filter', [MaintenanceController::class, 'filter']);
-        Route::get('maintenance-types/categories/list', [MaintenanceController::class, 'categories']);
+        Route::controller(MaintenanceRequestController::class)
+            ->group(function () {
+                Route::apiResource('maintenance-requests', MaintenanceRequestController::class)
+                    ->except(['destroy'])
+                    ->parameters(['maintenance-requests' => 'maintenance_request']);
+                Route::post('maintenance-requests/filter', 'filter');
+                Route::patch('maintenance-requests/{maintenance_request}/cancel', 'cancel');
+                Route::get('maintenance-requests/properties/{propertyId}', 'propertyMaintenanceRequests');
+            });
 
-        // Maintenance requests
-        Route::apiResource('maintenance-requests', MaintenanceRequestController::class)
-            ->except(['destroy'])
-            ->parameters(['maintenance-requests' => 'maintenance_request']);
-        Route::post('maintenance-requests/filter', [MaintenanceRequestController::class, 'filter']);
-        Route::patch('maintenance-requests/{maintenance_request}/cancel', [MaintenanceRequestController::class, 'cancel']);
-        Route::get('maintenance-requests/properties/{propertyId}', [MaintenanceRequestController::class, 'propertyMaintenanceRequests']);
+        // Maintenance Feedback
+        Route::controller(MaintenanceFeedbackController::class)
+            ->group(function () {
+                Route::apiResource('maintenance-requests.feedback', MaintenanceFeedbackController::class)
+                    ->only(['store', 'show', 'update']);
+                Route::get('feedback', 'residentFeedback')->middleware('substitute_auth_id');
+            });
 
-        // Maintenance feedback
-        Route::apiResource('maintenance-requests.feedback', MaintenanceFeedbackController::class)
-            ->only(['store', 'show', 'update']);
-        Route::get('feedback', [MaintenanceFeedbackController::class, 'residentFeedback'])
-            ->middleware('substitute_auth_id');
+        // Property Services
+        Route::controller(PropertyServiceController::class)
+            ->group(function () {
+                Route::get('properties/{propertyId}/services', 'propertyServices');
+                Route::get('properties/{propertyId}/services/{serviceId}', 'show');
+            });
     });

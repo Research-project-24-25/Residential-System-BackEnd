@@ -39,13 +39,11 @@ class PropertyRequest extends BaseFormRequest
             'filters.occupancy_limit.min' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'filters.occupancy_limit.max' => ['sometimes', 'nullable', 'integer', 'min:0', 'gte:filters.occupancy_limit.min'],
 
-            'filters.bedrooms' => ['sometimes', 'array'],
-            'filters.bedrooms.min' => ['sometimes', 'nullable', 'integer', 'min:0'],
-            'filters.bedrooms.max' => ['sometimes', 'nullable', 'integer', 'min:0', 'gte:filters.bedrooms.min'],
+            'filters.bedrooms' => ['sometimes', 'nullable', 'array'],
+            'filters.bedrooms.*' => ['integer', 'min:0'],
 
-            'filters.bathrooms' => ['sometimes', 'array'],
-            'filters.bathrooms.min' => ['sometimes', 'nullable', 'integer', 'min:0'],
-            'filters.bathrooms.max' => ['sometimes', 'nullable', 'integer', 'min:0', 'gte:filters.bathrooms.min'],
+            'filters.bathrooms' => ['sometimes', 'nullable', 'array'],
+            'filters.bathrooms.*' => ['integer', 'min:0'],
 
             'filters.area' => ['sometimes', 'array'],
             'filters.area.min' => ['sometimes', 'nullable', 'integer', 'min:0'],

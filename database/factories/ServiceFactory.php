@@ -29,8 +29,6 @@ class ServiceFactory extends Factory
                     ? $this->faker->randomElement(['monthly', 'quarterly', 'yearly'])
                     : null;
             },
-            'is_active' => $this->faker->boolean(80), // 80% chance of being active
-            'metadata' => $this->faker->optional(0.2)->words(3), // 20% chance of having metadata
         ];
     }
 }

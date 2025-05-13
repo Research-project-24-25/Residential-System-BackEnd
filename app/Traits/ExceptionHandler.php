@@ -30,6 +30,6 @@ trait ExceptionHandler
       return $this->forbiddenResponse($exception->getMessage());
     }
 
-    return $this->errorResponse($exception->getMessage(), 500);
+    return $this->errorResponse($exception->getMessage());
   }
 }

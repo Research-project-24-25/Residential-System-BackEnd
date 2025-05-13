@@ -17,13 +17,14 @@ class ServiceController extends Controller
         try {
             $user = $request->user();
 
+            // Only admins can view all services
+            if ($user->getTable() !== 'admins') {
+                return $this->forbiddenResponse('Only administrators can access all services');
+            }
+
             $perPage = $request->get('per_page', 10);
 
             $services = Service::query()
-                ->when($user && $user->getTable() !== 'admins', function ($query) {
-                    // Only show active services to non-admin users
-                    return $query->where('is_active', true);
-                })
                 ->sort($request)
                 ->paginate($perPage);
 
@@ -38,13 +39,14 @@ class ServiceController extends Controller
         try {
             $user = $request->user();
 
+            // Only admins can filter services
+            if ($user->getTable() !== 'admins') {
+                return $this->forbiddenResponse('Only administrators can access all services');
+            }
+
             $perPage = $request->get('per_page', 10);
 
             $services = Service::query()
-                ->when($user && $user->getTable() !== 'admins', function ($query) {
-                    // Only show active services to non-admin users
-                    return $query->where('is_active', true);
-                })
                 ->filter($request)
                 ->sort($request)
                 ->paginate($perPage);
@@ -80,16 +82,16 @@ class ServiceController extends Controller
         try {
             $user = $request->user();
 
-            $service = Service::findOrFail($id);
-
-            // Non-admin users can only view active services
-            if ($user->getTable() !== 'admins' && !$service->is_active) {
-                return $this->forbiddenResponse('Service not available');
+            // Only admins can view individual services directly
+            if ($user->getTable() !== 'admins') {
+                return $this->forbiddenResponse('Only administrators can view service details');
             }
 
-            // Count active requests if admin
+            $service = Service::findOrFail($id);
+
+            // Count active properties if admin
             if ($user->getTable() === 'admins') {
-                $service->loadCount('activeRequests');
+                $service->loadCount('properties');
             }
 
             return $this->successResponse(
@@ -133,10 +135,10 @@ class ServiceController extends Controller
 
             $service = Service::findOrFail($id);
 
-            // Check if there are any service requests associated with this service
-            if ($service->serviceRequests()->exists()) {
+            // Check if there are any property relationships with this service
+            if ($service->properties()->exists()) {
                 return $this->errorResponse(
-                    'Cannot delete service because it has associated service requests',
+                    'Cannot delete service because it is attached to properties',
                     422
                 );
             }

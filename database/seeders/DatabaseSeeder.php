@@ -63,6 +63,9 @@ class DatabaseSeeder extends Seeder
             'created_by' => Admin::first()->id,
         ]);
 
+        // Create services
+        $services = Service::factory(15)->create();
+
         // Create regular residents
         $residents = Resident::factory(25)->create();
 
@@ -77,8 +80,25 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Create services
-        Service::factory(15)->create();
+        // Create property-service relationships
+        foreach ($properties as $property) {
+            // Assign 2-4 random services to each property
+            $randomServices = $services->random(rand(2, 4));
+            foreach ($randomServices as $service) {
+                $property->services()->attach($service->id, [
+                    'billing_type' => ['fixed', 'area_based', 'prepaid'][array_rand(['fixed', 'area_based', 'prepaid'])],
+                    'price' => fake()->randomFloat(2, 50, 1000),
+                    'status' => ['active', 'inactive'][array_rand(['active', 'inactive'])],
+                    'details' => json_encode([
+                        'notes' => fake()->sentence(),
+                        'terms' => fake()->paragraph()
+                    ]),
+                    'activated_at' => fake()->optional(0.7)->dateTimeBetween('-1 year', 'now'),
+                    'expires_at' => fake()->optional(0.5)->dateTimeBetween('+1 month', '+2 years'),
+                    'last_billed_at' => fake()->optional(0.6)->dateTimeBetween('-6 months', 'now'),
+                ]);
+            }
+        }
 
         // Create bills for residents
         $bills = [];

@@ -9,6 +9,11 @@ class ServiceResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        // Only administrators can see inactive services
+        if ($request->user() && $request->user()->getTable() !== 'admins' && !$this->is_active) {
+            return [];
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -19,10 +24,12 @@ class ServiceResource extends JsonResource
             'unit_of_measure' => $this->unit_of_measure,
             'is_recurring' => $this->is_recurring,
             'recurrence' => $this->recurrence,
-            'is_active' => $this->is_active,
-            'metadata' => $this->metadata,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'properties_count' => $this->when(
+                isset($this->properties_count),
+                $this->properties_count
+            ),
         ];
     }
 }

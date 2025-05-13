@@ -21,14 +21,11 @@ return new class extends Migration
             $table->string('unit_of_measure')->nullable(); // e.g., 'hour', 'visit', 'month'
             $table->boolean('is_recurring')->default(false);
             $table->string('recurrence')->nullable(); // monthly, quarterly, yearly, null for one-time
-            $table->boolean('is_active')->default(true);
-            $table->json('metadata')->nullable();
             $table->timestamps();
 
             // Index for performance
             $table->index('type');
             $table->index('is_recurring');
-            $table->index('is_active');
         });
     }
 
