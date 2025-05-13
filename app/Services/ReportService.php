@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Admin;
 use App\Models\Bill;
 use App\Models\MaintenanceRequest;
-use App\Models\Payment;
 use App\Models\Property;
 use App\Models\PropertyResident;
 use App\Models\Service;
@@ -14,13 +13,6 @@ use Illuminate\Support\Facades\DB;
 
 class ReportService
 {
-    /**
-     * Get a summary of monthly revenue for a given year.
-     *
-     * @param int $year The year to report on.
-     * @param int $reportMonths The number of months to include in the report (default is 12).
-     * @return array Monthly breakdown of different revenue categories
-     */
     public function getMonthlyRevenueSummary(int $year, int $reportMonths = 12): array
     {
         $monthlySalesRevenue = array_fill(0, $reportMonths, 0.0);
@@ -47,45 +39,16 @@ class ReportService
             }
         }
 
-        // Calculate pro-rata rental revenue
+        // Calculate pro-rata rental revenue from bills (accrual-based)
         for ($month = 1; $month <= $reportMonths; $month++) {
-            $currentMonthStart = Carbon::create($year, $month, 1)->startOfMonth();
-            $currentMonthEnd = Carbon::create($year, $month, 1)->endOfMonth();
-            $daysInCurrentMonth = $currentMonthStart->daysInMonth;
+            // Get all rental bills created in this month
+            $rentalBills = Bill::query()
+                ->where('bill_type', 'rent')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->sum('amount');
 
-            $activeRentals = PropertyResident::query()
-                ->where('relationship_type', 'renter')
-                ->whereNotNull('monthly_rent')
-                ->where('start_date', '<=', $currentMonthEnd)
-                ->where(function ($query) use ($currentMonthStart) {
-                    $query->whereNull('end_date')
-                        ->orWhere('end_date', '>=', $currentMonthStart);
-                })
-                ->get();
-
-            $totalRentForMonth = 0;
-
-            foreach ($activeRentals as $rental) {
-                $rentalStartDate = Carbon::parse($rental->start_date);
-                $rentalEndDate = $rental->end_date ? Carbon::parse($rental->end_date) : $currentMonthEnd;
-
-                // Determine effective dates within the current month
-                $effectiveStartDateInMonth = $rentalStartDate->isAfter($currentMonthStart) ? $rentalStartDate : $currentMonthStart;
-                $effectiveEndDateInMonth = $rentalEndDate->isBefore($currentMonthEnd) ? $rentalEndDate : $currentMonthEnd;
-
-                // Skip if effective period is invalid
-                if ($effectiveEndDateInMonth->isBefore($effectiveStartDateInMonth)) {
-                    continue;
-                }
-
-                $activeDaysInMonth = $effectiveStartDateInMonth->diffInDays($effectiveEndDateInMonth) + 1;
-
-                if ($daysInCurrentMonth > 0) {
-                    $proratedRent = ($rental->monthly_rent / $daysInCurrentMonth) * $activeDaysInMonth;
-                    $totalRentForMonth += $proratedRent;
-                }
-            }
-            $monthlyRentalRevenue[$month - 1] = round((float) $totalRentForMonth, 2);
+            $monthlyRentalRevenue[$month - 1] = round((float) $rentalBills, 2);
 
             // Calculate service revenue (utilities, etc.)
             $serviceRevenue = Bill::query()
@@ -121,13 +84,6 @@ class ReportService
         ];
     }
 
-    /**
-     * Get a summary of monthly expenditures for a given year.
-     *
-     * @param int $year The year to report on.
-     * @param int $reportMonths The number of months to include in the report (default is 12).
-     * @return array Monthly breakdowns of different expenditure categories
-     */
     public function getMonthlyExpenditureSummary(int $year, int $reportMonths = 12): array
     {
         $monthlySalaries = array_fill(0, $reportMonths, 0.0);
@@ -142,7 +98,8 @@ class ReportService
             $monthlySalaries[$month] = $totalMonthlySalary;
         }
 
-        // Calculate maintenance costs
+        // Calculate maintenance costs - using final_cost field which represents
+        // the accrued expense when work is completed
         $maintenanceData = MaintenanceRequest::query()
             ->whereNotNull('final_cost')
             ->whereYear('completion_date', $year)
@@ -217,13 +174,6 @@ class ReportService
         ];
     }
 
-    /**
-     * Get a summary of monthly profits for a given year.
-     *
-     * @param int $year The year to report on.
-     * @param int $reportMonths The number of months to include in the report (default is 12).
-     * @return array Monthly profit breakdown
-     */
     public function getMonthlyProfitSummary(int $year, int $reportMonths = 12): array
     {
         // Get revenue and expenditure data
@@ -262,99 +212,20 @@ class ReportService
         ];
     }
 
-    /**
-     * Calculate total revenue for a period.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     public function calculateRevenue(Carbon $startDate, Carbon $endDate): float
     {
-        // Property sales revenue
-        $salesRevenue = PropertyResident::query()
-            ->whereIn('relationship_type', ['buyer', 'co_buyer'])
-            ->whereNotNull('sale_price')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('sale_price');
-
-        // Rental revenue from bills
-        $rentalRevenue = Bill::query()
-            ->where('bill_type', 'rent')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('amount');
-
-        // Service revenue
-        $serviceRevenue = Bill::query()
-            ->whereIn('bill_type', ['electricity', 'gas', 'water', 'security', 'cleaning', 'internet'])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('amount');
-
-        // Other revenue
-        $otherRevenue = Bill::query()
-            ->whereNotIn('bill_type', ['rent', 'electricity', 'gas', 'water', 'security', 'cleaning', 'internet'])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('amount');
-
-        return (float) ($salesRevenue + $rentalRevenue + $serviceRevenue + $otherRevenue);
+        // Sum all revenue components using accrual-based accounting
+        $totalRevenue = $this->calculateTotalRevenue($startDate, $endDate);
+        return $totalRevenue['total'];
     }
 
-    /**
-     * Calculate total expenditure for a period.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     public function calculateExpenditure(Carbon $startDate, Carbon $endDate): float
     {
-        // Get the total monthly salary costs
-        $totalMonthlySalary = Admin::sum('salary');
-
-        // Calculate how many months in the period
-        $monthsInPeriod = $startDate->diffInMonths($endDate) + 1;
-        $salaryCost = $totalMonthlySalary * $monthsInPeriod;
-
-        // Maintenance costs
-        $maintenanceCost = MaintenanceRequest::query()
-            ->whereNotNull('final_cost')
-            ->whereBetween('completion_date', [$startDate, $endDate])
-            ->sum('final_cost');
-
-        // Service provider costs - FIX THE QUERY TO NOT USE orWherePivot
-        $serviceProviderCost = Service::query()
-            ->whereNotNull('provider_cost')
-            ->whereHas('properties', function ($query) use ($startDate, $endDate) {
-                $query->where('property_service.status', 'active')
-                    ->where(function ($q) use ($startDate, $endDate) {
-                        $q->whereBetween('property_service.activated_at', [$startDate, $endDate])
-                            ->orWhere(function ($innerQ) use ($startDate) {
-                                $innerQ->where('property_service.activated_at', '<', $startDate)
-                                    ->where(function ($deepQ) use ($startDate) {
-                                        $deepQ->whereNull('property_service.expires_at')
-                                            ->orWhere('property_service.expires_at', '>=', $startDate);
-                                    });
-                            });
-                    });
-            })
-            ->sum('provider_cost');
-
-        // Property acquisition costs
-        $acquisitionCost = Property::query()
-            ->whereNotNull('acquisition_cost')
-            ->whereBetween('acquisition_date', [$startDate, $endDate])
-            ->sum('acquisition_cost');
-
-        return (float) ($salaryCost + $maintenanceCost + $serviceProviderCost + $acquisitionCost);
+        // Sum all expense components using accrual-based accounting
+        $totalExpenses = $this->calculateTotalExpenses($startDate, $endDate);
+        return $totalExpenses['total'];
     }
 
-    /**
-     * Get revenue and expenditure breakdown for a specific period.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return array
-     */
     public function getRevenueExpenseBreakdown(Carbon $startDate, Carbon $endDate): array
     {
         // Get all revenue and expense components
@@ -374,13 +245,6 @@ class ReportService
         ];
     }
 
-    /**
-     * Calculate profit for a specific period.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     public function calculateProfit(Carbon $startDate, Carbon $endDate): float
     {
         $revenue = $this->calculateRevenue($startDate, $endDate);
@@ -389,19 +253,12 @@ class ReportService
         return $revenue - $expenditure;
     }
 
-    /**
-     * Calculate total revenue with breakdown by type.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return array
-     */
     private function calculateTotalRevenue(Carbon $startDate, Carbon $endDate): array
     {
         // 1. Property sales revenue
         $salesRevenue = $this->calculateSalesRevenue($startDate, $endDate);
 
-        // 2. Rental revenue
+        // 2. Rental revenue from bills
         $rentalRevenue = $this->calculateRentalRevenue($startDate, $endDate);
 
         // 3. Service charges revenue (bills for utilities, etc.)
@@ -428,13 +285,6 @@ class ReportService
         ];
     }
 
-    /**
-     * Calculate total expenses with breakdown by type.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return array
-     */
     private function calculateTotalExpenses(Carbon $startDate, Carbon $endDate): array
     {
         // 1. Admin salary costs
@@ -463,13 +313,6 @@ class ReportService
         ];
     }
 
-    /**
-     * Calculate property sales revenue.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     private function calculateSalesRevenue(Carbon $startDate, Carbon $endDate): float
     {
         return PropertyResident::query()
@@ -479,66 +322,14 @@ class ReportService
             ->sum('sale_price');
     }
 
-    /**
-     * Calculate rental revenue.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     private function calculateRentalRevenue(Carbon $startDate, Carbon $endDate): float
     {
-        $totalRentalRevenue = 0;
-
-        // Get all active rental agreements in the period
-        $rentalAgreements = PropertyResident::query()
-            ->where('relationship_type', 'renter')
-            ->whereNotNull('monthly_rent')
-            ->where(function ($query) use ($startDate, $endDate) {
-                $query->where(function ($q) use ($startDate, $endDate) {
-                    // Started before or during period
-                    $q->where('start_date', '<=', $endDate)
-                        // And either has no end date or ends after start of period
-                        ->where(function ($innerQ) use ($startDate) {
-                            $innerQ->whereNull('end_date')
-                                ->orWhere('end_date', '>=', $startDate);
-                        });
-                });
-            })
-            ->get();
-
-        // Calculate pro-rated rental revenue for each agreement
-        foreach ($rentalAgreements as $rental) {
-            $rentalStartDate = Carbon::parse($rental->start_date);
-            $rentalEndDate = $rental->end_date ? Carbon::parse($rental->end_date) : $endDate;
-
-            // Determine effective start and end dates within the reporting period
-            $effectiveStartDate = $rentalStartDate->isAfter($startDate) ? $rentalStartDate : $startDate;
-            $effectiveEndDate = $rentalEndDate->isBefore($endDate) ? $rentalEndDate : $endDate;
-
-            // Skip if effective period is invalid
-            if ($effectiveEndDate->isBefore($effectiveStartDate)) {
-                continue;
-            }
-
-            // Calculate active days in period
-            $activeDaysInPeriod = $effectiveStartDate->diffInDays($effectiveEndDate) + 1;
-
-            // Calculate pro-rated revenue
-            $proRatedRevenue = $rental->monthly_rent * ($activeDaysInPeriod / 30); // Assuming 30 days per month on average
-            $totalRentalRevenue += $proRatedRevenue;
-        }
-
-        return round($totalRentalRevenue, 2);
+        return Bill::query()
+            ->where('bill_type', 'rent')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
     }
 
-    /**
-     * Calculate service-related revenue.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     private function calculateServiceRevenue(Carbon $startDate, Carbon $endDate): float
     {
         return Bill::query()
@@ -547,13 +338,6 @@ class ReportService
             ->sum('amount');
     }
 
-    /**
-     * Calculate maintenance-related revenue.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     private function calculateMaintenanceRevenue(Carbon $startDate, Carbon $endDate): float
     {
         return Bill::query()
@@ -562,28 +346,14 @@ class ReportService
             ->sum('amount');
     }
 
-    /**
-     * Calculate other revenue.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     private function calculateOtherRevenue(Carbon $startDate, Carbon $endDate): float
     {
         return Bill::query()
-            ->whereNotIn('bill_type', ['electricity', 'gas', 'water', 'security', 'cleaning', 'internet', 'maintenance'])
+            ->whereNotIn('bill_type', ['electricity', 'gas', 'water', 'security', 'cleaning', 'internet', 'maintenance', 'rent'])
             ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('amount');
     }
 
-    /**
-     * Calculate admin salary costs.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     private function calculateAdminSalaryCosts(Carbon $startDate, Carbon $endDate): float
     {
         // Get the total monthly salary costs
@@ -595,37 +365,15 @@ class ReportService
         return $totalMonthlySalary * $monthsInPeriod;
     }
 
-    /**
-     * Calculate maintenance costs.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     private function calculateMaintenanceCosts(Carbon $startDate, Carbon $endDate): float
     {
-        // When the actual_cost column is available, use it instead of final_cost
-        $actualCostExists = $this->columnExists('maintenance_requests', 'actual_cost');
-
-        $query = MaintenanceRequest::query()
-            ->whereBetween('created_at', [$startDate, $endDate]);
-
-        if ($actualCostExists) {
-            $query->whereNotNull('actual_cost');
-            return $query->sum('actual_cost');
-        } else {
-            $query->whereNotNull('final_cost');
-            return $query->sum('final_cost');
-        }
+        // Use final_cost field to represent the accrued expense when work is completed
+        return MaintenanceRequest::query()
+            ->whereNotNull('final_cost')
+            ->whereBetween('completion_date', [$startDate, $endDate])
+            ->sum('final_cost');
     }
 
-    /**
-     * Calculate service provider costs.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     private function calculateServiceProviderCosts(Carbon $startDate, Carbon $endDate): float
     {
         // Check if provider_cost column exists in services table
@@ -696,13 +444,6 @@ class ReportService
         return $totalProviderCost;
     }
 
-    /**
-     * Calculate property acquisition costs.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return float
-     */
     private function calculatePropertyAcquisitionCosts(Carbon $startDate, Carbon $endDate): float
     {
         // Check if acquisition_cost and acquisition_date columns exist in properties table
@@ -721,13 +462,6 @@ class ReportService
             ->sum('acquisition_cost');
     }
 
-    /**
-     * Helper method to check if a column exists in a table.
-     *
-     * @param string $table
-     * @param string $column
-     * @return bool
-     */
     private function columnExists(string $table, string $column): bool
     {
         return DB::getSchemaBuilder()->hasColumn($table, $column);

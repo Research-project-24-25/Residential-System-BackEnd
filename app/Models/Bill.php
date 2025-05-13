@@ -71,17 +71,16 @@ class Bill extends Model
     }
 
     /**
-     * Calculate the amount paid for this bill.
+     * Calculate the amount paid for this bill, including soft-deleted payments.
      */
     public function getPaidAmountAttribute(): float
     {
         // Sum of positive payments that are currently marked as 'paid'.
-        // Refunded payments will have their status changed to 'refunded'.
-        // Refund transactions themselves are separate records with negative amounts and 'paid' status,
-        // but are not summed here for 'paid_amount' of the bill.
+        // Include soft-deleted payments to maintain accounting integrity.
         return $this->payments()
-            ->where('status', 'paid') // Changed from 'completed'
-            ->where('amount', '>', 0)   // Only sum positive payments
+            ->withTrashed()
+            ->where('status', 'paid')
+            ->where('amount', '>', 0)
             ->sum('amount');
     }
 

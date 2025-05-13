@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Bill;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
 
@@ -20,7 +21,7 @@ class PaymentService
 
             // If payment is marked as paid, update the bill
             if ($payment->status === 'paid') { // Standardize to 'paid'
-                $this->updateBillStatus($payment);
+                $this->updateBillStatus($payment->bill);
             }
 
             return $payment;
@@ -42,20 +43,18 @@ class PaymentService
 
             // If status is paid, update the related bill
             if ($status === 'paid') { // Standardize to 'paid'
-                $this->updateBillStatus($payment);
+                $this->updateBillStatus($payment->bill);
             } elseif ($payment->getOriginal('status') === 'paid' && $status !== 'paid') { // Standardize to 'paid'
-                // If payment was paid but is no longer paid (e.g., changed to refunded), reverse the bill update
-                $this->reversePayment($payment);
+                // If payment was paid but is no longer paid (e.g., changed to refunded), update the bill
+                $this->updateBillStatus($payment->bill);
             }
 
             return $payment;
         });
     }
 
-    private function updateBillStatus(Payment $payment): void
+    public function updateBillStatus(Bill $bill): void
     {
-        $bill = $payment->bill;
-
         // Force refresh to get latest data
         $bill->refresh();
 
@@ -63,29 +62,17 @@ class PaymentService
         $this->billingService->updateBill($bill, []);
     }
 
-    private function reversePayment(Payment $payment): void
-    {
-        $bill = $payment->bill;
-
-        // Force refresh to get latest data
-        $bill->refresh();
-
-        // Update bill status based on remaining payments
-        $this->billingService->updateBill($bill, []);
-    }
-
     public function refundPayment(Payment $payment, float $amount, string $reason, int $processedBy): Payment
     {
         return DB::transaction(function () use ($payment, $amount, $reason, $processedBy) {
             // Step 1: Update the original payment's status to 'refunded'
-            // This will also trigger reversePayment via updatePaymentStatus, adjusting bill for original amount.
+            // This will also trigger bill status update via updatePaymentStatus
             $this->updatePaymentStatus($payment, 'refunded', $processedBy);
 
             // Step 2: Create a new payment record for the refund transaction itself
             $refund = Payment::create([
                 'bill_id' => $payment->bill_id,
                 'resident_id' => $payment->resident_id,
-                // 'payment_method_id' was removed from Payment model
                 'amount' => -$amount, // Negative amount represents a refund
                 'currency' => $payment->currency,
                 'status' => 'paid', // The refund transaction itself is 'paid'
@@ -111,10 +98,7 @@ class PaymentService
             $payment->save(); // Save original payment again with detailed refund metadata
 
             // Step 4: Update bill status to account for the new negative refund payment
-            // The bill was already adjusted for the original payment being "reversed".
-            // Now, apply the impact of the new refund payment.
-            // The updateBillStatus method expects a Payment object.
-            $this->updateBillStatus($refund);
+            $this->updateBillStatus($payment->bill);
 
             return $refund;
         });
@@ -133,7 +117,6 @@ class PaymentService
                 'status' => $payment->status,
                 'transaction_id' => $payment->transaction_id,
                 'payment_date' => $payment->payment_date->format('Y-m-d H:i:s'),
-                // payment_method block removed
             ],
             'bill' => [
                 'id' => $payment->bill->id,

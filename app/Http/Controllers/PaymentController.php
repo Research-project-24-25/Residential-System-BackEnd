@@ -12,7 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Throwable;
-use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
@@ -136,6 +135,37 @@ class PaymentController extends Controller
             return $this->handleException($e);
         }
     }
+
+    public function destroy($id, Request $request): JsonResponse
+    {
+        try {
+            // Only admins can delete payments
+            if ($request->user()->getTable() !== 'admins') {
+                return $this->errorResponse('Unauthorized to delete payments', 403);
+            }
+
+            $payment = Payment::findOrFail($id);
+
+            // Don't allow deletion of payments that affect closed accounting periods
+            // This is a simple check - in a real app, you might check against locked accounting periods
+            if ($payment->created_at->diffInDays(now()) > 30) {
+                return $this->errorResponse('Cannot delete payments older than 30 days for accounting integrity', 422);
+            }
+
+            // Soft delete the payment
+            $payment->delete();
+
+            // Update bill status since a payment has been removed
+            if ($payment->bill) {
+                $this->paymentService->updateBillStatus($payment->bill);
+            }
+
+            return $this->successResponse('Payment deleted successfully');
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
     public function billPayments($billId, Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -165,6 +195,91 @@ class PaymentController extends Controller
                 ->paginate($request->get('per_page', 10));
 
             return PaymentResource::collection($payments);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function trashed(Request $request): JsonResponse
+    {
+        try {
+            // Only admins can view trashed payments
+            if ($request->user()->getTable() !== 'admins') {
+                return $this->errorResponse('Unauthorized to view deleted payments', 403);
+            }
+
+            return $this->getTrashedModels(Payment::class, function ($query) use ($request) {
+                if ($request->has('sort')) {
+                    $query->sort($request);
+                }
+
+                // Handle specific payment filters
+                $filters = $request->input('filters', []);
+
+                if (isset($filters['bill_id'])) {
+                    $query->where('bill_id', $filters['bill_id']);
+                }
+
+                if (isset($filters['resident_id'])) {
+                    $query->where('resident_id', $filters['resident_id']);
+                }
+
+                if (isset($filters['status'])) {
+                    $query->where('status', $filters['status']);
+                }
+            });
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function restore(int $id, Request $request): JsonResponse
+    {
+        try {
+            // Only admins can restore payments
+            if ($request->user()->getTable() !== 'admins') {
+                return $this->errorResponse('Unauthorized to restore payments', 403);
+            }
+
+            $result = $this->restoreModel(Payment::class, $id);
+
+            // If restoration was successful, update the associated bill
+            if ($result->getStatusCode() === 200) {
+                $payment = Payment::find($id);
+                if ($payment && $payment->bill) {
+                    $this->paymentService->updateBillStatus($payment->bill);
+                }
+            }
+
+            return $result;
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function forceDelete(int $id, Request $request): JsonResponse
+    {
+        try {
+            // Only admins can permanently delete payments
+            if ($request->user()->getTable() !== 'admins') {
+                return $this->errorResponse('Unauthorized to permanently delete payments', 403);
+            }
+
+            // Get the payment before deletion (for bill update)
+            $payment = Payment::withTrashed()->findOrFail($id);
+            $billId = $payment->bill_id;
+
+            $result = $this->forceDeleteModel(Payment::class, $id);
+
+            // If deletion was successful, update the associated bill
+            if ($result->getStatusCode() === 200 && $billId) {
+                $bill = Bill::find($billId);
+                if ($bill) {
+                    $this->paymentService->updateBillStatus($bill);
+                }
+            }
+
+            return $result;
         } catch (Throwable $e) {
             return $this->handleException($e);
         }

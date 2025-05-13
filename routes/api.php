@@ -176,7 +176,10 @@ Route::prefix('admin')
 
         Route::controller(PaymentController::class)
             ->group(function () {
-                Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'show', 'update']);
+                Route::apiResource('payments', PaymentController::class);
+                Route::get('payments/trashed', 'trashed');
+                Route::patch('payments/{id}/restore', 'restore');
+                Route::delete('payments/{id}/force', 'forceDelete');
                 Route::get('bills/{billId}/payments', 'billPayments');
                 Route::get('residents/{residentId}/payments', 'residentPayments');
             });
