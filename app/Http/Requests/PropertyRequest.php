@@ -51,6 +51,14 @@ class PropertyRequest extends BaseFormRequest
 
             'filters.features' => ['sometimes', 'array'],
             'filters.features.*' => ['sometimes', 'string'],
+
+            'filters.acquisition_cost' => ['sometimes', 'array'],
+            'filters.acquisition_cost.min' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'filters.acquisition_cost.max' => ['sometimes', 'nullable', 'numeric', 'min:0', 'gt:filters.acquisition_cost.min'],
+
+            'filters.acquisition_date' => ['sometimes', 'array'],
+            'filters.acquisition_date.min' => ['sometimes', 'nullable', 'date'],
+            'filters.acquisition_date.max' => ['sometimes', 'nullable', 'date', 'after_or_equal:filters.acquisition_date.min'],
         ];
     }
 
@@ -72,12 +80,14 @@ class PropertyRequest extends BaseFormRequest
             'area' => ['sometimes', 'integer', 'min:0'],
             'features' => ['sometimes', 'nullable', 'array'],
             'features.*' => ['sometimes', 'string'],
+            'acquisition_cost' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'acquisition_date' => ['sometimes', 'nullable', 'date'],
             'images' => ['sometimes', 'nullable'],
             // Image upload validation for 'images[]' (array of files)
             // This rule applies to both create and update, 'sometimes' handles if it's present
             'images.*' => ['sometimes', 'file', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ];
-        
+
         // Simpler way to handle images, as 'images.*' with 'sometimes' covers both create and update.
         // The 'images' field itself being 'nullable' handles removal if an empty array or null is sent.
         // if ($isUpdate) {
@@ -94,14 +104,14 @@ class PropertyRequest extends BaseFormRequest
             // It might be $this->property->id or $this->route('property') depending on route binding
             $propertyId = $this->route('property') ? $this->route('property')->id : $this->route('id');
             if ($propertyId) {
-                 $rules['label'][] = Rule::unique('properties', 'label')->ignore($propertyId);
+                $rules['label'][] = Rule::unique('properties', 'label')->ignore($propertyId);
             } else {
                 // Fallback if ID cannot be determined, or handle error
                 // This might happen if the route parameter name is different
                 // Or if implicit route model binding is not used and 'id' is not explicitly passed.
                 // For now, we'll assume it's available or the unique rule might fail on update if label is unchanged.
                 // A more robust solution might involve checking $this->property if route model binding is used.
-                 $rules['label'][] = Rule::unique('properties', 'label')->ignore($this->input('label'), 'label');
+                $rules['label'][] = Rule::unique('properties', 'label')->ignore($this->input('label'), 'label');
             }
         }
 

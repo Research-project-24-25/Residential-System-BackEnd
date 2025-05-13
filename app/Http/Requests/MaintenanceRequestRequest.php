@@ -60,6 +60,7 @@ class MaintenanceRequestRequest extends BaseFormRequest
                 'notes' => ['nullable', 'string', 'max:1000'],
                 'estimated_cost' => ['nullable', 'numeric', 'min:0'],
                 'final_cost' => ['nullable', 'numeric', 'min:0'],
+                'actual_cost' => ['nullable', 'numeric', 'min:0'],
                 'bill_id' => ['nullable', 'exists:bills,id'],
                 'has_feedback' => ['sometimes', 'boolean'],
             ];
@@ -81,7 +82,7 @@ class MaintenanceRequestRequest extends BaseFormRequest
                     'images' => ['sometimes', 'nullable'],
                     'images.*' => ['sometimes', 'file', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
                 ];
-                 // Ensure other fields are not submittable by residents on update
+                // Ensure other fields are not submittable by residents on update
                 $rules['maintenance_id'] = ['prohibited'];
                 $rules['property_id'] = ['prohibited'];
                 $rules['priority'] = ['prohibited'];

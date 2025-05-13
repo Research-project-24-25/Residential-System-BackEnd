@@ -24,6 +24,8 @@ class Property extends Model
         'area',
         'images',
         'features',
+        'acquisition_cost',
+        'acquisition_date',
     ];
 
     protected $casts = [
@@ -34,6 +36,8 @@ class Property extends Model
         'bathrooms' => 'integer',
         'images' => 'array',
         'features' => 'array',
+        'acquisition_cost' => 'decimal:2',
+        'acquisition_date' => 'date',
     ];
 
     protected array $filterableFields = [
@@ -99,7 +103,7 @@ class Property extends Model
     {
         return $this->hasMany(Bill::class);
     }
-/**
+    /**
      * The services associated with the property.
      */
     public function services()
@@ -156,7 +160,7 @@ class Property extends Model
     {
         return $this->bills()->overdue()->get();
     }
-    
+
     public function getUnpaidBillsTotalAttribute(): float
     {
         return $this->bills()->unpaid()->sum('amount');

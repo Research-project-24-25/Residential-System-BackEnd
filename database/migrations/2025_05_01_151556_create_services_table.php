@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->enum('type', ['electricity', 'gas', 'water', 'security', 'cleaning', 'other']);
-            $table->decimal('base_price', 10, 2);
+            $table->decimal('base_price', 10, 2)->default(0);
+            $table->decimal('provider_cost', 10, 2)->default(0);
             $table->string('currency', 3)->default('USD');
             $table->string('unit_of_measure')->nullable(); // e.g., 'hour', 'visit', 'month'
             $table->boolean('is_recurring')->default(false);

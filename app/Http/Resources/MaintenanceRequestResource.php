@@ -64,6 +64,7 @@ class MaintenanceRequestResource extends JsonResource
             'notes' => $this->notes,
             'estimated_cost' => $this->estimated_cost,
             'final_cost' => $this->final_cost,
+            'actual_cost' => $this->actual_cost,
             'bill_id' => $this->bill_id,
             'has_feedback' => $this->has_feedback,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),

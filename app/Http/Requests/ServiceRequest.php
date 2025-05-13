@@ -20,18 +20,18 @@ class ServiceRequest extends BaseFormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'type' => ['required', 'string', Rule::in(['electricity', 'gas', 'water', 'security', 'cleaning', 'other'])],
             'base_price' => ['required', 'numeric', 'min:0'],
+            'provider_cost' => ['required', 'numeric', 'min:0'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'unit_of_measure' => ['nullable', 'string', 'max:50'],
             'is_recurring' => ['sometimes', 'boolean'],
             'recurrence' => ['nullable', 'required_if:is_recurring,true', Rule::in(['monthly', 'quarterly', 'yearly'])],
-            'is_active' => ['sometimes', 'boolean'],
-            'metadata' => ['nullable', 'array'],
         ];
 
         if ($this->isUpdateRequest()) {
             $specificRules['name'] = ['sometimes', 'string', 'max:255', Rule::unique('services', 'name')->ignore($this->route('service'))];
             $specificRules['type'] = ['sometimes', 'string', Rule::in(['electricity', 'gas', 'water', 'security', 'cleaning', 'other'])];
             $specificRules['base_price'] = ['sometimes', 'numeric', 'min:0'];
+            $specificRules['provider_cost'] = ['sometimes', 'numeric', 'min:0'];
         } else {
             // For create, ensure name is unique without ignore
             $specificRules['name'] = ['required', 'string', 'max:255', Rule::unique('services', 'name')];
@@ -50,12 +50,14 @@ class ServiceRequest extends BaseFormRequest
 
             // Boolean filters
             'filters.is_recurring' => ['sometimes', 'boolean'],
-            'filters.is_active' => ['sometimes', 'boolean'],
 
             // Range filters
             'filters.base_price' => ['sometimes', 'array'],
             'filters.base_price.min' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'filters.base_price.max' => ['sometimes', 'nullable', 'numeric', 'min:0', 'gt:filters.base_price.min'],
+            'filters.provider_cost' => ['sometimes', 'array'],
+            'filters.provider_cost.min' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'filters.provider_cost.max' => ['sometimes', 'nullable', 'numeric', 'min:0', 'gt:filters.provider_cost.min'],
         ];
     }
 

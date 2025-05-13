@@ -23,6 +23,8 @@ class PropertyResource extends JsonResource
       'area' => $this->area,
       'images' => $this->images,
       'features' => $this->features,
+      'acquisition_cost' => $this->acquisition_cost,
+      'acquisition_date' => $this->acquisition_date,
       'created_at' => $this->created_at,
       'updated_at' => $this->updated_at,
     ];

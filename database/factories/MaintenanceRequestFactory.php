@@ -48,6 +48,9 @@ class MaintenanceRequestFactory extends Factory
             'final_cost' => $isCompleted
                 ? $this->faker->randomFloat(2, 50, 800)
                 : null,
+            'actual_cost' => $isCompleted
+                ? $this->faker->randomFloat(2, 50, 800)
+                : null,
             'bill_id' => $isCompleted && $this->faker->boolean(30) ? Bill::factory() : null, // 30% chance of having bill if completed
             'has_feedback' => $hasFeedback,
         ];

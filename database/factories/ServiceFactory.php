@@ -21,6 +21,7 @@ class ServiceFactory extends Factory
             'description' => $this->faker->paragraph(),
             'type' => $this->faker->randomElement(['electricity', 'gas', 'water', 'security', 'cleaning', 'other']),
             'base_price' => $this->faker->randomFloat(2, 50, 500),
+            'provider_cost' => $this->faker->randomFloat(2, 20, 300),
             'currency' => $this->faker->randomElement(['USD', 'EUR', 'GBP']),
             'unit_of_measure' => $this->faker->randomElement(['hour', 'visit', 'month', 'unit', null]),
             'is_recurring' => $this->faker->boolean(30), // 30% chance of being recurring

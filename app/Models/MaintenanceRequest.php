@@ -28,6 +28,7 @@ class MaintenanceRequest extends Model
         'admin_id',
         'estimated_cost',
         'final_cost',
+        'actual_cost',
         'bill_id',
         'has_feedback'
     ];
@@ -38,6 +39,7 @@ class MaintenanceRequest extends Model
         'completion_date' => 'date',
         'estimated_cost' => 'decimal:2',
         'final_cost' => 'decimal:2',
+        'actual_cost' => 'decimal:2',
         'images' => 'array',
         'has_feedback' => 'boolean'
     ];

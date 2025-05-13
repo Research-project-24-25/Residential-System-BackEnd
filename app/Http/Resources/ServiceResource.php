@@ -20,6 +20,7 @@ class ServiceResource extends JsonResource
             'description' => $this->description,
             'type' => $this->type,
             'base_price' => $this->base_price,
+            'provider_cost' => $this->provider_cost,
             'currency' => $this->currency,
             'unit_of_measure' => $this->unit_of_measure,
             'is_recurring' => $this->is_recurring,

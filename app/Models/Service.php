@@ -16,6 +16,7 @@ class Service extends Model
         'description',
         'type',
         'base_price',
+        'provider_cost',
         'currency',
         'unit_of_measure',
         'is_recurring',
@@ -24,6 +25,7 @@ class Service extends Model
 
     protected $casts = [
         'base_price' => 'decimal:2',
+        'provider_cost' => 'decimal:2',
         'is_recurring' => 'boolean',
     ];
 

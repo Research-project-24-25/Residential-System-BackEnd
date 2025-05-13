@@ -29,6 +29,8 @@ class PropertyFactory extends Factory
             'area' => $this->faker->numberBetween(50, 500), // in square meters
             'images' => [$this->faker->imageUrl(640, 480, 'property')], // Provide as array
             'features' => $this->faker->words(5), // Provide as array
+            'acquisition_cost' => $this->faker->numberBetween(50000, 800000),
+            'acquisition_date' => $this->faker->date(),
         ];
     }
 }

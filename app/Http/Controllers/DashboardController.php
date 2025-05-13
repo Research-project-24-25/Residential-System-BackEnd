@@ -130,4 +130,102 @@ class DashboardController extends Controller
             return $this->handleException($e);
         }
     }
+
+    /**
+     * Get expenditures data for dashboard
+     */
+    public function expenditures(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'year' => 'sometimes|integer|min:1900|max:' . (Carbon::now()->year + 5),
+                'months' => 'sometimes|integer|min:1|max:24'
+            ]);
+
+            $year = $request->input('year', Carbon::now()->year);
+            $months = $request->input('months', 12);
+
+            $expenditureData = $this->revenueReportService->getMonthlyExpenditureSummary($year, $months);
+
+            return $this->successResponse(
+                'Expenditure data retrieved successfully',
+                [
+                    'year' => $year,
+                    'report_months_count' => $months,
+                    'monthly_salaries' => $expenditureData['monthly_salaries'],
+                    'monthly_maintenance' => $expenditureData['monthly_maintenance'],
+                    'monthly_services' => $expenditureData['monthly_services'],
+                ]
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Get profits data for dashboard
+     */
+    public function profits(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'year' => 'sometimes|integer|min:1900|max:' . (Carbon::now()->year + 5),
+                'months' => 'sometimes|integer|min:1|max:24'
+            ]);
+
+            $year = $request->input('year', Carbon::now()->year);
+            $months = $request->input('months', 12);
+
+            $profitData = $this->revenueReportService->getMonthlyProfitSummary($year, $months);
+
+            return $this->successResponse(
+                'Profit data retrieved successfully',
+                [
+                    'year' => $year,
+                    'report_months_count' => $months,
+                    'monthly_profit' => $profitData['monthly_profit'],
+                ]
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Get financial summary data for dashboard
+     */
+    public function financialSummary(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+            ]);
+
+            $startDate = Carbon::parse($request->input('start_date'));
+            $endDate = Carbon::parse($request->input('end_date'));
+
+            $revenue = $this->revenueReportService->calculateRevenue($startDate, $endDate);
+            $expenditure = $this->revenueReportService->calculateExpenditure($startDate, $endDate);
+            $profit = $revenue - $expenditure;
+            $profitMargin = $revenue > 0 ? round(($profit / $revenue) * 100, 2) : 0;
+
+            return $this->successResponse(
+                'Financial summary retrieved successfully',
+                [
+                    'period' => [
+                        'start_date' => $startDate->format('Y-m-d'),
+                        'end_date' => $endDate->format('Y-m-d'),
+                    ],
+                    'revenue' => $revenue,
+                    'expenditure' => $expenditure,
+                    'profit' => $profit,
+                    'profit_margin' => $profitMargin,
+                ]
+            );
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
 }
+

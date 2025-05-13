@@ -28,6 +28,7 @@ return new class extends Migration
             $table->foreignId('admin_id')->nullable()->constrained()->onDelete('set null');
             $table->decimal('estimated_cost', 10, 2)->nullable();
             $table->decimal('final_cost', 10, 2)->nullable();
+            $table->decimal('actual_cost', 10, 2)->nullable();
             $table->foreignId('bill_id')->nullable()->constrained()->onDelete('set null');
             $table->boolean('has_feedback')->default(false);
             $table->timestamps();
