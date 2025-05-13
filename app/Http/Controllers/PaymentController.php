@@ -136,32 +136,6 @@ class PaymentController extends Controller
             return $this->handleException($e);
         }
     }
-
-    public function destroy($id, Request $request): JsonResponse
-    {
-        try {
-            // Only admins can void payments
-            if ($request->user()->getTable() !== 'admins') {
-                return $this->forbiddenResponse('Unauthorized to void payments');
-            }
-
-            $payment = Payment::findOrFail($id);
-
-            $payment = $this->paymentService->voidPayment(
-                $payment,
-                $request->input('reason', 'Administrative action'),
-                $request->user()->id
-            );
-
-            return $this->successResponse(
-                'Payment voided successfully',
-                new PaymentResource($payment)
-            );
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
     public function billPayments($billId, Request $request): ResourceCollection|JsonResponse
     {
         try {

@@ -33,7 +33,7 @@ class PaymentRequest extends BaseFormRequest
             ];
         } elseif ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
             $specificRules = [
-                'status' => ['required', Rule::in(['paid', 'refunded', 'voided'])],
+                'status' => ['required', Rule::in(['paid', 'refunded'])],
                 'transaction_id' => ['nullable', 'string', 'max:255'],
                 'notes' => ['nullable', 'string', 'max:500'],
                 'metadata' => ['nullable', 'array'],

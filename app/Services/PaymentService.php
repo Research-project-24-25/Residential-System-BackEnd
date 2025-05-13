@@ -2,22 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Bill;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
-use Throwable;
 
 class PaymentService
 {
     public function __construct(private BillingService $billingService) {}
 
-    /**
-     * Process a new payment
-     *
-     * @param array $data
-     * @return Payment
-     * @throws \Exception
-     */
     public function processPayment(array $data): Payment
     {
         return DB::transaction(function () use ($data) {
@@ -36,14 +27,6 @@ class PaymentService
         });
     }
 
-    /**
-     * Update a payment's status
-     *
-     * @param Payment $payment
-     * @param string $status
-     * @param int|null $processedBy
-     * @return Payment
-     */
     public function updatePaymentStatus(Payment $payment, string $status, ?int $processedBy = null): Payment
     {
         return DB::transaction(function () use ($payment, $status, $processedBy) {
@@ -69,12 +52,6 @@ class PaymentService
         });
     }
 
-    /**
-     * Update bill status after a payment is made or updated
-     *
-     * @param Payment $payment
-     * @return void
-     */
     private function updateBillStatus(Payment $payment): void
     {
         $bill = $payment->bill;
@@ -86,12 +63,6 @@ class PaymentService
         $this->billingService->updateBill($bill, []);
     }
 
-    /**
-     * Reverse a payment's impact on a bill (when payment status changes from completed)
-     *
-     * @param Payment $payment
-     * @return void
-     */
     private function reversePayment(Payment $payment): void
     {
         $bill = $payment->bill;
@@ -103,15 +74,6 @@ class PaymentService
         $this->billingService->updateBill($bill, []);
     }
 
-    /**
-     * Record a refund for a payment
-     *
-     * @param Payment $payment
-     * @param float $amount
-     * @param string $reason
-     * @param int $processedBy
-     * @return Payment
-     */
     public function refundPayment(Payment $payment, float $amount, string $reason, int $processedBy): Payment
     {
         return DB::transaction(function () use ($payment, $amount, $reason, $processedBy) {
@@ -158,32 +120,6 @@ class PaymentService
         });
     }
 
-    public function voidPayment(Payment $payment, string $reason, int $processedBy): Payment
-    {
-        return DB::transaction(function () use ($payment, $reason, $processedBy) {
-            // Update the payment status to 'voided'
-            $this->updatePaymentStatus($payment, 'voided', $processedBy);
-
-            // Add void-specific metadata
-            $paymentMetadata = $payment->metadata ?? [];
-            $paymentMetadata['voided'] = true;
-            $paymentMetadata['void_reason'] = $reason;
-            $paymentMetadata['voided_at'] = now()->format('Y-m-d H:i:s');
-            $paymentMetadata['voided_by'] = $processedBy;
-
-            $payment->metadata = $paymentMetadata;
-            $payment->save();
-
-            return $payment;
-        });
-    }
-
-    /**
-     * Generate payment receipt data
-     *
-     * @param Payment $payment
-     * @return array
-     */
     public function generateReceiptData(Payment $payment): array
     {
         // Load related models
