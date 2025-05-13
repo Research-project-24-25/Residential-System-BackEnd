@@ -31,12 +31,10 @@ class PaymentResource extends JsonResource
             }),
             'bill_id' => $this->bill_id,
             'resident_id' => $this->resident_id,
-            // payment_method_id removed
             'amount' => $this->amount,
             'currency' => $this->currency,
-            'status' => $this->status, // Will now be 'paid' or 'refunded'
+            'status' => $this->status,
             'transaction_id' => $this->transaction_id,
-            // receipt_url removed
             'payment_date' => $this->payment_date ? $this->payment_date->format('Y-m-d H:i:s') : null,
             'notes' => $this->notes,
             'processed_by' => $this->processed_by,

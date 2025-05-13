@@ -84,11 +84,7 @@ class NotificationController extends Controller
             $notification = Notification::where('id', $id)
                 ->where('notifiable_type', get_class($user))
                 ->where('notifiable_id', $user->id)
-                ->first();
-
-            if (!$notification) {
-                return $this->notFoundResponse('Notification not found');
-            }
+                ->firstOrFail();
 
             $notification->delete();
 

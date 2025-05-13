@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\DashboardResource;
 use App\Services\DashboardService;
-use App\Services\RevenueReportService;
+use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -14,7 +14,7 @@ class DashboardController extends Controller
 {
     public function __construct(
         private DashboardService $dashboardService,
-        private RevenueReportService $revenueReportService
+        private ReportService $revenueReportService
     ) {}
 
     public function overview(Request $request): JsonResponse

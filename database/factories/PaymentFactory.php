@@ -20,7 +20,7 @@ class PaymentFactory extends Factory
      */
     public function definition(): array
     {
-        $status = $this->faker->randomElement(['paid', 'refunded']);
+        $status = $this->faker->randomElement(['paid', 'refunded', 'voided']);
         // Both 'paid' and 'refunded' are considered processed states where a transaction_id and payment_date would exist.
         $isProcessed = true; // Simplified as 'no-paid' is removed
 
@@ -67,10 +67,26 @@ class PaymentFactory extends Factory
                 'transaction_id' => $this->faker->uuid(), // Original transaction_id
                 'payment_date' => $this->faker->dateTimeBetween('-1 month', 'now'),
                 'processed_by' => Admin::factory(),
-                 // metadata might be updated to indicate refund details
+                // metadata might be updated to indicate refund details
                 'metadata' => array_merge($attributes['metadata'] ?? [], [
                     'refunded_at' => now(),
                     'refund_reason' => $this->faker->sentence()
+                ]),
+            ];
+        });
+    }
+
+    public function voided(): static
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'status' => 'voided',
+                'transaction_id' => $this->faker->uuid(),
+                'payment_date' => $this->faker->dateTimeBetween('-1 month', 'now'),
+                'processed_by' => Admin::factory(),
+                'metadata' => array_merge($attributes['metadata'] ?? [], [
+                    'voided_at' => now(),
+                    'voided_reason' => $this->faker->sentence()
                 ]),
             ];
         });

@@ -131,11 +131,7 @@ class PropertyController extends Controller
   public function destroy($id): JsonResponse
   {
     try {
-      $property = Property::find($id);
-
-      if (!$property) {
-        return $this->notFoundResponse('Property not found');
-      }
+      $property = Property::findOrFail($id);
 
       // Remove property images
       if (!empty($property->getRawOriginal('images'))) {

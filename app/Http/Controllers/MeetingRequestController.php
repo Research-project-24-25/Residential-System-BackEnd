@@ -227,9 +227,14 @@ class MeetingRequestController extends Controller
         try {
             $meetingRequest = MeetingRequest::findOrFail($id);
 
-            // Delete ID document if exists
+            // Delete ID document if it exists
             if ($meetingRequest->id_document) {
-                Storage::disk('public')->delete($meetingRequest->id_document);
+                $filePath = public_path($meetingRequest->id_document);
+
+                // Ensure path is inside 'meeting-documents' for safety
+                if (str_starts_with($meetingRequest->id_document, 'meeting-documents/') && file_exists($filePath)) {
+                    @unlink($filePath); // Use @ to suppress warning if deletion fails
+                }
             }
 
             $meetingRequest->delete();

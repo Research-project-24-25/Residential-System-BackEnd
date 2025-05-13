@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('resident_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2);
             $table->string('currency', 3)->default('USD');
-            $table->enum('status', ['paid', 'refunded'])->default(value: 'paid');
+            $table->enum('status', ['paid', 'refunded', 'voided'])->default(value: 'paid');
             $table->string('transaction_id')->nullable()->unique();
             $table->timestamp('payment_date')->nullable();
             $table->text('notes')->nullable();

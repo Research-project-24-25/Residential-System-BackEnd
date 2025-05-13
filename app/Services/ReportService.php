@@ -12,7 +12,7 @@ use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class RevenueReportService
+class ReportService
 {
     /**
      * Get a summary of monthly revenue for a given year.

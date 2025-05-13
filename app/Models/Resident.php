@@ -9,10 +9,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Resident extends Authenticatable
 {
-    use HasApiTokens, Notifiable, HasFactory, Filterable;
+    use HasApiTokens, Notifiable, HasFactory, Filterable, SoftDeletes;
 
     protected $guarded = ['id'];
 

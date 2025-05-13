@@ -232,8 +232,10 @@ class PropertyServiceController extends Controller
                 return $this->notFoundResponse('Service is not attached to this property');
             }
 
-            // Detach the service
-            $property->services()->detach($serviceId);
+            // Instead of detaching (hard delete), we'll update the pivot with deleted_at
+            $property->services()->updateExistingPivot($serviceId, [
+                'deleted_at' => now()
+            ]);
 
             return $this->successResponse('Service detached from property successfully');
         } catch (Throwable $e) {

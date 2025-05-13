@@ -158,6 +158,26 @@ class PaymentService
         });
     }
 
+    public function voidPayment(Payment $payment, string $reason, int $processedBy): Payment
+    {
+        return DB::transaction(function () use ($payment, $reason, $processedBy) {
+            // Update the payment status to 'voided'
+            $this->updatePaymentStatus($payment, 'voided', $processedBy);
+
+            // Add void-specific metadata
+            $paymentMetadata = $payment->metadata ?? [];
+            $paymentMetadata['voided'] = true;
+            $paymentMetadata['void_reason'] = $reason;
+            $paymentMetadata['voided_at'] = now()->format('Y-m-d H:i:s');
+            $paymentMetadata['voided_by'] = $processedBy;
+
+            $payment->metadata = $paymentMetadata;
+            $payment->save();
+
+            return $payment;
+        });
+    }
+
     /**
      * Generate payment receipt data
      *

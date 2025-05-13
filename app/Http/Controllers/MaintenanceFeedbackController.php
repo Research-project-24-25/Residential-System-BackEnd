@@ -130,7 +130,7 @@ class MaintenanceFeedbackController extends Controller
                 return $this->forbiddenResponse('You do not have permission to delete this feedback');
             }
 
-            // Delete feedback
+            // Soft Delete feedback
             $maintenanceRequest->feedback->delete();
 
             // Update maintenance request to indicate it no longer has feedback
