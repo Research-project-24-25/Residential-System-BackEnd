@@ -31,6 +31,7 @@ return new class extends Migration
             $table->decimal('actual_cost', 10, 2)->nullable();
             $table->foreignId('bill_id')->nullable()->constrained()->onDelete('set null');
             $table->boolean('has_feedback')->default(false);
+            $table->softDeletes();
             $table->timestamps();
 
             // Index for performance

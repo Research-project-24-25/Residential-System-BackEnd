@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('unit_of_measure')->nullable(); // e.g., 'hour', 'visit', 'month'
             $table->boolean('is_recurring')->default(false);
             $table->string('recurrence')->nullable(); // monthly, quarterly, yearly, null for one-time
+            $table->softDeletes();
             $table->timestamps();
 
             // Index for performance

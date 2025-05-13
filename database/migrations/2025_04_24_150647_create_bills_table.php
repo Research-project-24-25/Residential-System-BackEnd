@@ -25,6 +25,7 @@ return new class extends Migration
             $table->date('next_billing_date')->nullable(); // For recurring bills
             $table->json('metadata')->nullable();
             $table->foreignId('created_by')->constrained('admins')->onDelete('restrict');
+            $table->softDeletes();
             $table->timestamps();
 
             // Index for performance

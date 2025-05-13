@@ -25,6 +25,7 @@ return new class extends Migration
             // Track which admin created this resident
             $table->unsignedBigInteger('created_by');
             $table->foreign('created_by')->references('id')->on('admins')->onDelete('cascade');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

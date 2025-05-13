@@ -20,6 +20,7 @@ return new class extends Migration
             $table->text('improvement_suggestions')->nullable();
             $table->boolean('resolved_satisfactorily')->default(true);
             $table->boolean('would_recommend')->default(true);
+            $table->softDeletes();
             $table->timestamps();
 
             // Ensure only one feedback per maintenance request

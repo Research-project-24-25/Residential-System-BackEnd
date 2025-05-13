@@ -27,6 +27,7 @@ class CreatePropertiesTable extends Migration
             $table->json('features')->nullable(); // array of property features
             $table->decimal('acquisition_cost', 15, 2)->nullable();
             $table->date('acquisition_date')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

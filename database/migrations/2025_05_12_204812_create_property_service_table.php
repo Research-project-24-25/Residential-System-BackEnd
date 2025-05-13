@@ -24,6 +24,8 @@ return new class extends Migration
             $table->timestamp('expires_at')->nullable();
             $table->timestamp('last_billed_at')->nullable();
 
+            $table->softDeletes();
+
             $table->timestamps();
 
             // Composite primary key

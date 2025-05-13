@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('monthly_rent', 12, 2)->nullable(); // renters
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
-
+            $table->softDeletes();
             $table->timestamps();
         });
     }

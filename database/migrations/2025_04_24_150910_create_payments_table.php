@@ -23,6 +23,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->json('metadata')->nullable();
             $table->foreignId('processed_by')->nullable()->constrained('admins')->onDelete('set null');
+            $table->softDeletes();
             $table->timestamps();
 
             // Index for performance

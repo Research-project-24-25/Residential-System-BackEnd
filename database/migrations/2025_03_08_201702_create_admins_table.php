@@ -23,6 +23,7 @@ return new class extends Migration
             $table->integer('age');
             $table->enum('gender', ['male', 'female']);
             $table->double('salary')->default(0.0);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

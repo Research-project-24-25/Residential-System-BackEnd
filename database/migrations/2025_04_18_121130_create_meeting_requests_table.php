@@ -23,6 +23,7 @@ return new class extends Migration
             $table->datetime('approved_date')->nullable(); // Date/time that admin approved/scheduled
             $table->foreignId('admin_id')->nullable()->constrained()->onDelete('set null'); // Admin who handled the request
             $table->text('admin_notes')->nullable(); // Notes from admin
+            $table->softDeletes();
             $table->timestamps();
 
             // Indexes for performance
