@@ -20,6 +20,7 @@ class Admin extends Authenticatable
     protected $casts = [
         'age' => 'integer',
         'password' => 'hashed',
+        'salary' => 'double',
     ];
 
     public function isSuperAdmin()

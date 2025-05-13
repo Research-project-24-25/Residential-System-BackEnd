@@ -19,6 +19,7 @@ class AdminFactory extends Factory
       'phone_number' => fake()->phoneNumber(),
       'age' => fake()->numberBetween(25, 60),
       'gender' => fake()->randomElement(['male', 'female']),
+      'salary' => fake()->randomFloat(2, 30000, 100000),
     ];
   }
 

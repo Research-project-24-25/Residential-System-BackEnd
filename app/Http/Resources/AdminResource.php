@@ -19,6 +19,7 @@ class AdminResource extends JsonResource
             'phone_number' => $this->phone_number,
             'age' => $this->age,
             'gender' => $this->gender,
+            'salary' => $this->salary,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

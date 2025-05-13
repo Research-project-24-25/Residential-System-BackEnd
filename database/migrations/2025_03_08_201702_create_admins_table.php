@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('phone_number');
             $table->integer('age');
             $table->enum('gender', ['male', 'female']);
+            $table->double('salary')->default(0.0);
             $table->timestamps();
         });
     }

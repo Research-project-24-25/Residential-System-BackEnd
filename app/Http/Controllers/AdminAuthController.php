@@ -29,6 +29,7 @@ class AdminAuthController extends Controller
                 'phone_number' => ['required', 'string'],
                 'age' => ['required', 'integer', 'min:18'],
                 'gender' => ['required', 'in:male,female'],
+                'salary' => ['required', 'numeric', 'min:0', 'decimal:0,2'],
             ]);
             $validated['password'] = Hash::make($validated['password']);
 
