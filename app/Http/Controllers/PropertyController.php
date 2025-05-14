@@ -8,6 +8,7 @@ use App\Models\Property;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class PropertyController extends Controller
@@ -18,7 +19,6 @@ class PropertyController extends Controller
       $perPage = $request->get('per_page', 10);
 
       $properties = Property::query()
-        ->sort($request)
         ->paginate($perPage);
 
       return PropertyResource::collection($properties);
@@ -153,11 +153,7 @@ class PropertyController extends Controller
 
   public function trashed(Request $request): JsonResponse
   {
-    return $this->getTrashedModels(Property::class, function ($query) use ($request) {
-      if ($request->has('sort')) {
-        $query->sort($request);
-      }
-    });
+    return $this->getTrashedModels(Property::class);
   }
 
   public function forceDelete(int $id): JsonResponse

@@ -121,18 +121,18 @@ Route::prefix('admin')
         // Properties
         Route::controller(PropertyController::class)
             ->group(function () {
+                Route::get('properties/trashed', 'trashed');
                 Route::apiResource('properties', PropertyController::class);
                 Route::post('properties/filter', 'filter');
-                Route::get('properties/trashed', 'trashed');
                 Route::patch('properties/{id}/restore', 'restore');
                 Route::delete('properties/{id}/force', 'forceDelete');
             });
 
         // Residents
         Route::controller(ResidentController::class)->group(function () {
+            Route::get('residents/trashed', 'trashed');
             Route::apiResource('residents', ResidentController::class);
             Route::post('residents/filter', 'filter');
-            Route::get('residents/trashed', 'trashed');
             Route::patch('residents/{id}/restore', 'restore');
             Route::delete('residents/{id}/force', 'forceDelete');
         });
@@ -140,9 +140,9 @@ Route::prefix('admin')
         // Services
         Route::controller(ServiceController::class)
             ->group(function () {
+                Route::get('services/trashed', 'trashed');
                 Route::apiResource('services', ServiceController::class);
                 Route::post('services/filter', 'filter');
-                Route::get('services/trashed', 'trashed');
                 Route::patch('services/{id}/restore', 'restore');
                 Route::delete('services/{id}/force', 'forceDelete');
                 Route::patch('services/{service}/toggle-active', 'toggleActive');
@@ -165,8 +165,8 @@ Route::prefix('admin')
         // Bills and Payments
         Route::controller(BillController::class)
             ->group(function () {
-                Route::apiResource('bills', BillController::class);
                 Route::get('bills/trashed', 'trashed');
+                Route::apiResource('bills', BillController::class);
                 Route::patch('bills/{id}/restore', 'restore');
                 Route::delete('bills/{id}/force', 'forceDelete');
                 Route::post('bills/generate-recurring', 'generateRecurringBills');
@@ -176,8 +176,8 @@ Route::prefix('admin')
 
         Route::controller(PaymentController::class)
             ->group(function () {
-                Route::apiResource('payments', PaymentController::class);
                 Route::get('payments/trashed', 'trashed');
+                Route::apiResource('payments', PaymentController::class);
                 Route::patch('payments/{id}/restore', 'restore');
                 Route::delete('payments/{id}/force', 'forceDelete');
                 Route::get('bills/{billId}/payments', 'billPayments');
@@ -187,18 +187,18 @@ Route::prefix('admin')
         // Maintenance
         Route::controller(MaintenanceController::class)
             ->group(function () {
+                Route::get('maintenance-types/trashed', 'trashed');
                 Route::apiResource('maintenance-types', MaintenanceController::class);
                 Route::post('maintenance-types/filter', 'filter');
-                Route::get('maintenance-types/trashed', 'trashed');
                 Route::patch('maintenance-types/{id}/restore', 'restore');
                 Route::delete('maintenance-types/{id}/force', 'forceDelete');
             });
 
         Route::controller(MaintenanceRequestController::class)
             ->group(function () {
+                Route::get('maintenance-requests/trashed', 'trashed');
                 Route::apiResource('maintenance-requests', MaintenanceRequestController::class);
                 Route::post('maintenance-requests/filter', 'filter');
-                Route::get('maintenance-requests/trashed', 'trashed');
                 Route::patch('maintenance-requests/{id}/restore', 'restore');
                 Route::delete('maintenance-requests/{id}/force', 'forceDelete');
                 Route::get('maintenance-requests/properties/{propertyId}', 'propertyMaintenanceRequests');
@@ -206,9 +206,9 @@ Route::prefix('admin')
             });
 
         Route::controller(MaintenanceFeedbackController::class)->group(function () {
+            Route::get('maintenance-feedback/trashed', 'trashed');
             Route::apiResource('maintenance-feedback', MaintenanceFeedbackController::class)
                 ->only(['index', 'store', 'show', 'destroy']);
-            Route::get('maintenance-feedback/trashed', 'trashed');
             Route::patch('maintenance-feedback/{id}/restore', 'restore');
             Route::delete('maintenance-feedback/{id}/force', 'forceDelete');
         });
