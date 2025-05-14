@@ -26,16 +26,22 @@ class AuthController extends Controller
                 'password' => Hash::make($validated['password']),
             ]);
 
-            // Dispatch verification email
+            // Send verification email
             event(new Registered($user));
+
+            // Generate Sanctum token
+            $token = $user->createToken($user->email)->plainTextToken;
 
             return $this->createdResponse('User registered successfully. Please verify your email address.', [
                 'user' => $user,
+                'token' => $token,
+                'user_type' => 'user',
             ]);
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
     }
+
 
     public function me(Request $request)
     {

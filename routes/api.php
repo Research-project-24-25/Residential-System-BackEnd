@@ -45,9 +45,18 @@ Route::post('auth/register', [UserAuthController::class, 'register']);
 
 Route::controller(EmailVerificationController::class)
     ->prefix('email')
+    ->name('verification.')
     ->group(function () {
-        Route::get('/verify/{id}/{hash}', 'verify')->middleware('signed');
-        Route::middleware('auth:sanctum')->post('/resend', 'resend');
+        // This route validates email tokens
+        Route::get('/verify/{id}/{hash}', 'verify')
+            ->middleware('signed')
+            ->name('verify');
+
+        // Authenticated routes for email verification
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::post('/resend', 'resend')->name('resend');
+            Route::get('/status', 'status')->name('status');
+        });
     });
 
 /*
