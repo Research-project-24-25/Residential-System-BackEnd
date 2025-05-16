@@ -72,22 +72,15 @@ class AdminController extends Controller
     /**
      * Register a new admin.
      */
-    public function store(Request $request): JsonResponse
+    /**
+     * Register a new admin.
+     */
+    public function store(AdminRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'username' => ['required', 'string', 'max:255', 'unique:admins'],
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:admins'],
-                'password' => ['required', 'confirmed', Password::defaults()],
-                'role' => ['required', 'in:admin,super_admin'],
-                'first_name' => ['required', 'string', 'max:255'],
-                'last_name' => ['required', 'string', 'max:255'],
-                'phone_number' => ['required', 'string'],
-                'age' => ['required', 'integer', 'min:18'],
-                'gender' => ['required', 'in:male,female'],
-                'salary' => ['required', 'numeric', 'min:0', 'decimal:0,2'],
-            ]);
+            $validated = $request->validated();
 
+            // Hash the password
             $validated['password'] = Hash::make($validated['password']);
 
             $admin = Admin::create($validated);

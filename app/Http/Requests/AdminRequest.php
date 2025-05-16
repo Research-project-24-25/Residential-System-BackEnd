@@ -111,9 +111,9 @@ class AdminRequest extends BaseFormRequest
     /**
      * Determine if the current request path matches a given pattern.
      */
-    private function is(string $pattern): bool
+    public function is(...$patterns): bool
     {
-        return $this->getRequest()->is($pattern);
+        return $this->getRequest()->is(...$patterns);
     }
 
     /**
