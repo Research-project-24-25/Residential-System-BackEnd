@@ -232,14 +232,19 @@ Route::prefix('admin')
         Route::controller(AdminController::class)->group(function () {
             // Admin profile (accessible by any admin)
             Route::get('profile', 'profile');
-
+            
             // Admin management (super admin only)
             Route::middleware(['admin:super_admin'])->group(function () {
-            Route::get('admins/trashed', 'trashed');
-            Route::apiResource('admins', AdminController::class);
-            Route::post('admins/filter', 'filter');
-            Route::patch('admins/{id}/restore', 'restore');
-            Route::delete('admins/{id}/force', 'forceDelete');
+                Route::get('admins', 'index');
+                Route::post('admins', 'store');
+                Route::get('admins/trashed', 'trashed');
+                Route::post('admins/filter', 'filter');
+                Route::get('admins/{id}', 'show');
+                Route::put('admins/{id}', 'update');
+                Route::patch('admins/{id}', 'update');
+                Route::delete('admins/{id}', 'destroy');
+                Route::patch('admins/{id}/restore', 'restore');
+                Route::delete('admins/{id}/force', 'forceDelete');
             });
         });
     });

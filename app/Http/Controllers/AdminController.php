@@ -40,11 +40,6 @@ class AdminController extends Controller
     public function filter(AdminRequest $request): ResourceCollection|JsonResponse
     {
         try {
-            // Only super admins can filter admins
-            if (!$request->user()->isSuperAdmin()) {
-                return $this->forbiddenResponse('Only super administrators can access this resource');
-            }
-
             $perPage = $request->get('per_page', 10);
             $admins = Admin::query()
                 ->filter($request)
@@ -63,11 +58,6 @@ class AdminController extends Controller
     public function show(int $id, Request $request): JsonResponse
     {
         try {
-            // Only super admins can view admin details
-            if (!$request->user()->isSuperAdmin()) {
-                return $this->forbiddenResponse('Only super administrators can access this resource');
-            }
-
             $admin = Admin::findOrFail($id);
 
             return $this->successResponse(
@@ -81,15 +71,10 @@ class AdminController extends Controller
 
     /**
      * Register a new admin.
-     * Moved from AdminAuthController.
      */
     public function store(Request $request): JsonResponse
     {
         try {
-            if (!$request->user()->isSuperAdmin()) {
-                return $this->forbiddenResponse('Only super admins can create admin accounts.');
-            }
-
             $validated = $request->validate([
                 'username' => ['required', 'string', 'max:255', 'unique:admins'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:admins'],
@@ -102,6 +87,7 @@ class AdminController extends Controller
                 'gender' => ['required', 'in:male,female'],
                 'salary' => ['required', 'numeric', 'min:0', 'decimal:0,2'],
             ]);
+
             $validated['password'] = Hash::make($validated['password']);
 
             $admin = Admin::create($validated);
@@ -125,11 +111,6 @@ class AdminController extends Controller
     public function update(AdminRequest $request, int $id): JsonResponse
     {
         try {
-            // Only super admins can update admins
-            if (!$request->user()->isSuperAdmin()) {
-                return $this->forbiddenResponse('Only super administrators can update admin accounts');
-            }
-
             $admin = Admin::findOrFail($id);
             $validated = $request->validated();
 
@@ -155,11 +136,6 @@ class AdminController extends Controller
     public function destroy(int $id, Request $request): JsonResponse
     {
         try {
-            // Only super admins can delete admins
-            if (!$request->user()->isSuperAdmin()) {
-                return $this->forbiddenResponse('Only super administrators can delete admin accounts');
-            }
-
             // Prevent super admin from deleting themselves
             if ($id === $request->user()->id) {
                 return $this->errorResponse('You cannot delete your own account', 422);
@@ -186,11 +162,6 @@ class AdminController extends Controller
     public function trashed(Request $request): JsonResponse
     {
         try {
-            // Only super admins can view trashed admins
-            if (!$request->user()->isSuperAdmin()) {
-                return $this->forbiddenResponse('Only super administrators can access this resource');
-            }
-
             return $this->getTrashedModels(Admin::class, function ($query) use ($request) {
                 if ($request->has('sort')) {
                     $query->sort($request);
@@ -204,14 +175,9 @@ class AdminController extends Controller
     /**
      * Restore a soft-deleted admin.
      */
-    public function restore(int $id, Request $request): JsonResponse
+    public function restore(int $id): JsonResponse
     {
         try {
-            // Only super admins can restore admins
-            if (!$request->user()->isSuperAdmin()) {
-                return $this->forbiddenResponse('Only super administrators can restore admin accounts');
-            }
-
             return $this->restoreModel(Admin::class, $id);
         } catch (Throwable $e) {
             return $this->handleException($e);
@@ -224,11 +190,6 @@ class AdminController extends Controller
     public function forceDelete(int $id, Request $request): JsonResponse
     {
         try {
-            // Only super admins can force delete admins
-            if (!$request->user()->isSuperAdmin()) {
-                return $this->forbiddenResponse('Only super administrators can permanently delete admin accounts');
-            }
-
             // Prevent force deleting themselves
             if ($id === $request->user()->id) {
                 return $this->errorResponse('You cannot permanently delete your own account', 422);
@@ -242,7 +203,6 @@ class AdminController extends Controller
 
     /**
      * Get the current admin's profile.
-     * Moved from AdminAuthController.
      */
     public function profile(Request $request): JsonResponse
     {

@@ -12,6 +12,12 @@ class AdminRequest extends BaseFormRequest
      */
     public function authorize(): bool
     {
+        // For regular admin endpoints, just require any authenticated admin
+        if ($this->is('admin/profile')) {
+            return $this->isAdmin();
+        }
+
+        // For admin management endpoints, require super_admin role
         return $this->user() && $this->user()->isSuperAdmin();
     }
 
@@ -26,24 +32,63 @@ class AdminRequest extends BaseFormRequest
             return array_merge($parentRules, $this->getSpecificFilterRules());
         }
 
-        $isUpdate = $this->isUpdateRequest();
+        // For profile viewing, no additional validation needed
+        if ($this->is('admin/profile')) {
+            return [];
+        }
+
+        // For store/create method, use the admin creation rules
+        if ($this->isMethod('POST') && !$this->is('admin/admins/filter')) {
+            return $this->getStoreRules();
+        }
+
+        // For update methods, use the admin update rules
+        if ($this->isUpdateRequest()) {
+            return $this->getUpdateRules();
+        }
+
+        // Default fallback rules (empty if not covered above)
+        return [];
+    }
+
+    /**
+     * Get rules for creating a new admin.
+     */
+    private function getStoreRules(): array
+    {
+        return [
+            'username' => ['required', 'string', 'max:255', 'unique:admins'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:admins'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+            'role' => ['required', 'in:admin,super_admin'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'phone_number' => ['required', 'string'],
+            'age' => ['required', 'integer', 'min:18'],
+            'gender' => ['required', 'in:male,female'],
+            'salary' => ['required', 'numeric', 'min:0', 'decimal:0,2'],
+        ];
+    }
+
+    /**
+     * Get rules for updating an existing admin.
+     */
+    private function getUpdateRules(): array
+    {
         $adminId = $this->route('admin') ? $this->route('admin')->id : $this->route('id');
 
-        // Entity specific rules for create/update
-        $rules = [
-            'username' => [$isUpdate ? 'sometimes' : 'required', 'string', 'max:255', Rule::unique('admins')->ignore($adminId)],
-            'email' => [$isUpdate ? 'sometimes' : 'required', 'string', 'email', 'max:255', Rule::unique('admins')->ignore($adminId)],
-            'password' => [$isUpdate ? 'sometimes' : 'required', 'confirmed', Password::defaults()],
-            'role' => [$isUpdate ? 'sometimes' : 'required', 'in:admin,super_admin'],
-            'first_name' => [$isUpdate ? 'sometimes' : 'required', 'string', 'max:255'],
-            'last_name' => [$isUpdate ? 'sometimes' : 'required', 'string', 'max:255'],
-            'phone_number' => [$isUpdate ? 'sometimes' : 'required', 'string'],
-            'age' => [$isUpdate ? 'sometimes' : 'required', 'integer', 'min:18'],
-            'gender' => [$isUpdate ? 'sometimes' : 'required', 'in:male,female'],
-            'salary' => [$isUpdate ? 'sometimes' : 'required', 'numeric', 'min:0', 'decimal:0,2'],
+        return [
+            'username' => ['sometimes', 'string', 'max:255', Rule::unique('admins')->ignore($adminId)],
+            'email' => ['sometimes', 'string', 'email', 'max:255', Rule::unique('admins')->ignore($adminId)],
+            'password' => ['sometimes', 'confirmed', Password::defaults()],
+            'role' => ['sometimes', 'in:admin,super_admin'],
+            'first_name' => ['sometimes', 'string', 'max:255'],
+            'last_name' => ['sometimes', 'string', 'max:255'],
+            'phone_number' => ['sometimes', 'string'],
+            'age' => ['sometimes', 'integer', 'min:18'],
+            'gender' => ['sometimes', 'in:male,female'],
+            'salary' => ['sometimes', 'numeric', 'min:0', 'decimal:0,2'],
         ];
-
-        return array_merge($parentRules, $rules);
     }
 
     /**
@@ -64,6 +109,14 @@ class AdminRequest extends BaseFormRequest
     }
 
     /**
+     * Determine if the current request path matches a given pattern.
+     */
+    private function is(string $pattern): bool
+    {
+        return $this->getRequest()->is($pattern);
+    }
+
+    /**
      * Get custom messages for validation errors.
      */
     public function messages(): array
@@ -76,6 +129,7 @@ class AdminRequest extends BaseFormRequest
             'gender.in' => 'The gender must be either male or female.',
             'age.min' => 'The admin must be at least 18 years old.',
             'salary.min' => 'The salary must be at least 0.',
+            'password.confirmed' => 'The password confirmation does not match.',
         ];
         return array_merge($parentMessages, $specificMessages);
     }
