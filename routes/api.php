@@ -3,6 +3,7 @@
 // Controllers
 use App\Http\Controllers\User\AuthController as UserAuthController;
 use App\Http\Controllers\{
+    AdminController,
     AdminAuthController,
     AuthController,
     BillController,
@@ -107,10 +108,6 @@ Route::middleware(['auth:sanctum', 'verified'])
 Route::prefix('admin')
     ->middleware(['auth:sanctum', 'admin:admin'])
     ->group(function () {
-
-        // Profile
-        Route::get('profile', [AdminAuthController::class, 'profile']);
-
         // Dashboard
         Route::controller(DashboardController::class)
             ->prefix('dashboard')
@@ -225,12 +222,28 @@ Route::prefix('admin')
 
 /*
 |--------------------------------------------------------------------------
-| Super-admin Routes
+| Admin Authentication & Management
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum', 'admin:super_admin'])
-    ->post('admin/register', [AdminAuthController::class, 'register']);
+Route::prefix('admin')
+    ->middleware(['auth:sanctum'])
+    ->group(function () {
+        Route::controller(AdminController::class)->group(function () {
+            // Admin profile (accessible by any admin)
+            Route::get('profile', 'profile');
+
+            // Admin management (super admin only)
+            Route::middleware(['admin:super_admin'])->group(function () {
+            Route::get('admins/trashed', 'trashed');
+            Route::apiResource('admins', AdminController::class);
+            Route::post('admins/filter', 'filter');
+            Route::patch('admins/{id}/restore', 'restore');
+            Route::delete('admins/{id}/force', 'forceDelete');
+            });
+        });
+    });
+
 
 /*
 |--------------------------------------------------------------------------
