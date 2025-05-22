@@ -11,7 +11,9 @@ use App\Http\Resources\UserResource;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\ProfileUpdateRequest;
 use Throwable;
 
 class AuthController extends Controller
@@ -114,17 +116,83 @@ class AuthController extends Controller
             };
 
             $resource = match ($userType) {
-                'admin' => new AdminResource($user),
                 'resident' => new ResidentResource($user),
+                'admin' => new AdminResource($user),
                 default => new UserResource($user)
             };
 
-            return $this->successResponse('User data retrieved successfully', [
+            return $this->successResponse('Profile retrieved successfully', [
                 'user' => $resource,
                 'user_type' => $userType,
             ]);
         } catch (Throwable $e) {
             return $this->handleException($e);
+        }
+    }
+
+    public function updateProfile(ProfileUpdateRequest $request, $userId = null): JsonResponse
+    {
+        try {
+            $targetUser = $request->getTargetUser();
+            $targetUserType = $request->getTargetUserType();
+            $validated = $request->validated();
+
+            // Update the profile
+            $updatedUser = $this->performProfileUpdate($targetUser, $targetUserType, $validated, $request);
+
+            $resource = match ($targetUserType) {
+                'resident' => new ResidentResource($updatedUser),
+                'admin' => new AdminResource($updatedUser),
+                default => new UserResource($updatedUser),
+            };
+
+            return $this->successResponse('Profile updated successfully', [
+                'user' => $resource,
+                'user_type' => $targetUserType,
+            ]);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    private function performProfileUpdate($targetUser, $targetUserType, $validated, $request)
+    {
+        // Handle profile image for residents
+        if ($targetUserType === 'resident' && $request->hasFile('profile_image')) {
+            // Remove old profile image if exists
+            if ($targetUser->getRawOriginal('profile_image')) {
+                $this->removeOldProfileImage($targetUser->getRawOriginal('profile_image'));
+            }
+            $validated['profile_image'] = $this->handleProfileImage($request->file('profile_image'));
+        } elseif ($targetUserType === 'resident' && isset($validated['profile_image']) && $validated['profile_image'] === null) {
+            // Remove existing image if explicitly set to null
+            if ($targetUser->getRawOriginal('profile_image')) {
+                $this->removeOldProfileImage($targetUser->getRawOriginal('profile_image'));
+            }
+            $validated['profile_image'] = null;
+        }
+
+        $targetUser->update($validated);
+
+        return $targetUser;
+    }
+
+    private function handleProfileImage($image): string
+    {
+        $filename = time() . '_' . $image->getClientOriginalName();
+        $image->move(public_path('resident-images'), $filename);
+        return 'resident-images/' . $filename;
+    }
+
+    private function removeOldProfileImage(?string $imagePath): void
+    {
+        if (empty($imagePath)) {
+            return;
+        }
+
+        $path = public_path($imagePath);
+        if (file_exists($path)) {
+            unlink($path);
         }
     }
 

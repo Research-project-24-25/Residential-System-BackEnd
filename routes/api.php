@@ -18,6 +18,7 @@ use App\Http\Controllers\{
     ServiceController,
     PropertyServiceController,
 };
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
@@ -33,6 +34,8 @@ Route::controller(AuthController::class)->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('auth/logout', 'logout');
         Route::get('auth/profile', 'profile');
+        Route::put('auth/profile/{userId?}', 'updateProfile');
+        Route::patch('auth/profile/{userId?}', 'updateProfile');
     });
 });
 
@@ -216,20 +219,10 @@ Route::prefix('admin')
             Route::patch('maintenance-feedback/{id}/restore', 'restore');
             Route::delete('maintenance-feedback/{id}/force', 'forceDelete');
         });
-    });
 
-/*
-|--------------------------------------------------------------------------
-| Admin Authentication & Management
-|--------------------------------------------------------------------------
-*/
-
-Route::prefix('admin')
-    ->middleware(['auth:sanctum'])
-    ->group(function () {
-        Route::controller(AdminController::class)->group(function () {
-            // Admin management (super admin only)
-            Route::middleware(['admin:super_admin'])->group(function () {
+        // Admin Management (super admin only)
+        Route::middleware(['admin:super_admin'])->group(function () {
+            Route::controller(AdminController::class)->group(function () {
                 Route::get('admins/trashed', 'trashed');
                 Route::apiResource('admins', AdminController::class);
                 Route::post('admins/filter', 'filter');
@@ -238,7 +231,6 @@ Route::prefix('admin')
             });
         });
     });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -249,6 +241,7 @@ Route::prefix('admin')
 Route::prefix('resident')
     ->middleware(['auth:sanctum', 'resident'])
     ->group(function () {
+
         // Bills and Payments
         Route::controller(BillController::class)
             ->group(function () {
