@@ -15,9 +15,6 @@ use Throwable;
 
 class PasswordController extends Controller
 {
-    /**
-     * Change password for authenticated user
-     */
     public function changePassword(PasswordRequest $request): JsonResponse
     {
         try {
@@ -44,9 +41,6 @@ class PasswordController extends Controller
         }
     }
 
-    /**
-     * Send password reset link using Laravel's built-in functionality
-     */
     public function forgotPassword(PasswordRequest $request): JsonResponse
     {
         try {
@@ -67,9 +61,6 @@ class PasswordController extends Controller
         }
     }
 
-    /**
-     * Reset password using Laravel's built-in functionality
-     */
     public function resetPassword(PasswordRequest $request): JsonResponse
     {
         try {
@@ -88,9 +79,6 @@ class PasswordController extends Controller
         }
     }
 
-    /**
-     * Send reset link for the appropriate user type
-     */
     private function sendResetLinkForUserType(string $email): string
     {
         // Try User
@@ -111,9 +99,6 @@ class PasswordController extends Controller
         return Password::INVALID_USER;
     }
 
-    /**
-     * Reset password for the appropriate user type
-     */
     private function resetPasswordForUserType(array $credentials): string
     {
         $email = $credentials['email'];
@@ -142,9 +127,6 @@ class PasswordController extends Controller
         return Password::INVALID_USER;
     }
 
-    /**
-     * Update user password and revoke tokens
-     */
     private function updatePassword($user, string $password): void
     {
         $user->forceFill([
@@ -158,9 +140,6 @@ class PasswordController extends Controller
         event(new PasswordReset($user));
     }
 
-    /**
-     * Get human readable error message for password reset status
-     */
     private function getResetErrorMessage(string $status): string
     {
         return match ($status) {

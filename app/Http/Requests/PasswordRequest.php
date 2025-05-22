@@ -78,8 +78,7 @@ class PasswordRequest extends BaseFormRequest
      */
     private function isChangePasswordAction(): bool
     {
-        return $this->routeIs('password.change') ||
-            $this->route()?->getActionMethod() === 'changePassword' ||
+        return $this->route()?->getActionMethod() === 'changePassword' ||
             $this->has('current_password');
     }
 
@@ -88,8 +87,7 @@ class PasswordRequest extends BaseFormRequest
      */
     private function isForgotPasswordAction(): bool
     {
-        return $this->routeIs('password.forgot') ||
-            $this->route()?->getActionMethod() === 'forgotPassword' ||
+        return $this->route()?->getActionMethod() === 'forgotPassword' ||
             (!$this->has('token') && !$this->has('current_password') && $this->has('email'));
     }
 
@@ -98,11 +96,9 @@ class PasswordRequest extends BaseFormRequest
      */
     private function isResetPasswordAction(): bool
     {
-        return $this->routeIs('password.reset') ||
-            $this->route()?->getActionMethod() === 'resetPassword' ||
+        return $this->route()?->getActionMethod() === 'resetPassword' ||
             ($this->has('token') && $this->has('email'));
     }
-
     /**
      * Get custom messages for validation errors.
      */

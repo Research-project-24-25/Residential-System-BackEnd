@@ -49,11 +49,11 @@ Route::controller(PasswordController::class)
     ->prefix('password')
     ->name('password.')
     ->group(function () {
-        Route::post('forgot', 'forgotPassword')->name('forgot');
-        Route::post('reset', 'resetPassword')->name('reset');
+        Route::post('forgot', 'forgotPassword');
+        Route::post('reset', 'resetPassword');
 
         Route::middleware('auth:sanctum')->group(function () {
-            Route::post('change', 'changePassword')->name('change');
+            Route::post('change', 'changePassword');
         });
     });
 
