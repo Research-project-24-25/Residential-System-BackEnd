@@ -12,11 +12,6 @@ class AdminRequest extends BaseFormRequest
      */
     public function authorize(): bool
     {
-        // For regular admin endpoints, just require any authenticated admin
-        if ($this->is('admin/profile')) {
-            return $this->isAdmin();
-        }
-
         // For admin management endpoints, require super_admin role
         return $this->user() && $this->user()->isSuperAdmin();
     }
@@ -30,11 +25,6 @@ class AdminRequest extends BaseFormRequest
 
         if ($this->isFilterAction()) {
             return array_merge($parentRules, $this->getSpecificFilterRules());
-        }
-
-        // For profile viewing, no additional validation needed
-        if ($this->is('admin/profile')) {
-            return [];
         }
 
         // For store/create method, use the admin creation rules

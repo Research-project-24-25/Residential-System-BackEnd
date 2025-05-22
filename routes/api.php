@@ -1,10 +1,8 @@
 <?php
 
 // Controllers
-use App\Http\Controllers\User\AuthController as UserAuthController;
 use App\Http\Controllers\{
     AdminController,
-    AdminAuthController,
     AuthController,
     BillController,
     DashboardController,
@@ -16,12 +14,10 @@ use App\Http\Controllers\{
     NotificationController,
     PaymentController,
     PropertyController,
-    ResidentAuthController,
     ResidentController,
     ServiceController,
     PropertyServiceController,
 };
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
@@ -33,10 +29,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::controller(AuthController::class)->group(function () {
     Route::post('auth/login', 'login');
-    Route::middleware('auth:sanctum')->post('auth/logout', 'logout');
+    Route::post('auth/register', 'register');
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('auth/logout', 'logout');
+        Route::get('auth/profile', 'profile');
+    });
 });
-
-Route::post('auth/register', [UserAuthController::class, 'register']);
 
 /*
 |--------------------------------------------------------------------------
@@ -230,9 +228,6 @@ Route::prefix('admin')
     ->middleware(['auth:sanctum'])
     ->group(function () {
         Route::controller(AdminController::class)->group(function () {
-            // Admin profile (accessible by any admin)
-            Route::get('profile', 'profile');
-
             // Admin management (super admin only)
             Route::middleware(['admin:super_admin'])->group(function () {
                 Route::get('admins/trashed', 'trashed');
@@ -254,10 +249,6 @@ Route::prefix('admin')
 Route::prefix('resident')
     ->middleware(['auth:sanctum', 'resident'])
     ->group(function () {
-
-        // Profile
-        Route::get('profile', [ResidentAuthController::class, 'profile']);
-
         // Bills and Payments
         Route::controller(BillController::class)
             ->group(function () {

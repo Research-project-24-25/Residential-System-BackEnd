@@ -8,6 +8,7 @@ use App\Models\Resident;
 use App\Models\User;
 use App\Http\Resources\AdminResource;
 use App\Http\Resources\UserResource;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -66,6 +67,62 @@ class AuthController extends Controller
 
             // No matching user found
             return $this->errorResponse('Invalid credentials', 401);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function register(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|string|min:8|confirmed',
+            ]);
+
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
+
+            // Send verification email
+            event(new Registered($user));
+
+            // Generate Sanctum token
+            $token = $user->createToken($user->email)->plainTextToken;
+
+            return $this->createdResponse('User registered successfully. Please verify your email address.', [
+                'user' => new UserResource($user),
+                'token' => $token,
+                'user_type' => 'user',
+            ]);
+        } catch (Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    public function profile(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $userType = match ($user->getTable()) {
+                'admins' => 'admin',
+                'residents' => 'resident',
+                default => 'user'
+            };
+
+            $resource = match ($userType) {
+                'admin' => new AdminResource($user),
+                'resident' => new ResidentResource($user),
+                default => new UserResource($user)
+            };
+
+            return $this->successResponse('User data retrieved successfully', [
+                'user' => $resource,
+                'user_type' => $userType,
+            ]);
         } catch (Throwable $e) {
             return $this->handleException($e);
         }

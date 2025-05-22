@@ -192,19 +192,4 @@ class AdminController extends Controller
             return $this->handleException($e);
         }
     }
-
-    /**
-     * Get the current admin's profile.
-     */
-    public function profile(Request $request): JsonResponse
-    {
-        try {
-            return $this->successResponse(
-                'Profile retrieved successfully',
-                new AdminResource($request->user())
-            );
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
 }
