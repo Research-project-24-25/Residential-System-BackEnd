@@ -10,10 +10,13 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use App\Notifications\ResetPassword;
 
-class Resident extends Authenticatable
+class Resident extends Authenticatable implements CanResetPasswordContract
 {
-    use HasApiTokens, Notifiable, HasFactory, Filterable, SoftDeletes;
+    use HasApiTokens, Notifiable, HasFactory, Filterable, SoftDeletes, CanResetPassword;
 
     protected $guarded = ['id'];
 
@@ -113,5 +116,10 @@ class Resident extends Authenticatable
     public function getOverdueBillsAttribute()
     {
         return $this->bills()->overdue()->get();
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPassword($token));
     }
 }

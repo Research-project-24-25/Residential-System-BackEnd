@@ -17,8 +17,8 @@ use App\Http\Controllers\{
     ResidentController,
     ServiceController,
     PropertyServiceController,
+    PasswordController,
 };
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
@@ -38,6 +38,24 @@ Route::controller(AuthController::class)->group(function () {
         Route::patch('auth/profile/{userId?}', 'updateProfile');
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Password Management (Laravel Built-in)
+|--------------------------------------------------------------------------
+*/
+
+Route::controller(PasswordController::class)
+    ->prefix('password')
+    ->name('password.')
+    ->group(function () {
+        Route::post('forgot', 'forgotPassword')->name('forgot');
+        Route::post('reset', 'resetPassword')->name('reset');
+
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::post('change', 'changePassword')->name('change');
+        });
+    });
 
 /*
 |--------------------------------------------------------------------------
