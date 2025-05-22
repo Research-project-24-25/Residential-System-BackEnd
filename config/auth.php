@@ -59,19 +59,21 @@ return [
     |
     */
 
-    'users' => [
-        'driver' => 'eloquent',
-        'model' => App\Models\User::class,
-    ],
+    'providers' => [
+        'users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\User::class,
+        ],
 
-    'admins' => [
-        'driver' => 'eloquent',
-        'model' => App\Models\Admin::class,
-    ],
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Admin::class,
+        ],
 
-    'residents' => [
-        'driver' => 'eloquent',
-        'model' => App\Models\Resident::class,
+        'residents' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Resident::class,
+        ],
     ],
 
     /*
