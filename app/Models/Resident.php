@@ -22,6 +22,7 @@ class Resident extends Authenticatable implements CanResetPasswordContract
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
     protected $casts = [
