@@ -68,7 +68,7 @@ class MaintenanceRequestResource extends JsonResource
             'resident_id' => $this->resident_id,
             'description' => $this->description,
             'issue_details' => $this->issue_details,
-            'images' => $this->images,
+            'images' => $this->getRawOriginal('images') ? array_map(fn($image) => asset('storage/' . $image), json_decode($this->getRawOriginal('images'), true) ?? []) : [],,
             'priority' => $this->priority,
             'status' => $this->status,
             'requested_date' => $this->requested_date->format('Y-m-d'),

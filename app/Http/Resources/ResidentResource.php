@@ -22,7 +22,7 @@ class ResidentResource extends JsonResource
             'phone_number' => $this->phone_number,
             'age' => $this->age,
             'gender' => $this->gender,
-            'profile_image' => $this->profile_image,
+            'profile_image' => $this->getRawOriginal('profile_image') ? asset('storage/' . $this->getRawOriginal('profile_image')) : null,
             'properties' => $this->whenLoaded('properties', function () {
                 return $this->properties->map(function ($property) {
                     $pivotData = $property->pivot;

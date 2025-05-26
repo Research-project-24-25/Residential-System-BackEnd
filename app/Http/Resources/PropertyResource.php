@@ -21,7 +21,7 @@ class PropertyResource extends JsonResource
       'bedrooms' => $this->bedrooms,
       'bathrooms' => $this->bathrooms,
       'area' => $this->area,
-      'images' => $this->images,
+      'images' => $this->images ? array_map(fn($image) => asset('storage/' . $image), json_decode($this->getRawOriginal('images'), true) ?? []) : [],
       'features' => $this->features,
       'acquisition_cost' => $this->acquisition_cost,
       'acquisition_date' => $this->acquisition_date,

@@ -81,7 +81,23 @@ class Property extends Model
             return;
         }
 
-        $this->attributes['images'] = is_array($images) ? json_encode($images) : $images;
+        // Ensure $images is an array before processing
+        if (!is_array($images)) {
+            // Handle cases where input is not an array, maybe log a warning or set to empty array
+            // For now, we'll default to an empty array for non-array inputs.
+            $images = [];
+        }
+
+        $processedImages = array_map(function ($image) {
+            // Remove the asset('storage/') prefix if it exists
+            $prefix = asset('storage/');
+            if (is_string($image) && str_starts_with($image, $prefix)) {
+                return substr($image, strlen($prefix));
+            }
+            return $image; // Return as is if prefix is not found or not a string
+        }, $images);
+
+        $this->attributes['images'] = json_encode($processedImages);
     }
 
     // Relationships

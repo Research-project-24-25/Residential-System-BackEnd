@@ -65,7 +65,18 @@ class Resident extends Authenticatable implements CanResetPasswordContract
 
     public function setProfileImageAttribute($value)
     {
-        $this->attributes['profile_image'] = $value;
+        if (is_null($value)) {
+            $this->attributes['profile_image'] = null;
+            return;
+        }
+
+        // Remove the asset('storage/') prefix if it exists
+        $prefix = asset('storage/');
+        if (is_string($value) && str_starts_with($value, $prefix)) {
+            $this->attributes['profile_image'] = substr($value, strlen($prefix));
+        } else {
+            $this->attributes['profile_image'] = $value; // Store as is if prefix not found or not a string
+        }
     }
 
     /* Relationships */
