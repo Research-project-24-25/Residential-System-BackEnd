@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PropertyRequest;
 use App\Http\Resources\PropertyResource;
 use App\Models\Property;
+use App\Traits\HandlesFileUploads;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class PropertyController extends Controller
 {
+  use HandlesFileUploads;
+
   public function index(Request $request): ResourceCollection|JsonResponse
   {
     try {
@@ -68,10 +70,8 @@ class PropertyController extends Controller
 
       // Handle image uploads
       if ($request->hasFile('images')) {
-        $images = $this->handleImageUploads($request->file('images'));
-        $validated['images'] = $images;
+        $validated['images'] = $this->handlePropertyImages($request->file('images'));
       } else {
-        // Initialize with empty array if no images are provided
         $validated['images'] = [];
       }
 
@@ -99,18 +99,15 @@ class PropertyController extends Controller
 
       // Handle image uploads
       if ($request->hasFile('images')) {
-        // Remove old images if they exist
-        if (!empty($property->getRawOriginal('images'))) {
-          $this->removeOldImages(json_decode($property->getRawOriginal('images'), true) ?? []);
-        }
+        // Get old images for deletion
+        $oldImages = json_decode($property->getRawOriginal('images'), true) ?? [];
 
-        $images = $this->handleImageUploads($request->file('images'));
-        $validated['images'] = $images;
+        // Replace images (delete old, upload new)
+        $validated['images'] = $this->replacePropertyImages($request->file('images'), $oldImages);
       } elseif (isset($validated['images']) && $validated['images'] === null) {
         // If images is explicitly set to null, remove existing images
-        if (!empty($property->getRawOriginal('images'))) {
-          $this->removeOldImages(json_decode($property->getRawOriginal('images'), true) ?? []);
-        }
+        $oldImages = json_decode($property->getRawOriginal('images'), true) ?? [];
+        $this->removePropertyImages($oldImages);
         $validated['images'] = [];
       } elseif (!isset($validated['images'])) {
         // If images field is not present in the request, don't update it
@@ -134,9 +131,8 @@ class PropertyController extends Controller
       $property = Property::findOrFail($id);
 
       // Remove property images
-      if (!empty($property->getRawOriginal('images'))) {
-        $this->removeOldImages(json_decode($property->getRawOriginal('images'), true) ?? []);
-      }
+      $oldImages = json_decode($property->getRawOriginal('images'), true) ?? [];
+      $this->removePropertyImages($oldImages);
 
       $property->delete();
 
@@ -159,33 +155,5 @@ class PropertyController extends Controller
   public function forceDelete(int $id): JsonResponse
   {
     return $this->forceDeleteModel(Property::class, $id);
-  }
-
-  private function handleImageUploads($images): array
-  {
-    $uploadedImages = [];
-
-    foreach ($images as $image) {
-      $filename = time() . '_' . $image->getClientOriginalName();
-      // Store in public directory instead of storage
-      $image->move(public_path('property-images'), $filename);
-      $uploadedImages[] = 'property-images/' . $filename;
-    }
-
-    return $uploadedImages;
-  }
-
-  private function removeOldImages($images): void
-  {
-    if (!is_array($images)) {
-      return;
-    }
-
-    foreach ($images as $image) {
-      $path = public_path($image);
-      if (file_exists($path)) {
-        unlink($path);
-      }
-    }
   }
 }

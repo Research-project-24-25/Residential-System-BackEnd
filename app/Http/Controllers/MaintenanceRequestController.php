@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\MaintenanceRequestRequest;
 use App\Http\Resources\MaintenanceRequestResource;
-use App\Models\Admin;
 use App\Models\MaintenanceRequest;
 use App\Models\Property;
 use App\Services\BillingService;
@@ -13,11 +12,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use App\Notifications\MaintenanceRequestStatusChanged;
 use App\Notifications\NewMaintenanceRequest;
+use App\Traits\HandlesFileUploads;
 use Throwable;
 use App\Services\AdminNotificationService;
 
 class MaintenanceRequestController extends Controller
 {
+    use HandlesFileUploads;
     private BillingService $billingService;
     private AdminNotificationService $adminNotificationService;
 
@@ -103,7 +104,7 @@ class MaintenanceRequestController extends Controller
 
             // Handle image uploads
             if ($request->hasFile('images')) {
-                $images = $this->handleImageUploads($request->file('images'));
+                $images = $this->handleMaintenanceImages($request->file('images'));
                 $validated['images'] = $images;
             } else {
                 $validated['images'] = [];
@@ -164,13 +165,12 @@ class MaintenanceRequestController extends Controller
 
                 $updateData = array_intersect_key($validated, array_flip(['description', 'issue_details']));
 
-                // Handle image uploads
                 if ($request->hasFile('images')) {
                     $currentImages = is_array($maintenanceRequest->getRawOriginal('images'))
                         ? $maintenanceRequest->getRawOriginal('images')
                         : json_decode($maintenanceRequest->getRawOriginal('images') ?? '[]', true);
 
-                    $newImages = $this->handleImageUploads($request->file('images'));
+                    $newImages = $this->handleMaintenanceImages($request->file('images'));
                     $updateData['images'] = array_merge($currentImages ?? [], $newImages);
                 }
 
@@ -322,10 +322,8 @@ class MaintenanceRequestController extends Controller
             }
 
             // Remove images if they exist
-            if (!empty($maintenanceRequest->getRawOriginal('images'))) {
-                $images = json_decode($maintenanceRequest->getRawOriginal('images'), true) ?? [];
-                $this->removeImages($images);
-            }
+            $images = json_decode($maintenanceRequest->getRawOriginal('images'), true) ?? [];
+            $this->removeMaintenanceImages($images);
 
             $maintenanceRequest->delete();
 
@@ -420,34 +418,6 @@ class MaintenanceRequestController extends Controller
             return MaintenanceRequestResource::collection($maintenanceRequests);
         } catch (Throwable $e) {
             return $this->handleException($e);
-        }
-    }
-
-    private function handleImageUploads($images): array
-    {
-        $uploadedImages = [];
-
-        foreach ($images as $image) {
-            $filename = time() . '_' . $image->getClientOriginalName();
-            // Store in public directory
-            $image->move(public_path('maintenance-images'), $filename);
-            $uploadedImages[] = 'maintenance-images/' . $filename;
-        }
-
-        return $uploadedImages;
-    }
-
-    private function removeImages($images): void
-    {
-        if (!is_array($images)) {
-            return;
-        }
-
-        foreach ($images as $image) {
-            $path = public_path($image);
-            if (file_exists($path)) {
-                unlink($path);
-            }
         }
     }
 }

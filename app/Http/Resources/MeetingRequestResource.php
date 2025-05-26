@@ -26,7 +26,7 @@ class MeetingRequestResource extends JsonResource
             $data['user'] = new UserResource($this->whenLoaded('user'));
             $data['admin_notes'] = $this->admin_notes;
             $data['admin'] = new AdminResource($this->whenLoaded('admin'));
-            $data['id_document'] = $this->id_document ? asset('meeting-documents/' . basename($this->id_document)) : null;
+            $data['id_document'] = $this->id_document ? asset('storage/' . $this->id_document) : null;
         }
 
         return $data;

@@ -60,7 +60,7 @@ class Resident extends Authenticatable implements CanResetPasswordContract
             return null;
         }
 
-        return url($value);
+        return asset('storage/' . $value);
     }
 
     public function setProfileImageAttribute($value)

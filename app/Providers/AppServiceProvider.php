@@ -38,12 +38,14 @@ class AppServiceProvider extends ServiceProvider
 
         // Create required directories if they don't exist
         $directories = [
+            'meeting-documents',
+            'resident-images',
             'property-images',
-            'resident-images'
+            'maintenance-images'
         ];
 
         foreach ($directories as $directory) {
-            $path = public_path($directory);
+            $path = storage_path('app/public/' . $directory);
             if (!File::exists($path)) {
                 File::makeDirectory($path, 0755, true);
             }

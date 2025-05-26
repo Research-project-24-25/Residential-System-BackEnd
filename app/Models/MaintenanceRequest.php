@@ -127,7 +127,7 @@ class MaintenanceRequest extends Model
             return [];
         }
 
-        return array_map(fn($image) => url($image), $imagesArray);
+        return array_map(fn($image) => asset('storage/' . $image), $imagesArray);
     }
 
     // set images as JSON

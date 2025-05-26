@@ -6,18 +6,19 @@ use App\Http\Requests\MeetingRequestRequest;
 use App\Http\Resources\MeetingRequestResource;
 use App\Models\MeetingRequest;
 use App\Models\Property;
-use App\Models\Admin;
 use App\Notifications\MeetingRequestStatusChanged;
 use App\Notifications\NewMeetingRequest;
 use App\Services\AdminNotificationService;
+use App\Traits\HandlesFileUploads;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
-use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class MeetingRequestController extends Controller
 {
+    use HandlesFileUploads;
+
     protected $adminNotificationService;
 
     public function __construct(AdminNotificationService $adminNotificationService)
@@ -85,10 +86,7 @@ class MeetingRequestController extends Controller
 
             // Handle ID document upload
             if ($request->hasFile('id_document')) {
-                $image = $request->file('id_document');
-                $filename = time() . '_' . $image->getClientOriginalName();
-                $image->move(public_path('meeting-documents'), $filename);
-                $data['id_document'] = 'meeting-documents/' . $filename;
+                $data['id_document'] = $this->handleMeetingDocument($request->file('id_document'));
             }
 
             $meetingRequest = MeetingRequest::create($data);
@@ -235,14 +233,7 @@ class MeetingRequestController extends Controller
             $meetingRequest = MeetingRequest::findOrFail($id);
 
             // Delete ID document if it exists
-            if ($meetingRequest->id_document) {
-                $filePath = public_path($meetingRequest->id_document);
-
-                // Ensure path is inside 'meeting-documents' for safety
-                if (str_starts_with($meetingRequest->id_document, 'meeting-documents/') && file_exists($filePath)) {
-                    @unlink($filePath); // Use @ to suppress warning if deletion fails
-                }
-            }
+            $this->removeMeetingDocument($meetingRequest->id_document);
 
             $meetingRequest->delete();
 

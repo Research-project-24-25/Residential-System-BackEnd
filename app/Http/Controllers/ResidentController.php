@@ -7,14 +7,16 @@ use App\Http\Resources\ResidentResource;
 use App\Models\Resident;
 use App\Models\Property;
 use App\Services\PropertyResidentService;
+use App\Traits\HandlesFileUploads;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Http\UploadedFile;
 use Throwable;
 
 class ResidentController extends Controller
 {
+    use HandlesFileUploads;
+
     public function __construct(private PropertyResidentService $service) {}
 
     public function index(Request $request): JsonResponse
@@ -86,12 +88,12 @@ class ResidentController extends Controller
                 'phone_number' => $validated['phone_number'],
                 'age' => $validated['age'],
                 'gender' => $validated['gender'],
-                'created_by' => $request->user()->id, // Get the authenticated admin's ID
+                'created_by' => $request->user()->id,
             ];
 
             // Handle profile image if provided
             if ($request->hasFile('profile_image')) {
-                $residentData['profile_image'] = $this->handleProfileImage($request->file('profile_image'));
+                $residentData['profile_image'] = $this->handleResidentProfileImage($request->file('profile_image'));
             } else {
                 $residentData['profile_image'] = null;
             }
@@ -141,17 +143,13 @@ class ResidentController extends Controller
 
             // Handle profile image if provided
             if ($request->hasFile('profile_image')) {
-                // Remove old profile image if exists
-                if ($resident->getRawOriginal('profile_image')) {
-                    $this->removeOldProfileImage($resident->getRawOriginal('profile_image'));
-                }
-
-                $updateData['profile_image'] = $this->handleProfileImage($request->file('profile_image'));
+                $updateData['profile_image'] = $this->replaceResidentProfileImage(
+                    $request->file('profile_image'),
+                    $resident->getRawOriginal('profile_image')
+                );
             } elseif (isset($updateData['profile_image']) && $updateData['profile_image'] === null) {
                 // If profile_image is explicitly set to null, remove existing image
-                if ($resident->getRawOriginal('profile_image')) {
-                    $this->removeOldProfileImage($resident->getRawOriginal('profile_image'));
-                }
+                $this->removeResidentProfileImage($resident->getRawOriginal('profile_image'));
                 $updateData['profile_image'] = null;
             }
 
@@ -188,9 +186,7 @@ class ResidentController extends Controller
             $resident = Resident::findOrFail($id);
 
             // Remove profile image if exists
-            if ($resident->getRawOriginal('profile_image')) {
-                $this->removeOldProfileImage($resident->getRawOriginal('profile_image'));
-            }
+            $this->removeResidentProfileImage($resident->getRawOriginal('profile_image'));
 
             $resident->delete();
 
@@ -207,7 +203,7 @@ class ResidentController extends Controller
 
     public function trashed(Request $request): JsonResponse
     {
-        return $this->getTrashedModels(Resident::class, function($query) use ($request) {
+        return $this->getTrashedModels(Resident::class, function ($query) use ($request) {
             if ($request->has('sort')) {
                 $query->sort($request);
             }
@@ -217,24 +213,5 @@ class ResidentController extends Controller
     public function forceDelete(int $id): JsonResponse
     {
         return $this->forceDeleteModel(Resident::class, $id);
-    }
-
-    private function handleProfileImage(UploadedFile $image): string
-    {
-        $filename = time() . '_' . $image->getClientOriginalName();
-        $image->move(public_path('resident-images'), $filename);
-        return 'resident-images/' . $filename;
-    }
-
-    private function removeOldProfileImage(?string $imagePath): void
-    {
-        if (empty($imagePath)) {
-            return;
-        }
-
-        $path = public_path($imagePath);
-        if (file_exists($path)) {
-            unlink($path);
-        }
     }
 }
