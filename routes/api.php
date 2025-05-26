@@ -18,6 +18,7 @@ use App\Http\Controllers\{
     ServiceController,
     PropertyServiceController,
     PasswordController,
+    UserController,
 };
 use Illuminate\Support\Facades\Route;
 
@@ -142,6 +143,14 @@ Route::prefix('admin')
                 Route::get('/profits', 'profits');
                 Route::get('/financial-summary', 'financialSummary');
             });
+
+        Route::controller(UserController::class)->group(function () {
+            Route::get('users/trashed', 'trashed');
+            Route::apiResource('users', UserController::class);
+            Route::post('users/filter', 'filter');
+            Route::patch('users/{id}/restore', 'restore');
+            Route::delete('users/{id}/force', 'forceDelete');
+        });
 
         // Properties
         Route::controller(PropertyController::class)
