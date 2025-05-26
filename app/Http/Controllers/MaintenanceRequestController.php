@@ -14,14 +14,17 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 use App\Notifications\MaintenanceRequestStatusChanged;
 use App\Notifications\NewMaintenanceRequest;
 use Throwable;
+use App\Services\AdminNotificationService;
 
 class MaintenanceRequestController extends Controller
 {
     private BillingService $billingService;
+    private AdminNotificationService $adminNotificationService;
 
-    public function __construct(BillingService $billingService)
+    public function __construct(BillingService $billingService, AdminNotificationService $adminNotificationService)
     {
         $this->billingService = $billingService;
+        $this->adminNotificationService = $adminNotificationService;
     }
 
     public function index(Request $request): ResourceCollection|JsonResponse
@@ -110,8 +113,8 @@ class MaintenanceRequestController extends Controller
             $maintenanceRequest = MaintenanceRequest::create($validated);
             $maintenanceRequest->load(['maintenance', 'property', 'resident']);
 
-            // Notify admins about new request
-            $this->notifyAdmins($maintenanceRequest);
+            // Notify an admin about new request
+            $this->adminNotificationService->notifyAdmin(new NewMaintenanceRequest($maintenanceRequest));
 
             return $this->createdResponse(
                 'Maintenance request created successfully',
@@ -445,17 +448,6 @@ class MaintenanceRequestController extends Controller
             if (file_exists($path)) {
                 unlink($path);
             }
-        }
-    }
-
-    private function notifyAdmins(MaintenanceRequest $maintenanceRequest): void
-    {
-        // Get all admins
-        $admins = Admin::all();
-
-        // Notify each admin
-        foreach ($admins as $admin) {
-            $admin->notify(new NewMaintenanceRequest($maintenanceRequest));
         }
     }
 }

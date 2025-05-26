@@ -8,12 +8,20 @@ use App\Models\Admin;
 use App\Models\MaintenanceFeedback;
 use App\Models\MaintenanceRequest;
 use App\Notifications\NewMaintenanceFeedback;
+use App\Services\AdminNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
 
 class MaintenanceFeedbackController extends Controller
 {
+    protected $adminNotificationService;
+
+    public function __construct(AdminNotificationService $adminNotificationService)
+    {
+        $this->adminNotificationService = $adminNotificationService;
+    }
+
     public function store(int $maintenanceRequestId, MaintenanceFeedbackRequest $request): JsonResponse
     {
         try {
@@ -45,8 +53,8 @@ class MaintenanceFeedbackController extends Controller
             // Load relationships
             $feedback->load(['maintenanceRequest', 'resident']);
 
-            // Notify admins about the new feedback
-            $this->notifyAdmins($feedback);
+            // Notify an admin about the new feedback
+            $this->adminNotificationService->notifyAdmin(new NewMaintenanceFeedback($feedback));
 
             return $this->createdResponse(
                 'Feedback submitted successfully',
@@ -223,17 +231,6 @@ class MaintenanceFeedbackController extends Controller
             );
         } catch (Throwable $e) {
             return $this->handleException($e);
-        }
-    }
-
-    private function notifyAdmins(MaintenanceFeedback $feedback): void
-    {
-        // Get all admins
-        $admins = Admin::all();
-
-        // Notify each admin
-        foreach ($admins as $admin) {
-            $admin->notify(new NewMaintenanceFeedback($feedback));
         }
     }
 }

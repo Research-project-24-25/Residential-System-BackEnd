@@ -9,6 +9,7 @@ use App\Models\Property;
 use App\Models\Admin;
 use App\Notifications\MeetingRequestStatusChanged;
 use App\Notifications\NewMeetingRequest;
+use App\Services\AdminNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -17,6 +18,13 @@ use Throwable;
 
 class MeetingRequestController extends Controller
 {
+    protected $adminNotificationService;
+
+    public function __construct(AdminNotificationService $adminNotificationService)
+    {
+        $this->adminNotificationService = $adminNotificationService;
+    }
+
     public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
@@ -88,8 +96,8 @@ class MeetingRequestController extends Controller
             // Load the related property
             $meetingRequest->load('property');
 
-            // Notify admins about new meeting request
-            $this->notifyAdmins($meetingRequest);
+            // Notify an admin about new meeting request
+            $this->adminNotificationService->notifyAdmin(new NewMeetingRequest($meetingRequest));
 
             return $this->createdResponse(
                 'Meeting request created successfully',
@@ -207,10 +215,9 @@ class MeetingRequestController extends Controller
 
             $meetingRequest->load('property');
 
-            // Notify admins about cancellation
-            $admins = Admin::all();
-            foreach ($admins as $admin) {
-                $admin->notify(new MeetingRequestStatusChanged($meetingRequest));
+            // Notify the admin who processed the request if there is one
+            if ($meetingRequest->admin_id) {
+                $meetingRequest->admin->notify(new MeetingRequestStatusChanged($meetingRequest));
             }
 
             return $this->successResponse(
@@ -262,16 +269,5 @@ class MeetingRequestController extends Controller
     public function forceDelete(int $id): JsonResponse
     {
         return $this->forceDeleteModel(MeetingRequest::class, $id);
-    }
-
-    private function notifyAdmins(MeetingRequest $meetingRequest): void
-    {
-        // Get all admins
-        $admins = Admin::all();
-
-        // Notify each admin
-        foreach ($admins as $admin) {
-            $admin->notify(new NewMeetingRequest($meetingRequest));
-        }
     }
 }
