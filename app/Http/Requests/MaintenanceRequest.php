@@ -29,7 +29,6 @@ class MaintenanceRequest extends BaseFormRequest
                 }
             ],
             'estimated_cost' => ['nullable', 'numeric', 'min:0'],
-            'currency' => ['sometimes', 'string', 'size:3'],
             'estimated_hours' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['sometimes', 'boolean'],
         ];

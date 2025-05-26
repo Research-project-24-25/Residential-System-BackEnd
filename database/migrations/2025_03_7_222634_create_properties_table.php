@@ -16,7 +16,6 @@ class CreatePropertiesTable extends Migration
             $table->string('label')->unique(); // B1F2A5, H21, V12, etc.
             $table->enum('type', ['apartment', 'villa', 'house', 'studio']);
             $table->decimal('price', 15, 2)->default(0);
-            $table->string('currency')->default('USD');
             $table->enum('status', ['available_now', 'under_construction', 'sold', 'rented']);
             $table->text('description')->nullable();
             $table->integer('occupancy_limit')->default(0); // this unit can accommodate how many residents

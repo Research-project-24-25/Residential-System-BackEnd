@@ -29,8 +29,6 @@ class MaintenanceFeedback extends Model
     ];
 
     protected array $filterableFields = [
-        'maintenance_request_id',
-        'resident_id',
         'rating',
         'resolved_satisfactorily',
         'would_recommend',

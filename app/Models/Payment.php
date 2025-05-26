@@ -16,27 +16,26 @@ class Payment extends Model
         'bill_id',
         'resident_id',
         'amount',
-        'currency',
         'status',
         'transaction_id',
         'payment_date',
         'notes',
-        'metadata',
         'processed_by'
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'payment_date' => 'datetime',
-        'metadata' => 'array',
     ];
 
     protected array $filterableFields = [
         'bill_id',
         'resident_id',
         'status',
+        'transaction_id',
         'payment_date',
         'amount',
+        'processed_by',
         'created_at',
         'updated_at'
     ];
@@ -44,6 +43,8 @@ class Payment extends Model
     protected array $searchableFields = [
         'transaction_id',
         'notes',
+        'status',
+        'amount',
     ];
 
     public function bill(): BelongsTo

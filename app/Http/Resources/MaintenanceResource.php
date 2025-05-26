@@ -15,7 +15,6 @@ class MaintenanceResource extends JsonResource
             'description' => $this->description,
             'category' => $this->category,
             'estimated_cost' => $this->estimated_cost,
-            'currency' => $this->currency,
             'estimated_hours' => $this->estimated_hours,
             'is_active' => $this->is_active,
             'active_requests_count' => $this->when(

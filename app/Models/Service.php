@@ -18,7 +18,6 @@ class Service extends Model
         'type',
         'base_price',
         'provider_cost',
-        'currency',
         'unit_of_measure',
         'is_recurring',
         'recurrence',
@@ -31,9 +30,13 @@ class Service extends Model
     ];
 
     protected array $filterableFields = [
+        'name',
         'type',
         'is_recurring',
         'base_price',
+        'provider_cost',
+        'unit_of_measure',
+        'recurrence',
         'created_at',
         'updated_at'
     ];
@@ -41,6 +44,11 @@ class Service extends Model
     protected array $searchableFields = [
         'name',
         'description',
+        'type',
+        'base_price',
+        'provider_cost',
+        'unit_of_measure',
+        'recurrence'
     ];
 
     /**

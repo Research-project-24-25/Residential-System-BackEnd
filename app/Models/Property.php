@@ -16,7 +16,6 @@ class Property extends Model
         'label',
         'type',
         'price',
-        'currency',
         'status',
         'description',
         'occupancy_limit',
@@ -44,12 +43,14 @@ class Property extends Model
     protected array $filterableFields = [
         'type',
         'price',
-        'currency',
         'status',
         'occupancy_limit',
         'bedrooms',
         'bathrooms',
         'area',
+        'features',
+        'acquisition_cost',
+        'acquisition_date',
         'created_at',
         'updated_at'
     ];
@@ -57,6 +58,11 @@ class Property extends Model
     protected array $searchableFields = [
         'label',
         'description',
+        'type',
+        'price',
+        'status',
+        'area',
+        'features'
     ];
 
     public function getImagesAttribute($images)

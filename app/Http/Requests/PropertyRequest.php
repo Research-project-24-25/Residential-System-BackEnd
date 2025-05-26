@@ -71,7 +71,6 @@ class PropertyRequest extends BaseFormRequest
             'label' => [$requiredRule, 'string', 'max:255'],
             'type' => [$requiredRule, 'string', Rule::in(['apartment', 'house', 'villa', 'studio'])],
             'price' => [$requiredRule, 'numeric', 'min:0'],
-            'currency' => ['sometimes', 'string', 'max:3'],
             'status' => ['sometimes', 'string', Rule::in(['available_now', 'under_construction', 'sold', 'rented'])],
             'description' => ['sometimes', 'nullable', 'string'],
             'occupancy_limit' => ['sometimes', 'integer', 'min:0'],

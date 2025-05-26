@@ -36,7 +36,6 @@ class BillResource extends JsonResource
             'resident_id' => $this->resident_id,
             'bill_type' => $this->bill_type,
             'amount' => $this->amount,
-            'currency' => $this->currency,
             'due_date' => $this->due_date->format('Y-m-d'),
             'description' => $this->description,
             'status' => $this->status,
@@ -49,7 +48,6 @@ class BillResource extends JsonResource
             'payments' => $this->whenLoaded('payments', function () {
                 return PaymentResource::collection($this->payments);
             }),
-            'metadata' => $this->metadata,
             'created_by' => $this->created_by,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),

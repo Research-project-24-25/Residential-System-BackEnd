@@ -31,12 +31,11 @@ class Resident extends Authenticatable implements CanResetPasswordContract
     ];
 
     protected array $filterableFields = [
-        'username',
         'first_name',
         'last_name',
-        'email',
         'gender',
         'age',
+        'created_by',
         'created_at',
         'updated_at'
     ];

@@ -34,13 +34,11 @@ class BillRequest extends BaseFormRequest
                 'other'
             ])],
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'currency' => ['nullable', 'string', 'size:3'],
             'due_date' => ['required', 'date', 'after_or_equal:today'],
             'description' => ['nullable', 'string', 'max:1000'],
             'status' => ['nullable', 'string', Rule::in(['pending', 'partial', 'paid', 'overdue', 'cancelled'])],
             'recurrence' => ['nullable', 'string', Rule::in(['monthly', 'quarterly', 'biannual', 'annual', 'one-time'])],
             'next_billing_date' => ['nullable', 'date', 'after:due_date'],
-            'metadata' => ['nullable', 'array'],
         ];
 
         // If we're updating a bill, make resident_id and property_id optional

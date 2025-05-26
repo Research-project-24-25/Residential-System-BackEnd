@@ -17,7 +17,6 @@ class Maintenance extends Model
         'description',
         'category',
         'estimated_cost',
-        'currency',
         'estimated_hours',
         'is_active'
     ];
@@ -40,6 +39,9 @@ class Maintenance extends Model
     protected array $searchableFields = [
         'name',
         'description',
+        'category',
+        'estimated_cost',
+        'estimated_hours',
     ];
 
     /**

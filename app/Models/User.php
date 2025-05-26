@@ -12,12 +12,12 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use App\Notifications\ResetPassword;
-
+use App\Traits\Filterable;
 
 
 class User extends Authenticatable implements MustVerifyEmail, CanResetPasswordContract
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, CanResetPassword;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, CanResetPassword, Filterable;
 
     protected $fillable = [
         'name',
@@ -37,6 +37,16 @@ class User extends Authenticatable implements MustVerifyEmail, CanResetPasswordC
             'password' => 'hashed',
         ];
     }
+
+    protected array $filterableFields = [
+        'name'
+    ];
+
+    protected array $searchableFields = [
+        'name',
+        'email'
+    ];
+
 
     public function meetingRequests(): HasMany
     {

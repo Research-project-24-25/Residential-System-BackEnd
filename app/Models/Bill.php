@@ -18,13 +18,11 @@ class Bill extends Model
         'resident_id',
         'bill_type',
         'amount',
-        'currency',
         'due_date',
         'description',
         'status',
         'recurrence',
         'next_billing_date',
-        'metadata',
         'created_by'
     ];
 
@@ -32,22 +30,25 @@ class Bill extends Model
         'amount' => 'decimal:2',
         'due_date' => 'date',
         'next_billing_date' => 'date',
-        'metadata' => 'array',
     ];
 
     protected array $filterableFields = [
         'bill_type',
-        'property_id',
-        'resident_id',
         'status',
         'due_date',
         'amount',
+        'recurrence',
+        'next_billing_date',
+        'created_by',
         'created_at',
         'updated_at'
     ];
 
     protected array $searchableFields = [
         'description',
+        'status',
+        'bill_type',
+        'amount'
     ];
 
     public function property(): BelongsTo

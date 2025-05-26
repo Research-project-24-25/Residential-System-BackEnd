@@ -21,7 +21,6 @@ class ServiceRequest extends BaseFormRequest
             'type' => ['required', 'string', Rule::in(['electricity', 'gas', 'water', 'security', 'cleaning', 'other'])],
             'base_price' => ['required', 'numeric', 'min:0'],
             'provider_cost' => ['required', 'numeric', 'min:0'],
-            'currency' => ['sometimes', 'string', 'size:3'],
             'unit_of_measure' => ['nullable', 'string', 'max:50'],
             'is_recurring' => ['sometimes', 'boolean'],
             'recurrence' => ['nullable', 'required_if:is_recurring,true', Rule::in(['monthly', 'quarterly', 'yearly'])],

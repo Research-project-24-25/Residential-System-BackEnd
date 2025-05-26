@@ -23,9 +23,7 @@ class PaymentRequest extends BaseFormRequest
             $specificRules = [
                 'bill_id' => ['required', 'exists:bills,id'],
                 'amount' => ['required', 'numeric', 'min:0.01'],
-                'currency' => ['nullable', 'string', 'size:3'],
                 'notes' => ['nullable', 'string', 'max:500'],
-                'metadata' => ['nullable', 'array'],
                 'status' => ['nullable', Rule::in(['paid'])],
                 'transaction_id' => ['nullable', 'string', 'max:255'],
                 'payment_date' => ['nullable', 'date'],
@@ -36,7 +34,6 @@ class PaymentRequest extends BaseFormRequest
                 'status' => ['required', Rule::in(['paid', 'refunded'])],
                 'transaction_id' => ['nullable', 'string', 'max:255'],
                 'notes' => ['nullable', 'string', 'max:500'],
-                'metadata' => ['nullable', 'array'],
             ];
         }
         return array_merge(parent::rules(), $specificRules);

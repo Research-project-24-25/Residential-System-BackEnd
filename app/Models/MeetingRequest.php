@@ -40,6 +40,12 @@ class MeetingRequest extends Model
         'updated_at'
     ];
 
+    protected array $searchableFields = [
+        'pupose',
+        'notes',
+        'admin_notes'
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

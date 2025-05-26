@@ -55,6 +55,8 @@ class MaintenanceRequest extends Model
         'scheduled_date',
         'completion_date',
         'admin_id',
+        'final_cost',
+        'actual_cost',
         'created_at',
         'updated_at',
         'has_feedback'

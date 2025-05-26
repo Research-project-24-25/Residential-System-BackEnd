@@ -16,12 +16,10 @@ return new class extends Migration
             $table->foreignId('bill_id')->constrained()->onDelete('restrict');
             $table->foreignId('resident_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2);
-            $table->string('currency', 3)->default('USD');
             $table->enum('status', ['paid', 'refunded'])->default(value: 'paid');
             $table->string('transaction_id')->nullable()->unique();
             $table->timestamp('payment_date')->nullable();
             $table->text('notes')->nullable();
-            $table->json('metadata')->nullable();
             $table->foreignId('processed_by')->nullable()->constrained('admins')->onDelete('set null');
             $table->softDeletes();
             $table->timestamps();

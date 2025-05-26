@@ -17,7 +17,6 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->enum('category', ['plumbing', 'electrical', 'hvac', 'structural', 'appliances', 'landscaping', 'painting', 'other']);
             $table->decimal('estimated_cost', 10, 2)->nullable();
-            $table->string('currency', 3)->default('USD');
             $table->integer('estimated_hours')->nullable();
             $table->boolean('is_active')->default(true);
             $table->softDeletes();

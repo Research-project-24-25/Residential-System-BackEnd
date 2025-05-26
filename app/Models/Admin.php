@@ -10,10 +10,11 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use App\Notifications\ResetPassword;
+use App\Traits\Filterable;
 
 class Admin extends Authenticatable implements CanResetPasswordContract
 {
-    use HasApiTokens, Notifiable, HasFactory, SoftDeletes, CanResetPassword;
+    use HasApiTokens, Notifiable, HasFactory, SoftDeletes, CanResetPassword, Filterable;
 
     protected $guarded = ['id'];
 
@@ -27,6 +28,33 @@ class Admin extends Authenticatable implements CanResetPasswordContract
         'password' => 'hashed',
         'salary' => 'double',
     ];
+
+
+    protected $filterableFields = [
+        'first_name',
+        'last_name',
+        'age',
+        'gender',
+        'salary',
+        'username',
+        'role',
+        'created_at',
+        'updated_at',
+    ];
+
+
+    protected $searchableFields = [
+        'first_name',
+        'last_name',
+        'phone_number',
+        'age',
+        'gender',
+        'salary',
+        'username',
+        'email',
+        'role',
+    ];
+
 
     public function isSuperAdmin()
     {
