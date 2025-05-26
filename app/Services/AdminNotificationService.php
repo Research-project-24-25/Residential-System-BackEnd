@@ -12,7 +12,7 @@ class AdminNotificationService
 
   public function notifyAdmin(Notification $notification): void
   {
-    $admins = Admin::all();
+    $admins = Admin::where('role', 'admin')->get();
 
     if ($admins->isEmpty()) {
       // No admins to notify
