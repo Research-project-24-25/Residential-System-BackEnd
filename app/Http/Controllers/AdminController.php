@@ -26,7 +26,10 @@ class AdminController extends Controller
             }
 
             $perPage = $request->get('per_page', 10);
-            $admins = Admin::query()->paginate($perPage);
+
+            $admins = Admin::query()
+                ->sort($request)
+                ->paginate($perPage);
 
             return AdminResource::collection($admins);
         } catch (Throwable $e) {
@@ -42,6 +45,7 @@ class AdminController extends Controller
         try {
             $perPage = $request->get('per_page', 10);
             $admins = Admin::query()
+                ->sort($request)
                 ->filter($request)
                 ->paginate($perPage);
 

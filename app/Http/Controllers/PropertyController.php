@@ -21,6 +21,7 @@ class PropertyController extends Controller
       $perPage = $request->get('per_page', 10);
 
       $properties = Property::query()
+        ->sort($request)
         ->paginate($perPage);
 
       return PropertyResource::collection($properties);

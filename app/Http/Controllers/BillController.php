@@ -29,7 +29,8 @@ class BillController extends Controller
                 $query->where('resident_id', $user->id);
             }
 
-            $bills = $query->sort($request)
+            $bills = $query
+                ->sort($request)
                 ->paginate($request->get('per_page', 10));
 
             return BillResource::collection($bills);
