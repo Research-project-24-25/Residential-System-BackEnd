@@ -21,7 +21,6 @@ class MaintenanceFactory extends Factory
             'description' => $this->faker->paragraph(),
             'category' => $this->faker->randomElement(['plumbing', 'electrical', 'hvac', 'structural', 'appliances', 'landscaping', 'painting', 'other']),
             'estimated_cost' => $this->faker->randomFloat(2, 50, 500),
-            'currency' => $this->faker->randomElement(['USD', 'EUR', 'GBP']),
             'estimated_hours' => $this->faker->numberBetween(1, 10),
             'is_active' => $this->faker->boolean(80), // 80% chance of being active
         ];

@@ -28,13 +28,11 @@ class PaymentFactory extends Factory
             'bill_id' => Bill::factory(),
             'resident_id' => Resident::factory(),
             'amount' => $this->faker->randomFloat(2, 50, 1000),
-            'currency' => $this->faker->randomElement(['USD', 'EUR', 'GBP']),
             'status' => $status,
             'transaction_id' => $isProcessed ? $this->faker->uuid() : null, // or always generate if status is paid/refunded
             // receipt_url removed
             'payment_date' => $isProcessed ? $this->faker->dateTimeBetween('-1 month', 'now') : null,
             'notes' => $this->faker->optional(0.3)->sentence(),
-            'metadata' => $this->faker->optional(0.2)->words(3),
             'processed_by' => $isProcessed ? Admin::factory() : null,
         ];
     }

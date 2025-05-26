@@ -24,7 +24,6 @@ class BillFactory extends Factory
             'resident_id' => Resident::factory(),
             'bill_type' => $this->faker->randomElement(['rent', 'utility', 'service_charge', 'maintenance']),
             'amount' => $this->faker->randomFloat(2, 50, 1000),
-            'currency' => $this->faker->randomElement(['USD', 'EUR', 'GBP']), // Match Property currency? Or define globally?
             'due_date' => $this->faker->dateTimeBetween('+1 week', '+1 month'),
             'description' => $this->faker->sentence,
             'status' => $this->faker->randomElement(['pending', 'paid', 'overdue', 'cancelled']),
@@ -32,7 +31,6 @@ class BillFactory extends Factory
             'next_billing_date' => function (array $attributes) {
                 return $attributes['recurrence'] ? $this->faker->dateTimeBetween('+1 month', '+1 year') : null;
             },
-            'metadata' => $this->faker->optional(0.1)->words(3), // 10% chance of having metadata
             'created_by' => Admin::factory(),
         ];
     }
