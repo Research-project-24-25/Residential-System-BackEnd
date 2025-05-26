@@ -33,7 +33,6 @@ class NotificationFactory extends Factory
             'type' => $this->faker->randomElement([ // Example notification types
                 \App\Notifications\NewMeetingRequest::class,
                 \App\Notifications\MeetingRequestStatusChanged::class,
-                \App\Notifications\ServiceRequestStatusChanged::class,
             ]),
             'notifiable_type' => $notifiableType,
             'notifiable_id' => $notifiable->id,
@@ -42,4 +41,3 @@ class NotificationFactory extends Factory
         ];
     }
 }
-

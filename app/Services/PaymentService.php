@@ -22,6 +22,9 @@ class PaymentService
             // If payment is marked as paid, update the bill
             if ($payment->status === 'paid') { // Standardize to 'paid'
                 $this->updateBillStatus($payment->bill);
+
+                // Notify the resident about the payment received
+                $payment->resident->notify(new \App\Notifications\PaymentReceivedNotification($payment));
             }
 
             return $payment;

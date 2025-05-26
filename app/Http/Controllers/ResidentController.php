@@ -110,6 +110,9 @@ class ResidentController extends Controller
 
             $resident = $this->service->createAndAttach($residentData, $property, $pivotData);
 
+            // Send welcome notification to the new resident
+            $resident->notify(new \App\Notifications\NewResidentWelcomeNotification($resident));
+
             return $this->createdResponse(
                 'Resident created successfully',
                 new ResidentResource($resident)

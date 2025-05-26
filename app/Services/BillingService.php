@@ -25,6 +25,9 @@ class BillingService
             // Update the bill status based on due date
             $this->updateBillStatus($bill);
 
+            // Notify the resident about the new bill
+            $bill->resident->notify(new \App\Notifications\NewBillNotification($bill));
+
             return $bill;
         });
     }
@@ -67,7 +70,12 @@ class BillingService
 
         // If due date has passed and not fully paid, mark as overdue
         if ($bill->due_date < now() && !$bill->is_fully_paid) {
-            $bill->update(['status' => 'overdue']);
+            // Check if the status is changing to overdue to avoid sending duplicate notifications
+            if ($bill->status !== 'overdue') {
+                $bill->update(['status' => 'overdue']);
+                // Notify the resident about the overdue bill
+                $bill->resident->notify(new \App\Notifications\BillOverdueNotification($bill));
+            }
             return;
         }
 
@@ -129,6 +137,9 @@ class BillingService
                     // Update the template bill's next_billing_date
                     $templateBill->next_billing_date = $dueDate;
                     $templateBill->save();
+
+                    // Notify the resident about the new recurring bill
+                    $newBill->resident->notify(new \App\Notifications\NewBillNotification($newBill));
 
                     $count++;
                 });
