@@ -33,10 +33,12 @@ class AuthController extends Controller
             if ($admin && Hash::check($request->password, $admin->password)) {
                 $token = $admin->createToken('admin-token')->plainTextToken;
 
-                return $this->successResponse('Logged in successfully as admin', [
+                $userType = $admin->role;
+
+                return $this->successResponse("Logged in successfully as $userType", [
                     'user' => new AdminResource($admin),
                     'token' => $token,
-                    'user_type' => 'admin',
+                    'user_type' => $userType,
                 ]);
             }
 
