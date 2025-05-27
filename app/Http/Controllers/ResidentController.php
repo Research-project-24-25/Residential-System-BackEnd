@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Throwable;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class ResidentController extends Controller
 {
@@ -19,7 +20,7 @@ class ResidentController extends Controller
 
     public function __construct(private PropertyResidentService $service) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): ResourceCollection|JsonResponse
     {
         try {
             $perPage = $request->get('per_page', 10);
@@ -30,16 +31,13 @@ class ResidentController extends Controller
                 ->search($request)
                 ->paginate($perPage);
 
-            return $this->successResponse(
-                'Residents retrieved successfully',
-                ResidentResource::collection($residents)
-            );
+            return ResidentResource::collection($residents);
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
     }
 
-    public function filter(ResidentRequest $request): JsonResponse
+    public function filter(ResidentRequest $request): ResourceCollection|JsonResponse
     {
         try {
             $residents = Resident::query()
@@ -49,10 +47,7 @@ class ResidentController extends Controller
                 ->sort($request)
                 ->paginate($request->get('per_page', 10));
 
-            return $this->successResponse(
-                'Residents retrieved successfully',
-                ResidentResource::collection($residents)
-            );
+            return ResidentResource::collection($residents);
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
