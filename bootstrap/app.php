@@ -26,6 +26,4 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->withSchedule(function (Schedule $schedule) {
-        $schedule->command('users:cleanup-expired-accounts')->dailyAt('2:00');
     })->create();

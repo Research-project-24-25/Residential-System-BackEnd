@@ -130,6 +130,4 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
-
-    'account_deletion_grace_period' => env('ACCOUNT_DELETION_GRACE_PERIOD', 30),
 ];

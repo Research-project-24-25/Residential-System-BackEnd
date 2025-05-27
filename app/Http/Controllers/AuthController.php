@@ -214,58 +214,7 @@ class AuthController extends Controller
             // Soft delete the user
             $user->delete();
 
-            $gracePeriodDays = config('auth.account_deletion_grace_period', 30);
-
-            return $this->successResponse("Account deleted successfully. You have {$gracePeriodDays} days to restore your account.");
-        } catch (Throwable $e) {
-            return $this->handleException($e);
-        }
-    }
-
-    public function restoreAccount(Request $request): JsonResponse
-    {
-        try {
-            $request->validate([
-                'email' => 'required|email',
-                'password' => 'required|string',
-            ]);
-
-            $user = User::withTrashed()
-                ->where('email', $request->email)
-                ->first();
-
-            if (!$user) {
-                return $this->errorResponse('No account found with this email address', 404);
-            }
-
-            if (!$user->trashed()) {
-                return $this->errorResponse('Account is not deleted', 422);
-            }
-
-            // Check if grace period has expired
-            $gracePeriodDays = config('auth.account_deletion_grace_period', 30);
-            $deletionDeadline = $user->deleted_at->addDays($gracePeriodDays);
-
-            if (now()->isAfter($deletionDeadline)) {
-                return $this->errorResponse('Grace period for account restoration has expired', 422);
-            }
-
-            // Verify password
-            if (!Hash::check($request->password, $user->password)) {
-                return $this->errorResponse('Password is incorrect', 422);
-            }
-
-            // Restore the user
-            $user->restore();
-
-            // Generate new token
-            $token = $user->createToken($user->email)->plainTextToken;
-
-            return $this->successResponse('Account restored successfully', [
-                'user' => new UserResource($user),
-                'token' => $token,
-                'user_type' => 'user',
-            ]);
+            return $this->successResponse('Account deleted successfully');
         } catch (Throwable $e) {
             return $this->handleException($e);
         }
