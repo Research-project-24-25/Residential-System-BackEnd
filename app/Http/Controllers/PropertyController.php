@@ -115,6 +115,11 @@ class PropertyController extends Controller
         unset($validated['images']);
       }
 
+      // Check if status is being updated to 'available_now' and set acquisition_date
+      if (isset($validated['status']) && $validated['status'] === 'available_now') {
+        $validated['acquisition_date'] = now();
+      }
+
       $property->update($validated);
 
       return $this->successResponse(
