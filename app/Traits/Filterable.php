@@ -24,11 +24,6 @@ trait Filterable
         // Apply filters dynamically
         $this->applyFilters($query, $filters);
 
-        // Apply search if exists
-        if (isset($filters['search']) && !empty($filters['search'])) {
-            $this->applySearch($query, $filters['search']);
-        }
-
         // Apply trashed filter if it exists
         if (isset($filters['trashed'])) {
             $this->applyTrashedFilter($query, $filters['trashed']);
@@ -67,6 +62,28 @@ trait Filterable
     }
 
     /**
+     * Apply search to the query
+     *
+     * @param Builder $query
+     * @param Request|array $request
+     * @return Builder
+     */
+    public function scopeSearch(Builder $query, $request): Builder
+    {
+        if ($request instanceof Request) {
+            $searchTerm = $request->input('search', null);
+        } else {
+            $searchTerm = $request['search'] ?? null;
+        }
+
+        if (!empty($searchTerm)) {
+            $this->applySearch($query, $searchTerm);
+        }
+
+        return $query;
+    }
+
+    /**
      * Apply filters to the query
      *
      * @param Builder $query
@@ -78,7 +95,7 @@ trait Filterable
         $allowedFields = $this->filterableFields ?? [];
 
         foreach ($filters as $field => $value) {
-            // Skip special filters that are handled separately
+            // Skip special filters that are handled separately, including search now
             if ($field === 'search' || $field === 'trashed' || !in_array($field, $allowedFields)) {
                 continue;
             }
