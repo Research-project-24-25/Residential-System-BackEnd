@@ -146,6 +146,15 @@ Route::prefix('admin')
                 Route::get('/financial-summary', 'financialSummary');
             });
 
+        // Meeting Requests
+        Route::controller(MeetingRequestController::class)
+            ->group(function () {
+                Route::get('meeting-requests/trashed', 'trashed');
+                Route::apiResource('meeting-requests', MeetingRequestController::class);
+                Route::patch('meeting-requests/{id}/restore', 'restore');
+                Route::delete('meeting-requests/{id}/force', 'forceDelete');
+            });
+
         Route::controller(UserController::class)->group(function () {
             Route::get('users/trashed', 'trashed');
             Route::apiResource('users', UserController::class);
