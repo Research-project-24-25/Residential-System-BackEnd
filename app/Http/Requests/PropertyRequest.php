@@ -101,7 +101,7 @@ class PropertyRequest extends BaseFormRequest
         } else {
             // Ensure $this->route('id') is available and correct for the update route
             // It might be $this->property->id or $this->route('property') depending on route binding
-            $propertyId = $this->route('property') ? $this->route('property')->id : $this->route('id');
+            $propertyId = $this->route('property') ?? $this->route('id');
             if ($propertyId) {
                 $rules['label'][] = Rule::unique('properties', 'label')->ignore($propertyId);
             } else {
