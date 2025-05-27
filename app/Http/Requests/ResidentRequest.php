@@ -45,6 +45,8 @@ class ResidentRequest extends BaseFormRequest
     /**
      * Get resident creation/update rules
      */
+    // Update the getEntityRules method in ResidentRequest to remove property relationship fields
+
     private function getEntityRules(): array
     {
         $isUpdate = $this->isUpdateRequest();
@@ -62,19 +64,11 @@ class ResidentRequest extends BaseFormRequest
                     'email',
                     Rule::unique('residents')->ignore($residentId)
                 ],
-                'password' => ['sometimes', 'string', 'min:8', 'confirmed'], // Added confirmed for password updates
+                'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
                 'phone_number' => ['sometimes', 'string'],
                 'age' => ['sometimes', 'integer', 'min:0'],
                 'gender' => ['sometimes', Rule::in(['male', 'female'])],
-                'profile_image' => ['sometimes', 'nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'], // Allow updating image
-
-                'property_id' => ['sometimes', 'integer', 'exists:properties,id'],
-                'relationship_type' => ['sometimes', Rule::in(['buyer', 'co_buyer', 'renter'])],
-                'sale_price' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-                'ownership_share' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
-                'monthly_rent' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-                'start_date' => ['sometimes', 'nullable', 'date'],
-                'end_date' => ['sometimes', 'nullable', 'date', 'after_or_equal:start_date'],
+                'profile_image' => ['sometimes', 'nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             ];
         } else { // Create rules
             $rules = [
@@ -87,14 +81,6 @@ class ResidentRequest extends BaseFormRequest
                 'age' => ['required', 'integer', 'min:0'],
                 'gender' => ['required', Rule::in(['male', 'female'])],
                 'profile_image' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
-
-                'property_id' => ['required', 'integer', 'exists:properties,id'],
-                'relationship_type' => ['required', Rule::in(['buyer', 'co_buyer', 'renter'])],
-                'sale_price' => ['nullable', 'numeric', 'min:0'],
-                'ownership_share' => ['nullable', 'numeric', 'between:0,100'],
-                'monthly_rent' => ['nullable', 'numeric', 'min:0'],
-                'start_date' => ['nullable', 'date'],
-                'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             ];
         }
         return $rules;

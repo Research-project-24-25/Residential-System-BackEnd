@@ -19,6 +19,7 @@ use App\Http\Controllers\{
     PropertyServiceController,
     PasswordController,
     UserController,
+    PropertyResidentController,
 };
 use Illuminate\Support\Facades\Route;
 
@@ -181,6 +182,27 @@ Route::prefix('admin')
             Route::patch('residents/{id}/restore', 'restore');
             Route::delete('residents/{id}/force', 'forceDelete');
         });
+
+        // Property-Resident Relationship Management
+        Route::controller(PropertyResidentController::class)
+            ->group(function () {
+                // Get all property-resident relationships
+                Route::get('property-residents', 'index');
+
+                // Property-specific resident management
+                Route::get('properties/{propertyId}/residents', 'propertyResidents');
+                Route::get('properties/{propertyId}/residents/{residentId}', 'show');
+                Route::post('properties/{propertyId}/residents', 'attach');
+                Route::put('properties/{propertyId}/residents/{residentId}', 'update');
+                Route::delete('properties/{propertyId}/residents/{residentId}', 'detach');
+
+                // Resident-specific property management
+                Route::get('residents/{residentId}/properties', 'residentProperties');
+
+                // Soft delete management
+                Route::patch('properties/{propertyId}/residents/{residentId}/restore', 'restore');
+                Route::delete('properties/{propertyId}/residents/{residentId}/force', 'forceDelete');
+            });
 
         // Services
         Route::controller(ServiceController::class)

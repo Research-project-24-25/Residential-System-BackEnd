@@ -70,8 +70,6 @@ class ResidentController extends Controller
     public function store(ResidentRequest $request): JsonResponse
     {
         try {
-            $property = Property::findOrFail($request->property_id);
-
             // Get validated data
             $validated = $request->validated();
 
@@ -95,23 +93,14 @@ class ResidentController extends Controller
                 $residentData['profile_image'] = null;
             }
 
-            // Prepare pivot data
-            $pivotData = [
-                'relationship_type' => $validated['relationship_type'],
-                'sale_price' => $validated['sale_price'] ?? null,
-                'ownership_share' => $validated['ownership_share'] ?? null,
-                'monthly_rent' => $validated['monthly_rent'] ?? null,
-                'start_date' => $validated['start_date'] ?? null,
-                'end_date' => $validated['end_date'] ?? null,
-            ];
-
-            $resident = $this->service->createAndAttach($residentData, $property, $pivotData);
+            // Create resident only - property attachment will be handled by PropertyResidentController
+            $resident = Resident::create($residentData);
 
             // Send welcome notification to the new resident
             $resident->notify(new \App\Notifications\NewResidentWelcomeNotification($resident));
 
             return $this->createdResponse(
-                'Resident created successfully',
+                'Resident created successfully. Use PropertyResidentController to attach to properties.',
                 new ResidentResource($resident)
             );
         } catch (Throwable $e) {
@@ -119,13 +108,14 @@ class ResidentController extends Controller
         }
     }
 
+    // Update the update method to focus only on resident data
     public function update($id, ResidentRequest $request): JsonResponse
     {
         try {
             $resident = Resident::with(['properties'])->findOrFail($id);
             $validated = $request->validated();
 
-            // Remove fields that should not be updated directly
+            // Remove property relationship fields from resident updates
             $updateData = array_diff_key($validated, array_flip([
                 'property_id',
                 'relationship_type',
@@ -155,24 +145,8 @@ class ResidentController extends Controller
 
             $resident->update($updateData);
 
-            // Update property relationship if property_id is provided
-            if (isset($validated['property_id'])) {
-                $property = Property::findOrFail($validated['property_id']);
-
-                $pivotData = [
-                    'relationship_type' => $validated['relationship_type'],
-                    'sale_price' => $validated['sale_price'] ?? null,
-                    'ownership_share' => $validated['ownership_share'] ?? null,
-                    'monthly_rent' => $validated['monthly_rent'] ?? null,
-                    'start_date' => $validated['start_date'] ?? null,
-                    'end_date' => $validated['end_date'] ?? null,
-                ];
-
-                $this->service->updatePropertyRelationship($resident, $property, $pivotData);
-            }
-
             return $this->successResponse(
-                'Resident updated successfully',
+                'Resident updated successfully. Use PropertyResidentController to manage property relationships.',
                 new ResidentResource($resident->fresh(['properties']))
             );
         } catch (Throwable $e) {
