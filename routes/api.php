@@ -32,11 +32,13 @@ use Illuminate\Support\Facades\Route;
 Route::controller(AuthController::class)->group(function () {
     Route::post('auth/login', 'login');
     Route::post('auth/register', 'register');
+    Route::post('auth/restore-account', 'restoreAccount');
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('auth/logout', 'logout');
         Route::get('auth/profile', 'profile');
         Route::put('auth/profile/{userId?}', 'updateProfile');
         Route::patch('auth/profile/{userId?}', 'updateProfile');
+        Route::delete('auth/delete-account', 'deleteAccount');
     });
 });
 
