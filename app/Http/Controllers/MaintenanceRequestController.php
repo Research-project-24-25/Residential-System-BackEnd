@@ -45,6 +45,7 @@ class MaintenanceRequestController extends Controller
 
             $maintenanceRequests = $query->with(['maintenance', 'property', 'resident', 'admin', 'feedback'])
                 ->sort($request)
+                ->search($request)
                 ->paginate($perPage);
 
             return MaintenanceRequestResource::collection($maintenanceRequests);
@@ -66,6 +67,7 @@ class MaintenanceRequestController extends Controller
 
             $maintenanceRequests = $query->with(['maintenance', 'property', 'resident', 'admin', 'feedback'])
                 ->filter($request)
+                ->search($request)
                 ->sort($request)
                 ->paginate($perPage);
 

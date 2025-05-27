@@ -26,6 +26,7 @@ class ServiceController extends Controller
 
             $services = Service::query()
                 ->sort($request)
+                ->search($request)
                 ->paginate($perPage);
 
             return ServiceResource::collection($services);
@@ -49,6 +50,7 @@ class ServiceController extends Controller
             $services = Service::query()
                 ->filter($request)
                 ->sort($request)
+                ->search($request)
                 ->paginate($perPage);
 
             return ServiceResource::collection($services);

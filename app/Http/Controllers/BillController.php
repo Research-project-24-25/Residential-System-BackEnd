@@ -30,6 +30,7 @@ class BillController extends Controller
             }
 
             $bills = $query
+                ->search($request)
                 ->sort($request)
                 ->paginate($request->get('per_page', 10));
 
@@ -53,6 +54,7 @@ class BillController extends Controller
 
             $bills = $query
                 ->sort($request)
+                ->search($request)
                 ->filter($request)
                 ->paginate($request->get('per_page', 10));
 

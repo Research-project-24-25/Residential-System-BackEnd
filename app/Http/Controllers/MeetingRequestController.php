@@ -35,6 +35,7 @@ class MeetingRequestController extends Controller
             if ($request->user()->getTable() === 'admins') {
                 $requests = $query->with(['property', 'user', 'admin'])
                     ->sort($request)
+                    ->search($request)
                     ->paginate($perPage);
             } else {
                 $requests = $query->where('user_id', $request->user()->id)
@@ -55,6 +56,7 @@ class MeetingRequestController extends Controller
             $perPage = $request->get('per_page', 10);
             $query = MeetingRequest::query()
                 ->sort($request)
+                ->search($request)
                 ->filter($request);
 
             $user = $request->user();

@@ -23,6 +23,7 @@ class MaintenanceController extends Controller
                     return $query->where('is_active', true);
                 })
                 ->sort($request)
+                ->search($request)
                 ->paginate($perPage);
 
             return MaintenanceResource::collection($maintenances);
@@ -43,6 +44,7 @@ class MaintenanceController extends Controller
                 })
                 ->filter($request)
                 ->sort($request)
+                ->search($request)
                 ->paginate($perPage);
 
             return MaintenanceResource::collection($maintenances);

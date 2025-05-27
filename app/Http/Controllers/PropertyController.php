@@ -22,6 +22,7 @@ class PropertyController extends Controller
 
       $properties = Property::query()
         ->sort($request)
+        ->search($request)
         ->paginate($perPage);
 
       return PropertyResource::collection($properties);
@@ -38,6 +39,7 @@ class PropertyController extends Controller
       $properties = Property::query()
         ->filter($request)
         ->sort($request)
+        ->search($request)
         ->paginate($perPage);
 
       return PropertyResource::collection($properties);

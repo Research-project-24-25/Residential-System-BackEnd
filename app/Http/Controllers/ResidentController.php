@@ -27,6 +27,7 @@ class ResidentController extends Controller
             $residents = Resident::query()
                 ->with(['properties'])
                 ->sort($request)
+                ->search($request)
                 ->paginate($perPage);
 
             return $this->successResponse(
@@ -44,6 +45,7 @@ class ResidentController extends Controller
             $residents = Resident::query()
                 ->with(['properties'])
                 ->filter($request)
+                ->search($request)
                 ->sort($request)
                 ->paginate($request->get('per_page', 10));
 

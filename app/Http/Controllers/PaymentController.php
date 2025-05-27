@@ -29,6 +29,7 @@ class PaymentController extends Controller
 
             $payments = $query
                 ->sort($request)
+                ->search($request)
                 ->paginate($request->get('per_page', 10));
 
             return PaymentResource::collection($payments);
@@ -49,6 +50,7 @@ class PaymentController extends Controller
 
             $payments = $query->filter($request)
                 ->sort($request)
+                ->search($request)
                 ->paginate($request->get('per_page', 10));
 
             return PaymentResource::collection($payments);

@@ -25,6 +25,7 @@ class UserController extends Controller
 
             $users = User::query()
                 ->sort($request)
+                ->search($request)
                 ->paginate($perPage);
 
             return UserResource::collection($users);
@@ -41,6 +42,7 @@ class UserController extends Controller
             $users = User::query()
                 ->filter($request)
                 ->sort($request)
+                ->search($request)
                 ->paginate($perPage);
 
             return UserResource::collection($users);
