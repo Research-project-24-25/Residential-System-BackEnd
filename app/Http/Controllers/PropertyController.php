@@ -115,9 +115,17 @@ class PropertyController extends Controller
         unset($validated['images']);
       }
 
-      // Check if status is being updated to 'available_now' and set acquisition_date
-      if (isset($validated['status']) && $validated['status'] === 'available_now') {
-        $validated['acquisition_date'] = now();
+      $oldStatus = $property->status; // Get old status
+
+      // Check if status is being updated and handle acquisition_date based on transitions
+      if (isset($validated['status'])) {
+        $newStatus = $validated['status'];
+
+        if ($oldStatus === 'under_construction' && $newStatus === 'available_now') {
+          $validated['acquisition_date'] = now();
+        } elseif ($newStatus === 'under_construction') {
+          $validated['acquisition_date'] = null;
+        }
       }
 
       $property->update($validated);
