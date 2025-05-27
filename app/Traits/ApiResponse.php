@@ -21,9 +21,9 @@ trait ApiResponse
     return response()->json($response, $status);
   }
 
-  protected function errorResponse(string $message, int $status = 400): JsonResponse
+  protected function errorResponse(string $message, int $status = 400, array $additional = []): JsonResponse
   {
-    return response()->json(['message' => $message], $status);
+    return response()->json(['message' => $message], $status, $additional);
   }
 
   protected function createdResponse(string $message, $data = null): JsonResponse
